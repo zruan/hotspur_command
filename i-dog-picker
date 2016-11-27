@@ -189,9 +189,74 @@ def argidx(arg, idx, default):
     except IndexError:
         return default
 
+def circles(axes, x, y, s, c='b', vmin=None, vmax=None, **kwargs):
+    """
+    Make a scatter of circles plot of x vs y, where x and y are sequence 
+    like objects of the same lengths. The size of circles are in data scale.
+
+    Parameters
+    ----------
+    x,y : scalar or array_like, shape (n, )
+        Input data
+    s : scalar or array_like, shape (n, ) 
+        Radius of circle in data unit.
+    c : color or sequence of color, optional, default : 'b'
+        `c` can be a single color format string, or a sequence of color
+        specifications of length `N`, or a sequence of `N` numbers to be
+        mapped to colors using the `cmap` and `norm` specified via kwargs.
+        Note that `c` should not be a single numeric RGB or RGBA sequence 
+        because that is indistinguishable from an array of values
+        to be colormapped. (If you insist, use `color` instead.)  
+        `c` can be a 2-D array in which the rows are RGB or RGBA, however. 
+    vmin, vmax : scalar, optional, default: None
+        `vmin` and `vmax` are used in conjunction with `norm` to normalize
+        luminance data.  If either are `None`, the min and max of the
+        color array is used.
+    kwargs : `~matplotlib.collections.Collection` properties
+        Eg. alpha, edgecolor(ec), facecolor(fc), linewidth(lw), linestyle(ls), 
+        norm, cmap, transform, etc.
+
+    Returns
+    -------
+    paths : `~matplotlib.collections.PathCollection`
+
+    Examples
+    --------
+    a = np.arange(11)
+    circles(a, a, a*0.2, c=a, alpha=0.5, edgecolor='none')
+    plt.colorbar()
+
+    License
+    --------
+    This code is under [The BSD 3-Clause License]
+    (http://opensource.org/licenses/BSD-3-Clause)
+    """
+    from matplotlib.patches import Circle
+    from matplotlib.collections import PatchCollection
+
+    if np.isscalar(c):
+        kwargs.setdefault('color', c)
+        c = None
+    if 'fc' in kwargs: kwargs.setdefault('facecolor', kwargs.pop('fc'))
+    if 'ec' in kwargs: kwargs.setdefault('edgecolor', kwargs.pop('ec'))
+    if 'ls' in kwargs: kwargs.setdefault('linestyle', kwargs.pop('ls'))
+    if 'lw' in kwargs: kwargs.setdefault('linewidth', kwargs.pop('lw'))
+
+    patches = [Circle((x_, y_), s_) for x_, y_, s_ in np.broadcast(x, y, s)]
+    collection = PatchCollection(patches, **kwargs)
+    if c is not None:
+        collection.set_array(np.asarray(c))
+        collection.set_clim(vmin, vmax)
+
+    ax = axes
+    ax.add_collection(collection)
+    ax.autoscale_view()
+    if c is not None:
+        plt.sci(collection)
+    return collection
 
 
-class BoundControlBox(wx.Panel):
+class OneRangeBox(wx.Panel):
     """ A static box with a couple of radio buttons and a text
         box. Allows to switch between an automatic mode and a 
         manual mode with an associated value.
@@ -204,38 +269,94 @@ class BoundControlBox(wx.Panel):
         box = wx.StaticBox(self, -1, label)
         sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
         
-        self.radio_auto = wx.RadioButton(self, -1, 
-            label="Auto", style=wx.RB_GROUP)
-        self.radio_manual = wx.RadioButton(self, -1,
-            label="Manual")
-        self.manual_text = wx.TextCtrl(self, -1, 
+        self.low_label = wx.StaticText(self, -1, 
+            label="Value", style=wx.RB_GROUP)
+        self.low_text = wx.TextCtrl(self, -1, 
             size=(35,-1),
             value=str(initval),
             style=wx.TE_PROCESS_ENTER)
         
-        self.Bind(wx.EVT_UPDATE_UI, self.on_update_manual_text, self.manual_text)
-        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.manual_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.low_text)
+        
+        manual_box_low = wx.BoxSizer(wx.HORIZONTAL)
+        manual_box_low.Add(self.low_label, flag=wx.ALIGN_CENTER_VERTICAL)
+        manual_box_low.Add(self.low_text, flag=wx.ALIGN_CENTER_VERTICAL)
+        
+        sizer.Add(manual_box_low, 0, wx.ALL, 10)
+        
+        self.SetSizer(sizer)
+        sizer.Fit(self)
+    
+    def on_text_enter(self, event):
+	try:
+            low = float(self.low_text.GetValue())
+	except ValueError:
+            low = 0
+            self.low_text.SetValue(u"0")
+        self.value = low
+    
+        
+    def get_value(self):
+        return self.value
+
+
+class TwoRangeBox(wx.Panel):
+    """ A static box with a couple of radio buttons and a text
+        box. Allows to switch between an automatic mode and a 
+        manual mode with an associated value.
+    """
+    def __init__(self, parent, ID, label, initvals):
+        wx.Panel.__init__(self, parent, ID)
+        
+        self.value = initvals
+        
+        box = wx.StaticBox(self, -1, label)
+        sizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        
+        self.low_label = wx.StaticText(self, -1, 
+            label="Low", style=wx.RB_GROUP)
+        self.high_label = wx.StaticText(self, -1,
+            label="High")
+        self.low_text = wx.TextCtrl(self, -1, 
+            size=(35,-1),
+            value=str(initvals[0]),
+            style=wx.TE_PROCESS_ENTER)
+        self.high_text = wx.TextCtrl(self, -1, 
+            size=(35,-1),
+            value=str(initvals[1]),
+            style=wx.TE_PROCESS_ENTER)
+        
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.high_text)
+        self.Bind(wx.EVT_TEXT_ENTER, self.on_text_enter, self.low_text)
         
         manual_box = wx.BoxSizer(wx.HORIZONTAL)
-        manual_box.Add(self.radio_manual, flag=wx.ALIGN_CENTER_VERTICAL)
-        manual_box.Add(self.manual_text, flag=wx.ALIGN_CENTER_VERTICAL)
+        manual_box.Add(self.high_label, flag=wx.ALIGN_CENTER_VERTICAL)
+        manual_box.Add(self.high_text, flag=wx.ALIGN_CENTER_VERTICAL)
+        manual_box_low = wx.BoxSizer(wx.HORIZONTAL)
+        manual_box_low.Add(self.low_label, flag=wx.ALIGN_CENTER_VERTICAL)
+        manual_box_low.Add(self.low_text, flag=wx.ALIGN_CENTER_VERTICAL)
         
-        sizer.Add(self.radio_auto, 0, wx.ALL, 10)
+        sizer.Add(manual_box_low, 0, wx.ALL, 10)
         sizer.Add(manual_box, 0, wx.ALL, 10)
         
         self.SetSizer(sizer)
         sizer.Fit(self)
     
-    def on_update_manual_text(self, event):
-        self.manual_text.Enable(self.radio_manual.GetValue())
-    
     def on_text_enter(self, event):
-        self.value = self.manual_text.GetValue()
+	try:
+            low = float(self.low_text.GetValue())
+	except ValueError:
+            low = 0
+            self.low_text.SetValue(u"0")
+	try:
+            high = float(self.high_text.GetValue())
+	except ValueError:
+            high = 0
+            self.high_text.SetValue(u"0")
+        self.value = (low,high)
     
-    def is_auto(self):
-        return self.radio_auto.GetValue()
         
-    def manual_value(self):
+    def get_value(self):
         return self.value
 
 
@@ -255,7 +376,7 @@ class GraphFrame(wx.Frame):
         
         self.redraw_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_redraw_timer, self.redraw_timer)        
-        self.redraw_timer.Start(100)
+        self.redraw_timer.Start(2000)
 
     def create_menu(self):
         self.menubar = wx.MenuBar()
@@ -276,23 +397,21 @@ class GraphFrame(wx.Frame):
         self.init_plot()
         self.canvas = FigCanvas(self.panel, -1, self.fig)
 
-        self.xmin_control = BoundControlBox(self.panel, -1, "X min", 0)
-        self.xmax_control = BoundControlBox(self.panel, -1, "X max", 50)
-        self.ymin_control = BoundControlBox(self.panel, -1, "Y min", 0)
-        self.ymax_control = BoundControlBox(self.panel, -1, "Y max", 100)
+        self.range_control = OneRangeBox(self.panel, -1, "Size     ", args.range)
+        self.threshold_control = TwoRangeBox(self.panel, -1, "Threshold range", args.thresholds)
+        self.meanmax_control = OneRangeBox(self.panel, -1, "Mean Max", args.meanmax)
         
-        self.pause_button = wx.Button(self.panel, -1, "Pause")
+        self.pause_button = wx.Button(self.panel, -1, "Detect")
         self.Bind(wx.EVT_BUTTON, self.on_pause_button, self.pause_button)
-        self.Bind(wx.EVT_UPDATE_UI, self.on_update_pause_button, self.pause_button)
         
         self.cb_grid = wx.CheckBox(self.panel, -1, 
-            "Show Grid",
+            "",
             style=wx.ALIGN_RIGHT)
         self.Bind(wx.EVT_CHECKBOX, self.on_cb_grid, self.cb_grid)
         self.cb_grid.SetValue(True)
         
         self.cb_xlab = wx.CheckBox(self.panel, -1, 
-            "Show X labels",
+            "",
             style=wx.ALIGN_RIGHT)
         self.Bind(wx.EVT_CHECKBOX, self.on_cb_xlab, self.cb_xlab)        
         self.cb_xlab.SetValue(True)
@@ -305,11 +424,11 @@ class GraphFrame(wx.Frame):
         self.hbox1.Add(self.cb_xlab, border=5, flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL)
         
         self.hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox2.Add(self.xmin_control, border=5, flag=wx.ALL)
-        self.hbox2.Add(self.xmax_control, border=5, flag=wx.ALL)
+        self.hbox2.Add(self.range_control, border=5, flag=wx.ALL)
         self.hbox2.AddSpacer(24)
-        self.hbox2.Add(self.ymin_control, border=5, flag=wx.ALL)
-        self.hbox2.Add(self.ymax_control, border=5, flag=wx.ALL)
+        self.hbox2.Add(self.threshold_control, border=5, flag=wx.ALL)
+        self.hbox2.AddSpacer(24)
+        self.hbox2.Add(self.meanmax_control, border=5, flag=wx.ALL)
         
         self.vbox = wx.BoxSizer(wx.VERTICAL)
         self.vbox.Add(self.canvas, 1, flag=wx.LEFT | wx.TOP | wx.GROW)        
@@ -337,21 +456,28 @@ class GraphFrame(wx.Frame):
         # to the plotted line series
         #
         self.plot_data = self.axes.imshow(self.micrographs,cmap="Greys_r")
-        self.plot_circles = self.axes.scatter([00],[00],marker='o',s=(1600^2)*np.pi,facecolors='none', edgecolors='r')
+        self.plot_circles = self.axes.scatter([],[],marker='o',s=(1600^2)*np.pi,facecolors='none', edgecolors='r')
+
+    
 
     def draw_plot(self):
         """ Redraws the plot
         """
-        dx_in_points = np.diff(ax.transData.transform(zip([0]*len(dx), dx))) 
-        self.plot_circles = (x,y,c=z,s=dx_in_points**2,marker='s', edgecolors='none')
+        dx = 200/2
+        self.plot_circles.remove()
+        self.plot_circles = circles(self.axes,self.circle_x,self.circle_y,s=dx,edgecolor='r',facecolor='none')
         self.canvas.draw()
     
     def on_pause_button(self, event):
-        self.paused = not self.paused
+	args.range = self.range_control.get_value()
+	args.thresholds = self.threshold_control.get_value()
+	args.meanmax = self.meanmax_control.get_value()
+	result = process(mics[0])
+	print(result)
+	app.frame.circle_x = [a[0][1] for a in result]
+	app.frame.circle_y = [a[0][0] for a in result]
+	self.draw_plot()
     
-    def on_update_pause_button(self, event):
-        label = "Pause" 
-        self.pause_button.SetLabel(label)
     
     def on_cb_grid(self, event):
         self.draw_plot()
@@ -400,6 +526,28 @@ class GraphFrame(wx.Frame):
         self.statusbar.SetStatusText('')
 
 
+def process(mic):
+    try:
+	image = imaging.load(mic)[0]    
+    except KeyboardInterrupt:
+	exit(-1)
+    except Exception as e:
+	print('[error] failed to process image: %s, %s' % (mic, e))
+	return
+    if args.invert:
+	image = imaging.filters.invert(image)
+    size = args.range
+    meanmax = args.meanmax
+    mint = argidx(args.thresholds, 0, None)
+    maxt = argidx(args.thresholds, 1, None)
+    debug = None
+    keys = list(detect(image, size, mint, maxt, debug, meanmax))
+    if len(keys) > 5:
+	print('found %d particles in image %s -> %s' % (len(keys), mic, ""))
+    return keys
+
+
+
 
 
 
@@ -409,28 +557,6 @@ if __name__ == '__main__':
     print(args)
     mics = get_micrographs(args)
 
-    def process(mic):
-        try:
-            if args.star:
-                mic = pyfs.join(pyfs.dpath(args.star), mic)
-            image = imaging.load(mic)[0]    
-        except KeyboardInterrupt:
-            exit(-1)
-        except Exception as e:
-            print('[error] failed to process image: %s, %s' % (mic, e))
-            return
-        if args.invert:
-            image = imaging.filters.invert(image)
-        mint = argidx(args.thresholds, 0, None)
-        maxt = argidx(args.thresholds, 1, None)
-        debug = None
-        if args.debug:
-            debug = pyfs.rext(mic, full=False) + '_%s' % (args.label)
-        keys = list(detect(image, size, mint, maxt, debug, meanmax))
-        star = pyfs.rext(mic, full=False) + '_%s.star' % (args.label)
-        if len(keys) > 5:
-            save_star(keys, star)
-            print('found %d particles in image %s -> %s' % (len(keys), mic, star))
 
     try:
         image = imaging.load(mics[0])[0]    
@@ -441,10 +567,21 @@ if __name__ == '__main__':
         exit(-1)
     if args.invert:
         image = imaging.filters.invert(image)
-    reduced_image = imaging.filters.zoom(image, 0.25)
+    args.thresholds = (0.0,10)
+    args.range = 200
+    args.debug = False
+    args.label = 'dog'
+    args.meanmax = None
+    result = process(mics[0])
+    print(result)
+    reduced_image = image
     norm_image = imaging.filters.norm(reduced_image, 0.01, 0.01, 0, 255)
     app = wx.App(False)
     app.frame = GraphFrame(norm_image)
+    app.frame.circle_x = [a[0][1] for a in result]
+    app.frame.circle_y = [a[0][0] for a in result]
+
+
     app.frame.Show()
     app.MainLoop()
 
