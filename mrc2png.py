@@ -23,6 +23,8 @@ def arguments():
     
     parser.add_argument('-p', '--parallel', type=int, default=1,
                         help='number of images to process in parallel')
+    parser.add_argument('-z', '--zoom', type=float, default=0.25,
+                        help='Scale factor')
     parser.add_argument('-i', '--invert', default=False, action='store_true',
                         help='invert image so that particles are black on a white background')
     return parser.parse_args()
