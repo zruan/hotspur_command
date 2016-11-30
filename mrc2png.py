@@ -127,6 +127,7 @@ def colorize_log_map(logimage, mint, maxt):
 
 def save_peaks(image, path):
     image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+    image = imaging.filters.zoom(image, 0.25)
     picks_path = path + '.preview.png'
     print(' saving png:', picks_path)
     imaging.save(image, picks_path)
