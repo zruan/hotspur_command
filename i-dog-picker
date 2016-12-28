@@ -1,5 +1,4 @@
-#!/usr/bin/python
-
+#!/home/exacloud/lustre1/users/yoshiokc/sw/cky-tools/site/bin/python
 import argparse
 import imaging
 import pystar
@@ -288,9 +287,9 @@ class OneRangeBox(wx.Panel):
         sizer.Fit(self)
     
     def on_text_enter(self, event):
-	try:
+        try:
             low = float(self.low_text.GetValue())
-	except ValueError:
+        except ValueError:
             low = 0
             self.low_text.SetValue(u"0")
         self.value = low
@@ -343,14 +342,14 @@ class TwoRangeBox(wx.Panel):
         sizer.Fit(self)
     
     def on_text_enter(self, event):
-	try:
+        try:
             low = float(self.low_text.GetValue())
-	except ValueError:
+        except ValueError:
             low = 0
             self.low_text.SetValue(u"0")
-	try:
+        try:
             high = float(self.high_text.GetValue())
-	except ValueError:
+        except ValueError:
             high = 0
             self.high_text.SetValue(u"0")
         self.value = (low,high)
@@ -469,14 +468,14 @@ class GraphFrame(wx.Frame):
         self.canvas.draw()
     
     def on_pause_button(self, event):
-	args.range = self.range_control.get_value()
-	args.thresholds = self.threshold_control.get_value()
-	args.meanmax = self.meanmax_control.get_value()
-	result = process(mics[0])
-	print(result)
-	app.frame.circle_x = [a[0][1] for a in result]
-	app.frame.circle_y = [a[0][0] for a in result]
-	self.draw_plot()
+        args.range = self.range_control.get_value()
+        args.thresholds = self.threshold_control.get_value()
+        args.meanmax = self.meanmax_control.get_value()
+        result = process(mics[0])
+        print(result)
+        app.frame.circle_x = [a[0][1] for a in result]
+        app.frame.circle_y = [a[0][0] for a in result]
+        self.draw_plot()
     
     
     def on_cb_grid(self, event):
@@ -528,14 +527,14 @@ class GraphFrame(wx.Frame):
 
 def process(mic):
     try:
-	image = imaging.load(mic)[0]    
+        image = imaging.load(mic)[0]    
     except KeyboardInterrupt:
-	exit(-1)
+        exit(-1)
     except Exception as e:
-	print('[error] failed to process image: %s, %s' % (mic, e))
-	return
+        print('[error] failed to process image: %s, %s' % (mic, e))
+        return
     if args.invert:
-	image = imaging.filters.invert(image)
+        image = imaging.filters.invert(image)
     size = args.range
     meanmax = args.meanmax
     mint = argidx(args.thresholds, 0, None)
@@ -543,7 +542,7 @@ def process(mic):
     debug = None
     keys = list(detect(image, size, mint, maxt, debug, meanmax))
     if len(keys) > 5:
-	print('found %d particles in image %s -> %s' % (len(keys), mic, ""))
+        print('found %d particles in image %s -> %s' % (len(keys), mic, ""))
     return keys
 
 

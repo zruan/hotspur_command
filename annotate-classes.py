@@ -2,29 +2,36 @@
 
 import argparse
 import imaging
-import pystar
+import pystar2
 import pyfs
+from collections import defaultdict
 
 import numpy as np
 
-
+colors = [imaging.rgba(228,26,28,255)
+         ,imaging.rgba(55,126,184,255)
+         ,imaging.rgba(77,175,74,255)
+         ,imaging.rgba(152,78,163,255)
+         ,imaging.rgba(255,127,0,255)
+         ,imaging.rgba(255,255,51,255)
+         ,imaging.rgba(166,86,40,255)
+         ,imaging.rgba(247,129,191,255)]
 def arguments():
 
     def floatlist(string):
         return list(map(float, string.split(',')))
 
     parser = argparse.ArgumentParser(
-        description='Converts an MRC image to a normalized png')
+        description='Annotates particles belonging to a 2D Class in Micrographs')
     
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--mrc', nargs='+', help='path to MRC input image')
-    group.add_argument('--star', help='path to STAR file with MRC images')
-    group.add_argument('--glob', help='glob pattern for MRC images')
+    parser.add_argument('--data_star', help='path to Class2D _data star file', required=True)
+    parser.add_argument('--model_star', help='path to Class2D _model star file', required=True)
+
+    parser.add_argument('--class_id', type=int, help='Class to annotate', required=True, nargs='+')
+
     
     parser.add_argument('-p', '--parallel', type=int, default=1,
                         help='number of images to process in parallel')
-    parser.add_argument('-z', '--zoom', type=float, default=0.25,
-                        help='Scale factor')
     parser.add_argument('-i', '--invert', default=False, action='store_true',
                         help='invert image so that particles are black on a white background')
     return parser.parse_args()
@@ -125,27 +132,58 @@ def colorize_log_map(logimage, mint, maxt):
     return colorized
 
 
-def save_peaks(image, path):
+def save_peaks(image, path, mic):
+    zoom = 0.25
     image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-    image = imaging.filters.zoom(image, args.zoom)
+    reduced_image = imaging.filters.zoom(image, zoom)
+    rzoom = float(reduced_image.shape[0]) / float(image.shape[0])
+    czoom = float(reduced_image.shape[1]) / float(image.shape[1])
+    reduced_image = imaging.filters.asRGB(reduced_image)
+    for class_id in particles_datastructure[mic].keys():
+        color=colors[args.class_id.index(class_id)]
+        for x in particles_datastructure[mic][class_id]:
+            imaging.drawing.circle(reduced_image, (x[1]*rzoom,x[0]*czoom), 40, 4, color)
     picks_path = path + '.preview.png'
     print(' saving png:', picks_path)
-    imaging.save(image, picks_path)
+    imaging.save(reduced_image, picks_path)
 
-def save_mult_peaks(images, path):
-    cols = 5
-    rows = len(images)/5 + 1
-    montage = np.zeros((images[0].shape[0]*cols,images[0].shape[1]*rows))
+def save_mult_peaks(starfile, class_highlight):
+    fields = list(starfile.keys())[0]
+    index_image = fields.index('rlnReferenceImage')
+    index_distribution = fields.index('rlnClassDistribution')
+    mrc_file = list(list(starfile.values())[0])[0][index_image].split('@')[1]
+    images = imaging.load(mrc_file)    
+    cols = 10
+    rows = len(images)/cols + 1
+    montage = np.zeros((images[0].shape[0]*rows,images[0].shape[1]*cols))
     curr_col = 0
     curr_row = 0
-    for image in images:
+    entries = list(starfile.values())[0].tolist()
+    entries.sort(key=lambda x: x[index_distribution], reverse=True)
+    for coord in entries:
+        image = images[int(coord[index_image].split('@')[0]) - 1]
         image = imaging.filters.norm(image, -0.21, 2, 0, 255)
-        montage[image.shape[0]*curr_col:image.shape[0]*(curr_col+1),image.shape[1]*curr_row:image.shape[1]*(curr_row+1)] = image
+        montage[image.shape[1]*curr_row:image.shape[1]*(curr_row+1),image.shape[0]*curr_col:image.shape[0]*(curr_col+1)] = image
         curr_col += 1
         if curr_col >= cols:
             curr_col = 0
             curr_row += 1
-    picks_path = path + '.preview.png'
+    curr_col = 0
+    curr_row = 0
+    montage = imaging.filters.asRGB(montage)
+    for coord in entries:
+        if int(coord[index_image].split('@')[0]) in class_highlight:
+            color = colors[class_highlight.index(int(coord[index_image].split('@')[0]))]
+            montage = imaging.drawing.line(montage,(image.shape[1]*curr_row+2,image.shape[0]*curr_col+2),(image.shape[1]*(curr_row)+2,image.shape[0]*(curr_col+1)-2),color,4)
+            montage = imaging.drawing.line(montage,(image.shape[1]*curr_row+2,image.shape[0]*curr_col+2),(image.shape[1]*(curr_row+1)-2,image.shape[0]*(curr_col)+2),color,4)
+            montage = imaging.drawing.line(montage,(image.shape[1]*(curr_row+1)-2,image.shape[0]*curr_col+2),(image.shape[1]*(curr_row+1)-2,image.shape[0]*(curr_col+1)-2),color,4)
+            montage = imaging.drawing.line(montage,(image.shape[1]*curr_row+2,image.shape[0]*(curr_col+1)-2),(image.shape[1]*(curr_row+1)-2,image.shape[0]*(curr_col+1)-2),color,4)
+
+        curr_col += 1
+        if curr_col >= cols:
+            curr_col = 0
+            curr_row += 1
+    picks_path = 'classes.preview.png'
     print(' saving montage png:', picks_path)
     imaging.save(montage, picks_path)
 
@@ -177,7 +215,7 @@ _rlnAutopickFigureOfMerit #5
 
 
 def load_micrographs_star(path):
-    values = pystar.load(path)[0]['data_']
+    values = pystar2.load(path)[0]['data_']
     fields = list(values)[0]
     index = fields.index('rlnMicrographName')
     return [x[index] for x in list(values.values())[0]]
@@ -189,8 +227,6 @@ def get_micrographs(args):
     elif args.glob:
         import glob
         return glob.glob(args.glob)
-    elif args.star:
-        return load_micrographs_star(args.star)
     raise ValueError()
 
 
@@ -205,13 +241,10 @@ if __name__ == '__main__':
 
     args = arguments()
     print(args)
-    mics = get_micrographs(args)
 
     def process(mic):
         try:
-            if args.star:
-                mic = pyfs.join(pyfs.dpath(args.star), mic)
-            image = imaging.load(mic)    
+            image = imaging.load(mic)[0]    
         except KeyboardInterrupt:
             exit(-1)
         except Exception as e:
@@ -223,18 +256,37 @@ if __name__ == '__main__':
         #maxt = argidx(args.thresholds, 1, None)
         #debug = None
         #if args.debug:
-        debug = pyfs.rext(mic, full=False) + '_%s' % ("prev")
+        debug = pyfs.rext(mic, full=False) + '_%s' % ("class")
         #keys = list(detect(image, size, mint, maxt, debug, meanmax))
         #star = pyfs.rext(mic, full=False) + '_%s.star' % (args.label)
         #if len(keys) > 5:
         #    save_star(keys, star)
         #    print('found %d particles in image %s -> %s' % (len(keys), mic, star))
-        if len(image) == 1:
-            save_peaks(image[0], debug)
-        else:
-            save_mult_peaks(image, debug)
+        save_peaks(image, debug, mic)
+    
+    # Load _data and prepare datastructure for micrographs
+    particles_datastructure = defaultdict(lambda: defaultdict(list))
+    starfile = pystar2.load(args.data_star)['']
+    fields = list(starfile.keys())[0]
+    index_name = fields.index('rlnMicrographName')
+    index_x = fields.index('rlnCoordinateX')
+    index_y = fields.index('rlnCoordinateY')
+    index_class = fields.index('rlnClassNumber')
+    for coord in list(starfile.values())[0]:
+        class_id = coord[index_class]
+        if class_id in args.class_id:
+            particles_datastructure[coord[index_name]][class_id].append((coord[index_x],coord[index_y]))
+            
+
+    print(particles_datastructure)
+    # Load _model and prepare class avergae image
+
+    model_starfile = pystar2.load(args.model_star)['model_classes']
+    save_mult_peaks(model_starfile, args.class_id)
+
+    # Process micrographs in paralel
     import multiprocessing as mp
     pool = mp.Pool(args.parallel)
-    pool.map(process, mics)
+    pool.map(process, particles_datastructure.keys())
 
 
