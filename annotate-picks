@@ -1,4 +1,4 @@
-#!/home/exacloud/lustre1/users/yoshiokc/sw/cky-tools/site/bin/python
+#!/eppec/storage/sw/cky-tools/site/bin/python
 import argparse
 import imaging
 import pystar
