@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/home/exacloud/lustre1/users/yoshiokc/sw/cky-tools/site/bin/python
 
 import argparse
 import imaging
@@ -29,7 +29,7 @@ def arguments():
                         help='number of bins for particles, gets outputted as a seperate STAR files with group # appended to file name')
     parser.add_argument('-l', '--label', default='dog',
                         help='suffix label for STAR files.  known in Relion GUI as `Picking rootname`')
-    parser.add_argument('-t', '--thresholds', default=[], type=float, nargs='+',
+    parser.add_argument('-t', '--thresholds', default=[], type=float, nargs='*',
                         help='min and max thresholds for particle selection')
     parser.add_argument('-i', '--invert', default=False, action='store_true',
                         help='invert image so that particles are black on a white background')
@@ -37,6 +37,8 @@ def arguments():
                         help='exclude picks with a mean value larger than this')
     parser.add_argument('--debug', default=False, action='store_true',
                         help='writes debug PNG images alongside the input files with an associated label')
+    parser.add_argument('--force', default=False, action='store_true',
+                        help='force overwriting output files')
     return parser.parse_args()
 
 
@@ -72,7 +74,7 @@ def log(image, size):
 
 
 def detect(image, size, mint=None, maxt=None, debug=None, meanmax=None):
-    zoom = min(1.0, 15.0 / size)
+    zoom = min(1.0, 30.0 / size)
     reduced_image = imaging.filters.zoom(image, zoom)
     rzoom = float(reduced_image.shape[0]) / float(image.shape[0])
     czoom = float(reduced_image.shape[1]) / float(image.shape[1])
@@ -84,7 +86,7 @@ def detect(image, size, mint=None, maxt=None, debug=None, meanmax=None):
         if maxt is None:
             maxt = pvalues[-1]
         if mint is None:
-            mint = max(0, pvalues[0])
+            mint = pvalues[0]
         peaks = [(p, v) for p, v in peaks if v <= maxt]
         peaks = [(p, v) for p, v in peaks if v >= mint]
         if meanmax is not None:
@@ -136,7 +138,7 @@ def colorize_log_map(logimage, mint, maxt):
 
 
 def save_peaks(image, log_image, peaks, size, path):
-    image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+    image = imaging.filters.norm(image, 0.2, 0.01, 0, 255)
     keys = log_peaks_as_keypoints(peaks, size)
     image = imaging.detection.keypoints.draw(image, keys)
     picks_path = path + '.picks.png'
@@ -208,9 +210,11 @@ if __name__ == '__main__':
     meanmax = args.meanmax    
 
     def process(mic):
+        star = pyfs.rext(mic, full=False) + '_%s.star' % (args.label)
+        if not args.force and pyfs.exists(star):
+            print('skipping:', mic)
+            return
         try:
-            if args.star:
-                mic = pyfs.join(pyfs.dpath(args.star), mic)
             image = imaging.load(mic)[0]    
         except KeyboardInterrupt:
             exit(-1)

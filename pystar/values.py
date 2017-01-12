@@ -2,14 +2,20 @@
 
 from pyparsing import *
 
-Number = Word(nums+'.e-')
-Number.setParseAction(lambda x: map(float, x))
 
-uqstr = Word(alphanums+"/_-.:")
+Int = Word(nums) 
+Float = Optional('-') + Word(nums) + Optional('.' + Word(nums)) + Optional('e' + Optional('+') + Optional('-' ) + Word(nums))
+Int.setParseAction(lambda x: int( ''.join(x)))
+Float.setParseAction(lambda x: float( ''.join(x)))
+Number = ( Float | Int )
+#Number = Regex(r'\d+(\.\d*)?([eE]\d+)?')
+
+uqstr = Word(alphanums+"/_-.:@")
 sqstr = Suppress("'") + CharsNotIn("'") + Suppress("'")
 dqstr = Suppress('"') + CharsNotIn('"') + Suppress('"')
 mqstr = Suppress(';') + CharsNotIn(';') + Suppress(';')
-
+NumberedString = Int + '@' + uqstr
+NumberedString.setParseAction(lambda x: (x[2],x[0]))
 
 def striplines(lines):
     stripped = []
@@ -24,7 +30,7 @@ Comment = Suppress('#') + Suppress(restOfLine)
 CodeName = CharsNotIn('\n\t\r ') + Optional(Comment)
 DataName = Suppress('_') + CodeName + Optional(Comment)
 Keyword = Suppress('data_') | Suppress('loop_') | Suppress('save_') | Suppress('stop_')
-Value = (~Keyword) + (~DataName) + ( Number | String ) + Optional(Comment)
+Value = (~Keyword) + (~DataName) + (  NumberedString | Number  | String ) + Optional(Comment)
 Values = OneOrMore(Value)
 DataItem = Group(DataName + Value)
 DataItems = OneOrMore(Comment | DataItem)
