@@ -20,6 +20,8 @@ def arguments():
     group.add_argument('--mrc', nargs='+', help='path to MRC input image')
     group.add_argument('--star', help='path to STAR file with MRC images')
     group.add_argument('--glob', help='glob pattern for MRC images')
+
+    parser.add_argument('--suffix', help='suffix for png file', default="preview")
     
     parser.add_argument('-p', '--parallel', type=int, default=1,
                         help='number of images to process in parallel')
@@ -128,7 +130,7 @@ def colorize_log_map(logimage, mint, maxt):
 def save_peaks(image, path):
     image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
     image = imaging.filters.zoom(image, args.zoom)
-    picks_path = path + '.preview.png'
+    picks_path = path + '.png'
     print(' saving png:', picks_path)
     imaging.save(image, picks_path)
 
@@ -223,7 +225,7 @@ if __name__ == '__main__':
         #maxt = argidx(args.thresholds, 1, None)
         #debug = None
         #if args.debug:
-        debug = pyfs.rext(mic, full=False) + '_%s' % ("prev")
+        debug = pyfs.rext(mic, full=False) + '_%s' % (args.suffix)
         #keys = list(detect(image, size, mint, maxt, debug, meanmax))
         #star = pyfs.rext(mic, full=False) + '_%s.star' % (args.label)
         #if len(keys) > 5:
