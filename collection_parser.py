@@ -14,20 +14,21 @@ import numpy as np
 import string
 
 
+
 config = { "MotionCor2Parser" : {
-                "sum_micrograph_glob" : "micrographs_motioncor2_DW/${base}.mrc",
-                "dw_micrograph_glob" : "micrographs_motioncor2_DW/${base}_DW.mrc",
-                "log_glob" : "logs/motioncor2*/motioncor2_${base}.mrc.log"
+                "sum_micrograph_glob" : "${base}_mc.mrc",
+                "dw_micrograph_glob" : "${base}_mc_DW.mrc",
+                "log_glob" : "${base}_mc.log"
                 },
            "PreviewParser" : {
-                "image_glob" : "micrographs_motioncor2_DW/${base}_prev.preview.png"
-                }
+                "image_glob" : "${base}_mc_prev.preview.png"
+                },
            "GctfParser" : {
-                "ctf_image_glob" : "${base}_mc_DW.mrc",
+                "ctf_image_glob" : "${base}_mc_DW_ctf.mrc",
                 "ctf_image_preview_glob" : "${base}_mc_DW_ctf_prev.preview.png",
                 "ctf_star_glob" : "${base}_mwc_DW_gctf.star",
-                "ctf_EPA_log.glob" : "${base}_mc_DW_EPA.log",
-                "ctf_log_glob" : "{base}_mc_DW_gctf.log"
+                "ctf_epa_log_glob" : "${base}_mc_DW_EPA.log",
+                "ctf_log_glob" : "${base}_mc_DW_gctf.log"
                 }
          }
 
@@ -59,7 +60,6 @@ class PreviewParser(Parser):
 
 class GctfParser(Parser):
 
-
     def __init__(self, database, config):
         Parser.__init__(self, database)
         self.config = config["GctfParser"] 
@@ -70,13 +70,40 @@ class GctfParser(Parser):
             if "Gctf" in value:
                 continue
             print("No Gctf parsed for %s . Processing ... " % (key),end="",flush=True)
-            preview_files = glob.glob(string.Template(self.config["image_glob"]).substitute(base=key))
-            if len(preview_files) > 0:
-                value["Preview"] = {}
-                value["Preview"]["filename"] = preview_files[-1]
+            ctf_files = glob.glob(string.Template(self.config["ctf_image_glob"]).substitute(base=key))
+            if len(ctf_files) > 0:
+                value["Gctf"] = {}
+                value["Gctf"]["ctf_image_filename"] = ctf_files[-1]
+                value["Gctf"]["ctf_preview_image_filename"] = string.Template(self.config["ctf_image_preview_glob"]).substitute(base=key)
+                value["Gctf"]["ctf_star_filename"] = string.Template(self.config["ctf_star_glob"]).substitute(base=key)
+                value["Gctf"]["ctf_epa_log_filename"] = string.Template(self.config["ctf_epa_log_glob"]).substitute(base=key)
+                value["Gctf"]["ctf_log_filename"] = string.Template(self.config["ctf_log_glob"]).substitute(base=key)
+                self.parse_EPA_log(value["Gctf"]["ctf_epa_log_filename"],value)
+                self.parse_gctf_log(value["Gctf"]["ctf_log_filename"],value)
                 print("Done!")
             else:
                 print("Not found!")
+
+    def parse_EPA_log(self, filename, value):
+        data = np.genfromtxt(filename,skip_header=1,dtype=[float,float,float,float,float],usecols=(0,1,2,3,4))
+        value["Gctf"]["EPA"] = {}
+        value["Gctf"]["EPA"]["Resolution"] = list(data['f0'])
+        value["Gctf"]["EPA"]["Sim. CTF"] = list(data['f1'])
+        value["Gctf"]["EPA"]["Meas. CTF"] = list(data['f2'])
+        value["Gctf"]["EPA"]["Meas. CTF - BG"] = list(data['f3'])
+
+    def parse_gctf_log(self, filename, value):
+        with open(filename) as f:
+            lines = f.readlines()
+            ctf_params = lines[-13].split()
+            value["Gctf"]["Defocus U"] = ctf_params[0]
+            value["Gctf"]["Defocus V"] = ctf_params[1]
+            value["Gctf"]["Astig angle"] = ctf_params[2]
+            value["Gctf"]["Phase shift"] = ctf_params[3]
+            value["Gctf"]["CCC"] = ctf_params[4]
+            value["Gctf"]["Estimated resolution"] = lines[-11].split()[-1]
+            value["Gctf"]["Estimated b-factor"] = lines[-10].split()[-1]
+            value["Gctf"]["Validation scores"] = [lines[a].split()[-1] for a in [-2,-3,-4,-5]]
 
 class MotionCor2Parser(Parser):
 
@@ -222,6 +249,10 @@ if __name__ == '__main__':
     PreviewParser = PreviewParser(database, config)
 
     PreviewParser.parse(num_files_max=args.numfiles)
+    
+    GctfParser = GctfParser(database, config)
+
+    GctfParser.parse(num_files_max=args.numfiles)
     
     with open(args.json, 'w') as outfile:
             json.dump(database, outfile)
