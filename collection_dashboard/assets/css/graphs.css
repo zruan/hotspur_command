@@ -8,3 +8,9 @@
 	stroke: steelblue;
 	stroke-width: 1.5px;
 }
+
+.line.simctf {
+	stroke-dasharray: 3, 3;
+	stroke-width: 1px;
+	stroke: red;
+}

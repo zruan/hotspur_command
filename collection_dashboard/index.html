@@ -290,7 +290,12 @@ g.selectAll(".dot")
           tooltip.transition()
                .duration(500)
                .style("opacity", 0);
-      });
+      })
+	.on("click", function(d){
+        var url = "micrograph.html?micrograph=";
+        url += d[0];
+        window.location = url;    
+    });
 }
 
 var glob_data;
