@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
  <head> 
-  <title>Layouts &raquo; Quarter Grid</title> 
+  <title>Collection Statistics</title> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
   <link rel="stylesheet" type="text/css" href="assets/lib/bootstrap/dist/css/bootstrap.min.css" /> 
   <link rel="stylesheet" type="text/css" href="assets/css/keen-dashboards.css" /> 
@@ -19,6 +19,9 @@
       </ul> 
      </div> 
     </div> 
+<ul class="nav navbar-nav navbar-right">
+      <li><span class="navbar-text" id="timer">Last: ago</span></li>
+    </ul>
    </div> 
   </div> 
   <div class="container-fluid"> 
@@ -139,60 +142,6 @@
       </div> 
      </div> 
     </div> 
-    <div class="col-sm-6 col-md-4"> 
-     <div class="chart-wrapper"> 
-      <div class="chart-title">
-        Cell Title 
-      </div> 
-      <div class="chart-stage"> 
-       <img data-src="holder.js/100%x180/white" /> 
-      </div> 
-      <div class="chart-notes">
-        Notes about this chart 
-      </div> 
-     </div> 
-    </div> 
-   </div> 
-   <div class="row"> 
-    <div class="col-sm-6 col-md-3"> 
-     <div class="chart-wrapper"> 
-      <div class="chart-title">
-        Cell Title 
-      </div> 
-      <div class="chart-stage"> 
-       <img data-src="holder.js/100%x180/white" /> 
-      </div> 
-      <div class="chart-notes">
-        Notes about this chart 
-      </div> 
-     </div> 
-    </div> 
-    <div class="col-sm-6 col-md-3"> 
-     <div class="chart-wrapper"> 
-      <div class="chart-title">
-        Cell Title 
-      </div> 
-      <div class="chart-stage"> 
-       <img data-src="holder.js/100%x180/white" /> 
-      </div> 
-      <div class="chart-notes">
-        Notes about this chart 
-      </div> 
-     </div> 
-    </div> 
-    <div class="col-sm-6 col-md-3"> 
-     <div class="chart-wrapper"> 
-      <div class="chart-title">
-        Cell Title 
-      </div> 
-      <div class="chart-stage"> 
-       <img data-src="holder.js/100%x180/white" /> 
-      </div> 
-      <div class="chart-notes">
-        Notes about this chart 
-      </div> 
-     </div> 
-    </div> 
    </div> 
    <hr /> 
    <p class="small text-muted">Built by Johannes</p> 
@@ -204,6 +153,7 @@
     Holder.add_theme("white", { background:"#fff", foreground:"#a7a7a7", size:10 });
   </script> 
   <script type="text/javascript" src="assets/lib/d3/d3.js"></script> 
+  <script type="text/javascript" src="assets/lib/countdown/countdown.min.js"></script> 
   <script type="text/javascript" src="assets/js/index.js"></script>  
  </body>
 </html>

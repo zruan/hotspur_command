@@ -5,10 +5,18 @@ var tooltip = d3
   .style("opacity", 0);
 
 function prepare_graph(id, yfunc, ylabel) {
-  var svg = d3.selectAll(id).append("svg").attr("height", "180").attr("width", "400"),
+    d3.selectAll(id).selectAll(".svg-container").remove();
+  var svg = d3.selectAll(id)
+      .append("div")
+      .classed("svg-container",true)
+      .append("svg")
+      .attr("preserveAspectRatio", "xMinYMin meet")
+      .attr("viewBox", "0 0 500 250")
+      //class to make it responsive
+      .classed("svg-content-responsive", true); 
     margin = { top: 20, right: 20, bottom: 30, left: 50 },
-    width = +svg.attr("width") - margin.left - margin.right,
-    height = +svg.attr("height") - margin.top - margin.bottom,
+    width = 500 - margin.left - margin.right,
+    height = 250 - margin.top - margin.bottom,
     g = svg
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
@@ -77,7 +85,7 @@ function prepare_graph(id, yfunc, ylabel) {
     })
     .on("mouseover", function(d) {
       d3.selectAll("#" + d[0] + ".dot").attr("r", 7);
-      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.style("opacity", 0.9);
       tooltip
         .html(d[0] + " " + yfunc(d) + "")
         .style("left", d3.event.pageX + 5 + "px")
@@ -85,7 +93,7 @@ function prepare_graph(id, yfunc, ylabel) {
     })
     .on("mouseout", function(d) {
       d3.selectAll("#" + d[0] + ".dot").attr("r", 3.5);
-      tooltip.transition().duration(500).style("opacity", 0);
+      tooltip.style("opacity", 0);
     })
     .on("click", function(d) {
       var url = "micrograph.html?micrograph=";
@@ -95,7 +103,8 @@ function prepare_graph(id, yfunc, ylabel) {
 }
 
 var glob_data;
-d3.json("data/data.json", function(data) {
+var noCache = new Date().getTime();
+d3.json("data/data.json" + "?_=" + noCache, function(data) {
   glob_data = data;
   micrograph_time = d3.keys(data).map(function(d) {
     acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
@@ -106,6 +115,9 @@ d3.json("data/data.json", function(data) {
     return a[1] - b[1];
   }
   micrograph_time = micrograph_time.sort(sortByDateAscending);
+  d3.timer( function () {
+$('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString()+ " ago");
+},1000);
   prepare_graph(
     "#grid-1-1",
     function(d) {
