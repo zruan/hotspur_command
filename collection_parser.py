@@ -12,6 +12,7 @@ from collections import OrderedDict
 import argparse
 import numpy as np
 import string
+from dateutil.tz import tzlocal
 
 
 
@@ -164,7 +165,7 @@ class StackParser(Parser):
         files = glob.glob(self.glob)
         num_files = 0
         for filename in files:
-            base = pyfs.rext(pyfs.bname(filename))
+            base = pyfs.rext(filename)
             if base not in self.database:
                 print("Found new stack %s under %s . Processing ... " % (base, filename), end="",flush=True)
                 try:
@@ -197,7 +198,7 @@ class StackParser(Parser):
                 dose_per_frame = e_sum / data.shape[0] / data.shape[1] / data.shape[2]
             self.database[base] = { "moviestack" : { "filename" : filename,
                                                      "numframes" : numframes,
-                                                     "acquisition_time" : acquisition_time.isoformat(),
+                                                     "acquisition_time" : acquisition_time.replace(tzinfo=tzlocal()).isoformat(),
                                                      "dimensions" : dimensions,
                                                      "e_sum": e_sum,
                                                      "dose_per_pix_frame": dose_per_frame }}
@@ -223,6 +224,39 @@ def arguments():
     
     return parser.parse_args()
 
+class ParserProcess(Process):
+    def __init__(self, config, work_dir=None):
+        Process.__init__(self)
+        self.config = config
+        if work_dir is None:
+            self.work_dir = self.config["scratch_dir"]
+        else:
+            self.work_dir = work_dir
+
+    def run(self):
+        
+        try:
+            with open(self.config["Database"]) as database:
+                database = json.load(database, object_pairs_hook=OrderedDict)
+        except FileNotFoundError:
+            database = OrderedDict()
+        StackParser = StackParser(database, config)
+        MotionCor2Parser = MotionCor2Parser(database, config)
+        PreviewParser = PreviewParser(database, config)
+        GctfParser = GctfParser(database, config)
+        while True:
+
+            StackParser.parse()
+
+            MotionCor2Parser.parse()
+
+            PreviewParser.parse()
+
+            GctfParser.parse()
+            
+            with open(self.config["Database"], 'w') as outfile:
+                    json.dump(database, outfile)
+            
 
 
 if __name__ == '__main__':

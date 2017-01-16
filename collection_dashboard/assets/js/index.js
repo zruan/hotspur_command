@@ -74,7 +74,7 @@ function prepare_graph(id, yfunc, ylabel) {
     .append("circle")
     .attr("class", "dot")
     .attr("id", function(d) {
-      return d[0];
+      return d[0].replace(/\//g, "_");
     })
     .attr("r", 3.5)
     .attr("cx", function(d) {
@@ -84,15 +84,15 @@ function prepare_graph(id, yfunc, ylabel) {
       return y(yfunc(d));
     })
     .on("mouseover", function(d) {
-      d3.selectAll("#" + d[0] + ".dot").attr("r", 7);
+      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".dot").attr("r", 7);
       tooltip.style("opacity", 0.9);
       tooltip
-        .html(d[0] + " " + yfunc(d) + "")
+        .html(d[0] + " " + d3.format(",.2f")(yfunc(d)) + "")
         .style("left", d3.event.pageX + 5 + "px")
         .style("top", d3.event.pageY - 28 + "px");
     })
     .on("mouseout", function(d) {
-      d3.selectAll("#" + d[0] + ".dot").attr("r", 3.5);
+      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".dot").attr("r", 3.5);
       tooltip.style("opacity", 0);
     })
     .on("click", function(d) {
