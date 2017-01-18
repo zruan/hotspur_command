@@ -13,81 +13,36 @@ import pyfs
 import stat
 import imaging
 import numpy as np
+from collection_parser import ParserProcess
 
 
 
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
-class PreviewProcessor(Process):
-    def __init__(self, process_id, watch_glob, config, min_age=5,sleep=5,work_dir=None, zoom = 0.25):
+class CollectionProcessor(Process):
+    def __init__(self, process_id, config, watch_glob = None, min_age=1,sleep=5,work_dir=None, ensure_dirs=[],
+                 depends=None,
+                 done_lambda= lambda stackname, process_id, config : config["lock_dir"] + stackname + "." + process_id + ".done",
+                 lock_lambda= lambda stackname, process_id, config : config["lock_dir"] + stackname + "." + process_id + ".lck",
+                 ):
         Process.__init__(self)
         self.process_id = process_id
-        self.watch_glob = watch_glob
-        self.config = config
-        self.min_age = min_age
-        self.sleep = sleep
-        self.zoom = zoom
-        if work_dir is None:
-            self.work_dir = self.config["scratch_dir"]
+        if watch_glob is None:
+            if depends is None:
+                raise ValueError("Need to specify etiher watch_glob or dependency")
+            else:
+                self.watch_glob = done_lambda(pyfs.rext(config["glob"]),depends,config)
+                print(process_id + " glob is:" + self.watch_glob)
         else:
-            self.work_dir = work_dir
-
-    def create_preview(self, filename):
-        image = imaging.load(filename)[0]    
-        image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-        image = imaging.filters.zoom(image, self.zoom)
-        picks_path = pyfs.rext(filename) + '.preview.png'
-        print(' saving png:', picks_path)
-        imaging.save(image, picks_path)
-
-    def run(self):
-        os.chdir(self.work_dir)
-        idle = 0
-        while True:
-
-            file_list = glob.glob(self.watch_glob)
-            wait = True
-            for filename in file_list:
-                lock_filename = self.config["lock_dir"] + filename + "." + self.process_id + ".lck"
-                done_filename = self.config["lock_dir"] + filename + "." + self.process_id + ".done"
-                if os.path.isfile(lock_filename) or os.path.isfile(done_filename):
-                    continue
-                if file_age_in_seconds(filename) < self.min_age:
-                    continue
-                wait = False
-                print("Processing %s on %s" % (self.process_id,filename))
-                start = time.time()
-                with open(lock_filename, 'a'):
-                    os.utime(lock_filename, None)
-
-                self.create_preview(filename)
-                with open(done_filename, 'a'):
-                    os.utime(done_filename, None)
-
-                os.remove(lock_filename)
-                end = time.time()
-                duration = end-start
-                print("Performed %s on %s in %.2f seconds" % (self.process_id,filename, duration) )
-            if wait:
-                idle += self.sleep 
-                if idle > 3600:
-                    print("Not processed anything for 60 minutes. %s Exiting." % (self.process_id))
-                    break
-                time.sleep(self.sleep)
-            wait = True
-
-class CommandProcessor(Process):
-    def __init__(self, process_id, process_command, watch_glob, config, min_age=1,sleep=5,work_dir=None, ensure_dirs=[], done_lambda=None):
-        Process.__init__(self)
-        self.process_id = process_id
-        self.process_command = process_command
-        self.watch_glob = watch_glob
+            self.watch_glob = watch_glob
         self.config = config
         self.min_age = min_age
         self.sleep = sleep
+        self.depends = depends
         self.ensure_dirs = ensure_dirs
         self.done_lambda = done_lambda
+        self.lock_lambda = lock_lambda
         if work_dir is None:
             self.work_dir = self.config["scratch_dir"]
         else:
@@ -98,42 +53,38 @@ class CommandProcessor(Process):
         os.chdir(self.work_dir)
         idle = 0
         while True:
-            if self.done_lambda:
-                os.chdir(self.config["lock_dir"])
             file_list = glob.glob(self.watch_glob)
             wait = True
             for filename in file_list:
-                if self.done_lambda:
-                    os.chdir(self.work_dir)
-                    filename = self.done_lambda(filename)
                 replace_dict = config.copy()
+                if self.depends:
+                    filename = filename[len(config["lock_dir"]):]
+                stackname = pyfs.rext(filename, full=True)
                 replace_dict.update({ "filename" : filename,
                                  "filename_noex" : pyfs.rext(filename, full=True),
                                  "filename_base" : os.path.basename(filename),
                                  "filename_directory" : os.path.dirname(filename),
                                  "filename_base_noext" : pyfs.rext(os.path.basename(filename),full=True),
+                                 "stackname" : stackname
                                })
 
 
-                lock_filename = self.config["lock_dir"] + filename + "." + self.process_id + ".lck"
-                done_filename = self.config["lock_dir"] + filename + "." + self.process_id + ".done"
+                lock_filename = self.lock_lambda(stackname, self.process_id, config)
+                done_filename = self.done_lambda(stackname, self.process_id, config)
                 if os.path.isfile(lock_filename) or os.path.isfile(done_filename):
                     continue
-                if file_age_in_seconds(filename) < self.min_age:
+                if self.min_age > 0 and file_age_in_seconds(filename) < self.min_age:
                     continue
-                wait = False
-                print("Processing %s on %s" % (self.process_id,filename))
-                start = time.time()
                 for ensure_dir in self.ensure_dirs:
                     ensure_dir_sub = string.Template(ensure_dir).substitute(replace_dict)
                     if not os.path.exists(ensure_dir_sub):
                         os.makedirs(ensure_dir_sub)
+                wait = False
+                print("Processing %s on %s" % (self.process_id,filename))
+                start = time.time()
                 with open(lock_filename, 'a'):
                     os.utime(lock_filename, None)
-
-                command = Template(self.process_command).substitute(replace_dict)
-                print(command)
-                res = subprocess.run(command,shell=True)
+                self.run_loop(config, replace_dict)
 
                 with open(done_filename, 'a'):
                     os.utime(done_filename, None)
@@ -149,6 +100,37 @@ class CommandProcessor(Process):
                     break
                 time.sleep(self.sleep)
             wait = True
+
+
+
+class PreviewProcessor(CollectionProcessor):
+    def __init__(self, process_id, config, filename, suffix="", zoom=0.25, **kwargs):
+        CollectionProcessor.__init__(self, process_id, config, **kwargs)
+        self.suffix = suffix
+        self.zoom = zoom
+        self.filename = filename
+
+    def create_preview(self, filename):
+        image = imaging.load(filename)[0]    
+        image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+        image = imaging.filters.zoom(image, self.zoom)
+        picks_path = pyfs.rext(filename) + self.suffix + '.preview.png'
+        print(' saving png:', picks_path)
+        imaging.save(image, picks_path)
+
+    def run_loop(self, config, replace_dict):
+        self.create_preview(string.Template(self.filename).substitute(replace_dict))
+
+class CommandProcessor(CollectionProcessor):
+    def __init__(self, process_id, process_command, config, **kwargs):
+        CollectionProcessor.__init__(self,process_id, config, **kwargs)
+        self.process_command = process_command
+
+
+    def run_loop(self, config, replace_dict):
+        command = Template(self.process_command).substitute(replace_dict)
+        print(command)
+        res = subprocess.run(command,shell=True)
 
 def arguments():
 
@@ -191,7 +173,10 @@ if __name__ == '__main__':
     if not os.path.exists(config["lock_dir"]):
         os.makedirs(config["lock_dir"])
 
+    parse_process = ParserProcess(config)
+
     for process in processes:
         process.start()
+    parse_process.start()
     for process in processes:
         process.join()

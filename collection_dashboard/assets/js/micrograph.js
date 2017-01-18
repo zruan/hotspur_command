@@ -49,6 +49,7 @@ function create_motion_chart(micrograph) {
     .attr("dy", "0.71em")
     .style("text-anchor", "end")
     .text("");
+  if (glob_data[micrograph].MotionCor2) {
   var line = d3
     .line()
     .x(function(d, i) {
@@ -62,6 +63,7 @@ function create_motion_chart(micrograph) {
     .datum(glob_data[micrograph].MotionCor2.x_shifts)
     .attr("class", "line motion")
     .attr("d", line);
+  }
 }
 
 
@@ -83,6 +85,7 @@ function create_radial_ctf_plot(micrograph) {
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+  if ( glob_data[micrograph].Gctf ) {
   var x = d3.scaleLinear().rangeRound([ width, 0 ]);
 
   var y = d3.scaleLinear().rangeRound([ height, 0 ]);
@@ -150,20 +153,31 @@ function create_radial_ctf_plot(micrograph) {
     .datum(glob_data[micrograph].Gctf.EPA.Resolution)
     .attr("class", "line")
     .attr("d", back_line);
+  }
 }
 
 function load_micrograph(micrograph) {
   curr_index = micrograph_time.findIndex(function(d) {
     return d[0] == micrograph;
   });
+  if (glob_data[micrograph].Preview) {
   d3
     .selectAll("#big_micro")
     .attr("src", "data/" + glob_data[micrograph].Preview.filename);
-
+  } else {
+  d3
+    .selectAll("#big_micro")
+    .attr("src", "" );
+  }
+  if (glob_data[micrograph].Gctf) {
   d3
     .selectAll("#gctf_preview")
     .attr("src", "data/" + glob_data[micrograph].Gctf.ctf_preview_image_filename);
-
+  } else {
+  d3
+    .selectAll("#gctf_preview")
+    .attr("src", "" );
+  }
   d3.selectAll("#title_field").text(micrograph);
   create_radial_ctf_plot(micrograph);
   create_motion_chart(micrograph);
@@ -189,6 +203,11 @@ $("#button_previous").click(previous);
 $("#button_next").click(next);
 Mousetrap.bind('right', next);
 Mousetrap.bind('left', previous);
+  d3.timer( function () {
+$('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString()+ " ago");
+},1000);
+
+
 var noCache = new Date().getTime();
 d3.json("data/data.json" + "?_=" + noCache, function(data) {
   glob_data = data;
@@ -201,14 +220,36 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
     return a[1] - b[1];
   }
   micrograph_time = micrograph_time.sort(sortByDateAscending);
-  d3.timer( function () {
-$('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString()+ " ago");
-},1000);
   micrograph = findGetParameter("micrograph");
   if (micrograph == null) {
+    if (data[micrograph_time.slice(-1)[0][0]].Preview) {
     load_micrograph(micrograph_time.slice(-1)[0][0]);
+    }
   } else {
     load_micrograph(micrograph);
   }
 });
 
+setInterval(function () {
+var noCache = new Date().getTime();
+d3.json("data/data.json" + "?_=" + noCache, function(data) {
+  glob_data = data;
+  micrograph_time = d3.keys(data).map(function(d) {
+    acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
+    return [ d, acquisition_time ];
+  });
+  function sortByDateAscending(a, b) {
+    // Dates will be cast to numbers automagically:
+    return a[1] - b[1];
+  }
+  micrograph_time = micrograph_time.sort(sortByDateAscending);
+  micrograph = findGetParameter("micrograph");
+  if (micrograph == null) {
+    if (data[micrograph_time.slice(-1)[0][0]].Preview) {
+    load_micrograph(micrograph_time.slice(-1)[0][0]);
+    }
+  } else {
+    load_micrograph(micrograph);
+  }
+});
+},20000);

@@ -5,6 +5,7 @@ var tooltip = d3
   .style("opacity", 0);
 
 function prepare_graph(id, yfunc, ylabel) {
+    setTimeout(function() {
     d3.selectAll(id).selectAll(".svg-container").remove();
   var svg = d3.selectAll(id)
       .append("div")
@@ -27,6 +28,14 @@ function prepare_graph(id, yfunc, ylabel) {
 
   var line = d3
     .line()
+    .defined(function(d) {
+        try {
+            yfunc(d);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    })
     .x(function(d) {
       return x(d[1]);
     })
@@ -40,10 +49,14 @@ function prepare_graph(id, yfunc, ylabel) {
   );
   y.domain([
     d3.min(micrograph_time, function(d) {
+        try {
       return yfunc(d);
+        } catch (e) { return null;}
     }) * 0.9,
     d3.max(micrograph_time, function(d) {
+        try {
       return yfunc(d);
+        } catch (e) { return null; }
     }) * 1.1
   ]);
 
@@ -71,6 +84,11 @@ function prepare_graph(id, yfunc, ylabel) {
     .selectAll(".dot")
     .data(micrograph_time)
     .enter()
+    .filter(function(d) { try {
+        yfunc(d);
+        return true;
+    } catch (e) { return false; }
+    })
     .append("circle")
     .attr("class", "dot")
     .attr("id", function(d) {
@@ -100,24 +118,10 @@ function prepare_graph(id, yfunc, ylabel) {
       url += d[0];
       window.location = url;
     });
+    }, 0);
 }
 
-var glob_data;
-var noCache = new Date().getTime();
-d3.json("data/data.json" + "?_=" + noCache, function(data) {
-  glob_data = data;
-  micrograph_time = d3.keys(data).map(function(d) {
-    acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
-    return [ d, acquisition_time ];
-  });
-  function sortByDateAscending(a, b) {
-    // Dates will be cast to numbers automagically:
-    return a[1] - b[1];
-  }
-  micrograph_time = micrograph_time.sort(sortByDateAscending);
-  d3.timer( function () {
-$('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString()+ " ago");
-},1000);
+function prepare_graphs(data, micrograph_time) {
   prepare_graph(
     "#grid-1-1",
     function(d) {
@@ -198,5 +202,46 @@ $('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString(
     },
     "deg"
   );
+}
+
+
+var glob_data;
+var noCache = new Date().getTime();
+var micrograph_time;
+
+d3.timer( function () {
+    try {
+$('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString()+ " ago");
+    } catch (e) { $('#timer').text("Last:  ago"); }
+},1000);
+d3.json("data/data.json" + "?_=" + noCache, function(data) {
+  glob_data = data;
+  micrograph_time = d3.keys(data).map(function(d) {
+    acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
+    return [ d, acquisition_time ];
+  });
+  function sortByDateAscending(a, b) {
+    // Dates will be cast to numbers automagically:
+    return a[1] - b[1];
+  }
+  micrograph_time = micrograph_time.sort(sortByDateAscending);
+  prepare_graphs(data,micrograph_time);
 });
 
+setInterval(function () {
+var noCache = new Date().getTime();
+
+d3.json("data/data.json" + "?_=" + noCache, function(data) {
+  glob_data = data;
+  micrograph_time = d3.keys(data).map(function(d) {
+    acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
+    return [ d, acquisition_time ];
+  });
+  function sortByDateAscending(a, b) {
+    // Dates will be cast to numbers automagically:
+    return a[1] - b[1];
+  }
+  micrograph_time = micrograph_time.sort(sortByDateAscending);
+  prepare_graphs(data,micrograph_time);
+});
+}, 20000);
