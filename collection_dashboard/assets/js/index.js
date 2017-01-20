@@ -30,7 +30,10 @@ function prepare_graph(id, yfunc, ylabel) {
     .line()
     .defined(function(d) {
         try {
-            yfunc(d);
+            result = parseFloat(yfunc(d));
+            if (isNaN(result)) {
+                return false;
+            }
             return true;
         } catch (e) {
             return false;
@@ -85,8 +88,11 @@ function prepare_graph(id, yfunc, ylabel) {
     .data(micrograph_time)
     .enter()
     .filter(function(d) { try {
-        yfunc(d);
-        return true;
+            result = parseFloat(yfunc(d));
+            if (isNaN(result)) {
+                return false;
+            }
+            return true;
     } catch (e) { return false; }
     })
     .append("circle")

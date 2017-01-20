@@ -13,7 +13,7 @@ import pyfs
 import stat
 import imaging
 import numpy as np
-from collection_parser import ParserProcess
+from collection_parser import ParserProcess,MotionCor2Parser,GctfParser,StackParser
 
 
 
@@ -33,7 +33,6 @@ class CollectionProcessor(Process):
                 raise ValueError("Need to specify etiher watch_glob or dependency")
             else:
                 self.watch_glob = done_lambda(pyfs.rext(config["glob"]),depends,config)
-                print(process_id + " glob is:" + self.watch_glob)
         else:
             self.watch_glob = watch_glob
         self.config = config
@@ -53,53 +52,62 @@ class CollectionProcessor(Process):
         os.chdir(self.work_dir)
         idle = 0
         while True:
-            file_list = glob.glob(self.watch_glob)
-            wait = True
-            for filename in file_list:
-                replace_dict = config.copy()
-                if self.depends:
-                    filename = filename[len(config["lock_dir"]):]
-                stackname = pyfs.rext(filename, full=True)
-                replace_dict.update({ "filename" : filename,
-                                 "filename_noex" : pyfs.rext(filename, full=True),
-                                 "filename_base" : os.path.basename(filename),
-                                 "filename_directory" : os.path.dirname(filename),
-                                 "filename_base_noext" : pyfs.rext(os.path.basename(filename),full=True),
-                                 "stackname" : stackname
-                               })
+            try:
+                file_list = glob.glob(self.watch_glob)
+                wait = True
+                for filename in file_list:
+                    replace_dict = config.copy()
+                    if self.depends:
+                        filename = filename[len(config["lock_dir"]):]
+                    stackname = pyfs.rext(filename, full=True)
+                    replace_dict.update({ "filename" : filename,
+                                     "filename_noex" : pyfs.rext(filename, full=True),
+                                     "filename_base" : os.path.basename(filename),
+                                     "filename_directory" : os.path.dirname(filename),
+                                     "filename_base_noext" : pyfs.rext(os.path.basename(filename),full=True),
+                                     "stackname" : stackname
+                                   })
 
 
-                lock_filename = self.lock_lambda(stackname, self.process_id, config)
-                done_filename = self.done_lambda(stackname, self.process_id, config)
-                if os.path.isfile(lock_filename) or os.path.isfile(done_filename):
-                    continue
-                if self.min_age > 0 and file_age_in_seconds(filename) < self.min_age:
-                    continue
-                for ensure_dir in self.ensure_dirs:
-                    ensure_dir_sub = string.Template(ensure_dir).substitute(replace_dict)
-                    if not os.path.exists(ensure_dir_sub):
-                        os.makedirs(ensure_dir_sub)
-                wait = False
-                print("Processing %s on %s" % (self.process_id,filename))
-                start = time.time()
-                with open(lock_filename, 'a'):
-                    os.utime(lock_filename, None)
-                self.run_loop(config, replace_dict)
+                    lock_filename = self.lock_lambda(stackname, self.process_id, config)
+                    done_filename = self.done_lambda(stackname, self.process_id, config)
+                    if os.path.isfile(lock_filename) or os.path.isfile(done_filename):
+                        continue
+                    if self.min_age > 0 and file_age_in_seconds(filename) < self.min_age:
+                        continue
+                    try:
+                        for ensure_dir in self.ensure_dirs:
+                            ensure_dir_sub = string.Template(ensure_dir).substitute(replace_dict)
+                            if not os.path.exists(ensure_dir_sub):
+                                os.makedirs(ensure_dir_sub)
+                        wait = False
+                        print("Processing %s on %s" % (self.process_id,filename))
+                        start = time.time()
+                        with open(lock_filename, 'a'):
+                            os.utime(lock_filename, None)
+                        self.run_loop(config, replace_dict)
 
-                with open(done_filename, 'a'):
-                    os.utime(done_filename, None)
+                        with open(done_filename, 'a'):
+                            os.utime(done_filename, None)
 
-                os.remove(lock_filename)
-                end = time.time()
-                duration = end-start
-                print("Performed %s on %s in %.2f seconds" % (self.process_id,filename, duration) )
-            if wait:
-                idle += self.sleep 
-                if idle > 3600:
-                    print("Not processed anything for 60 minutes. %s Exiting." % (self.process_id))
-                    break
-                time.sleep(self.sleep)
-            wait = True
+                        os.remove(lock_filename)
+                        end = time.time()
+                        duration = end-start
+                        print("Performed %s on %s in %.2f seconds" % (self.process_id,filename, duration) )
+                    except KeyboardInterrupt:
+                        print("%s received Ctr-C. Cleaning up:" % (self.process_id))
+                        os.remove(lock_filename)
+                        raise KeyboardInterrupt
+                if wait:
+                    idle += self.sleep 
+                    if idle > 3600:
+                        print("Not processed anything for 60 minutes. %s Exiting." % (self.process_id))
+                        break
+                    time.sleep(self.sleep)
+                wait = True
+            except KeyboardInterrupt:
+                print("%s received Ctrl-C" % (self.process_id))
+                return
 
 
 
@@ -115,7 +123,6 @@ class PreviewProcessor(CollectionProcessor):
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
         image = imaging.filters.zoom(image, self.zoom)
         picks_path = pyfs.rext(filename) + self.suffix + '.preview.png'
-        print(' saving png:', picks_path)
         imaging.save(image, picks_path)
 
     def run_loop(self, config, replace_dict):
@@ -129,7 +136,6 @@ class CommandProcessor(CollectionProcessor):
 
     def run_loop(self, config, replace_dict):
         command = Template(self.process_command).substitute(replace_dict)
-        print(command)
         res = subprocess.run(command,shell=True)
 
 def arguments():
@@ -178,5 +184,12 @@ if __name__ == '__main__':
     for process in processes:
         process.start()
     parse_process.start()
-    for process in processes:
-        process.join()
+    try:
+        for process in processes:
+            process.join()
+        parse_process.join()
+    except KeyboardInterrupt:
+        print("Waiting for processes to finish")
+        for process in processes:
+            process.join()
+        parse_process.join()

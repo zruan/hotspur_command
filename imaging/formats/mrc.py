@@ -76,6 +76,16 @@ def load_header(path):
             raise ValueError('unknown MRC type')
         return header
 
+def load_header_handler(fd):
+    header = np.frombuffer(fd, dtype=MRCHeader, count=1)[0]
+    # memory map using copy on write mode
+    # with offset starting after the header
+    # and reverse dimensions from header
+    if header["mode"] not in MRCModes:
+        header = header.byteswap()
+    if header["mode"] not in MRCModes:
+        raise ValueError('unknown MRC type')
+    return header
 
 def header_from_array(array):
     header = np.zeros([1], dtype=MRCHeader)

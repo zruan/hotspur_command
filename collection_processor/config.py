@@ -10,23 +10,27 @@ config = {
         "archive_dir" : "/tmp/JE_test_archive/",
         # Directory that holds lock files for processing
         "lock_dir"    : "/home/scratch/${user}/${curr_dir_base}/lock/",
-        "parser" :{ "MotionCor2Parser" : {
-		"watch_file" : "$${lock_dir}$${base}.motioncor2.done",
-                "sum_micrograph_glob" : "$${base}_mc.mrc",
-                "dw_micrograph_glob" : "$${base}_mc_DW.mrc",
-                "log_glob" : "$${base}_mc.log",
-                "preview_glob" : "$${base}_mc_DW.preview.png"
+        "parser" :{ "MotionCor2" : {
+		"type" : MotionCor2Parser,
+		"depends" : "motioncor2",
+                "sum_micrograph" : "$${base}_mc.mrc",
+                "dw_micrograph" : "$${base}_mc_DW.mrc",
+                "log" : "$${base}_mc.log",
+                "preview" : "$${base}_mc_DW.preview.png"
                 },
-           "GctfParser" : {
-		"watch_file" : "$${lock_dir}$${base}.gctf.done",
-                "ctf_image_glob" : "$${base}_mc_DW.ctf",
-                "ctf_image_preview_glob" : "$${base}_mc_DW_ctf.preview.png",
-                "ctf_star_glob" : "$${base}_mwc_DW_gctf.star",
-                "ctf_epa_log_glob" : "$${base}_mc_DW_EPA.log",
-                "ctf_log_glob" : "$${base}_mc_DW_gctf.log"
+           "Gctf" : {
+		"type" : GctfParser,
+		"depends" : "gctf",
+                "ctf_image" : "$${base}_mc_DW.ctf",
+                "ctf_image_preview" : "$${base}_mc_DW_ctf.preview.png",
+                "ctf_star" : "$${base}_mwc_DW_gctf.star",
+                "ctf_epa_log" : "$${base}_mc_DW_EPA.log",
+                "ctf_log" : "$${base}_mc_DW_gctf.log"
                 },
-           "StackParser" : {
-               "glob" : "*/stack_????_gain.mrc"
+           "moviestack" : {
+               "type": StackParser,
+	       "depends" : "clip",
+	       "moviestack" : "$${base}_gain.mrc"
                },
 	   "Database" : "data.json"
          }

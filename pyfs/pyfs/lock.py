@@ -34,14 +34,14 @@ def locked(path):
 # This tracking is to make sure that all locks get cleared
 # if python gets killed, even in a subproceses or thread
 ALL_LOCKS = {}
-for event in [signal.SIGINT, signal.SIGTERM]:
-    def handler(s, t):
-        for lock in ALL_LOCKS.values():
-            lock.release()
-        if hasattr(old_handler, "__call__"):
-            old_handler(s, t)
-        raise RuntimeError("python process %d was interrupted with signal: %s" % (os.getpid(), s))
-    old_handler = signal.signal(event, handler)
+#for event in [signal.SIGINT, signal.SIGTERM]:
+#    def handler(s, t):
+#        for lock in ALL_LOCKS.values():
+#            lock.release()
+#        if hasattr(old_handler, "__call__"):
+#            old_handler(s, t)
+#        raise RuntimeError("python process %d was interrupted with signal: %s" % (os.getpid(), s))
+#    old_handler = signal.signal(event, handler)
 
 
 def track_lock(lock):
