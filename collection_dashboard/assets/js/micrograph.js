@@ -254,8 +254,6 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
     } else {
     load_micrograph(micrograph_time.slice(-2)[0][0]);
     }
-  } else {
-    load_micrograph(micrograph);
-  }
+  } 
 });
 },20000);

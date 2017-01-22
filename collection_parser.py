@@ -16,8 +16,8 @@ import string
 from dateutil.tz import tzlocal
 from multiprocessing import Process
 import time
-import bz2
 import signal
+
 
 class DelayedKeyboardInterrupt(object):
     def __enter__(self):
@@ -44,10 +44,12 @@ class Parser:
         if "glob" in config:
             self.glob = config["glob"]
         elif "depends" in config:
-            self.glob = global_config["lock_dir"] + pyfs.rext(global_config["glob"]) + "." + config["depends"] + ".done"
+            self.glob = (global_config["lock_dir"]
+                         + pyfs.rext(global_config["glob"])
+                         + "." + config["depends"] + ".done")
         else:
-            raise ValueError(self.parserid + ": Need to specify etiher watch_glob or dependency")
-
+            raise ValueError(self.parserid
+                             + ": Need to specify etiher watch_glob or dependency")
 
     def parse(self):
         num_files = 0
@@ -67,13 +69,14 @@ class Parser:
             self.parse_process(stackname)
             num_files += 1
             print("Done!")
-            if ("num_files_max" in self.config and num_files >= self.config["num_files_max"]) or num_files > 10:
+            if ("num_files_max" in self.config
+                    and num_files >= self.config["num_files_max"]) or num_files > 10:
                 break
         return num_files
 
 
-
 class GctfParser(Parser):
+
     def parse_process(self, stackname):
         value = self.database[stackname]
         value[self.parser_id] = {}
@@ -82,12 +85,15 @@ class GctfParser(Parser):
         value[self.parser_id]["ctf_star_filename"] = string.Template(self.config["ctf_star"]).substitute(base=stackname)
         value[self.parser_id]["ctf_epa_log_filename"] = string.Template(self.config["ctf_epa_log"]).substitute(base=stackname)
         value[self.parser_id]["ctf_log_filename"] = string.Template(self.config["ctf_log"]).substitute(base=stackname)
-        self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"],value[self.parser_id])
-        self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],value[self.parser_id])
-
+        self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"], value[self.parser_id])
+        self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"], value[self.parser_id])
 
     def parse_EPA_log(self, filename, value):
-        data = np.genfromtxt(filename,skip_header=1,dtype=[float,float,float,float,float],usecols=(0,1,2,3,4))
+        """Parses the EPA log of Gctf to provide radial average of CTF"""
+        data = np.genfromtxt(filename,
+                             skip_header=1,
+                             dtype=[float, float, float, float, float],
+                             usecols=(0, 1, 2, 3, 4))
         value["EPA"] = {}
         value["EPA"]["Resolution"] = list(data['f0'])
         value["EPA"]["Sim. CTF"] = list(data['f1'])
@@ -110,10 +116,12 @@ class GctfParser(Parser):
                 value["Estimated resolution"] = line.split()[-1]
             if "B_FACTOR" in line:
                 value["Estimated b-factor"] = line.split()[-1]
-        value["Validation scores"] = [lines[a].split()[-1] for a in [-2,-3,-4,-5]]
+        value["Validation scores"] = [lines[a].split()[-1] for a in [-2, -3, -4, -5]]
+
 
 class MotionCor2Parser(Parser):
-    def parse_process(self,stackname):
+
+    def parse_process(self, stackname):
         value = self.database[stackname]
         value[self.parser_id] = {}
         value[self.parser_id]["sum_micrograph_filename"] = string.Template(self.config["sum_micrograph"]).substitute(base=stackname)

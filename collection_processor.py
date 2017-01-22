@@ -99,7 +99,7 @@ class CollectionProcessor(Process):
                         os.remove(lock_filename)
                         raise KeyboardInterrupt
                 if wait:
-                    idle += self.sleep 
+                    idle += self.sleep
                     if idle > 3600:
                         print("Not processed anything for 60 minutes. %s Exiting." % (self.process_id))
                         break
