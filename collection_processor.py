@@ -12,27 +12,36 @@ import getpass
 import pyfs
 import stat
 import imaging
-import numpy as np
-from collection_parser import ParserProcess,MotionCor2Parser,GctfParser,StackParser
-
+from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser
 
 
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
 
+
 class CollectionProcessor(Process):
-    def __init__(self, process_id, config, watch_glob = None, min_age=1,sleep=5,work_dir=None, ensure_dirs=[],
-                 depends=None,
-                 done_lambda= lambda stackname, process_id, config : config["lock_dir"] + stackname + "." + process_id + ".done",
-                 lock_lambda= lambda stackname, process_id, config : config["lock_dir"] + stackname + "." + process_id + ".lck",
-                 ):
+    def __init__(
+            self,
+            process_id,
+            config,
+            watch_glob=None,
+            min_age=1,
+            sleep=5,
+            work_dir=None,
+            ensure_dirs=[],
+            depends=None,
+            done_lambda=lambda stackname, process_id, config: config["lock_dir"] + stackname + "." + process_id + ".done",
+            lock_lambda=lambda stackname, process_id, config: config["lock_dir"] + stackname + "." + process_id + ".lck",
+    ):
         Process.__init__(self)
         self.process_id = process_id
         if watch_glob is None:
             if depends is None:
-                raise ValueError("Need to specify etiher watch_glob or dependency")
+                raise ValueError(
+                    "Need to specify etiher watch_glob or dependency")
             else:
-                self.watch_glob = done_lambda(pyfs.rext(config["glob"]),depends,config)
+                self.watch_glob = done_lambda(
+                    pyfs.rext(config["glob"]), depends, config)
         else:
             self.watch_glob = watch_glob
         self.config = config
@@ -47,7 +56,6 @@ class CollectionProcessor(Process):
         else:
             self.work_dir = work_dir
 
-
     def run(self):
         os.chdir(self.work_dir)
         idle = 0
@@ -60,28 +68,36 @@ class CollectionProcessor(Process):
                     if self.depends:
                         filename = filename[len(config["lock_dir"]):]
                     stackname = pyfs.rext(filename, full=True)
-                    replace_dict.update({ "filename" : filename,
-                                     "filename_noex" : pyfs.rext(filename, full=True),
-                                     "filename_base" : os.path.basename(filename),
-                                     "filename_directory" : os.path.dirname(filename),
-                                     "filename_base_noext" : pyfs.rext(os.path.basename(filename),full=True),
-                                     "stackname" : stackname
-                                   })
+                    replace_dict.update({
+                        "filename": filename,
+                        "filename_noex": pyfs.rext(
+                            filename, full=True),
+                        "filename_base": os.path.basename(filename),
+                        "filename_directory": os.path.dirname(filename),
+                        "filename_base_noext": pyfs.rext(
+                            os.path.basename(filename), full=True),
+                        "stackname": stackname
+                    })
 
-
-                    lock_filename = self.lock_lambda(stackname, self.process_id, config)
-                    done_filename = self.done_lambda(stackname, self.process_id, config)
-                    if os.path.isfile(lock_filename) or os.path.isfile(done_filename):
+                    lock_filename = self.lock_lambda(stackname,
+                                                     self.process_id, config)
+                    done_filename = self.done_lambda(stackname,
+                                                     self.process_id, config)
+                    if os.path.isfile(lock_filename) or os.path.isfile(
+                            done_filename):
                         continue
-                    if self.min_age > 0 and file_age_in_seconds(filename) < self.min_age:
+                    if self.min_age > 0 and file_age_in_seconds(
+                            filename) < self.min_age:
                         continue
                     try:
                         for ensure_dir in self.ensure_dirs:
-                            ensure_dir_sub = string.Template(ensure_dir).substitute(replace_dict)
+                            ensure_dir_sub = string.Template(
+                                ensure_dir).substitute(replace_dict)
                             if not os.path.exists(ensure_dir_sub):
                                 os.makedirs(ensure_dir_sub)
                         wait = False
-                        print("Processing %s on %s" % (self.process_id,filename))
+                        print("Processing %s on %s" %
+                              (self.process_id, filename))
                         start = time.time()
                         with open(lock_filename, 'a'):
                             os.utime(lock_filename, None)
@@ -92,16 +108,20 @@ class CollectionProcessor(Process):
 
                         os.remove(lock_filename)
                         end = time.time()
-                        duration = end-start
-                        print("Performed %s on %s in %.2f seconds" % (self.process_id,filename, duration) )
+                        duration = end - start
+                        print("Performed %s on %s in %.2f seconds" %
+                              (self.process_id, filename, duration))
                     except KeyboardInterrupt:
-                        print("%s received Ctr-C. Cleaning up:" % (self.process_id))
+                        print("%s received Ctr-C. Cleaning up:" %
+                              (self.process_id))
                         os.remove(lock_filename)
                         raise KeyboardInterrupt
                 if wait:
                     idle += self.sleep
                     if idle > 3600:
-                        print("Not processed anything for 60 minutes. %s Exiting." % (self.process_id))
+                        print(
+                            "Not processed anything for 60 minutes. %s Exiting."
+                            % (self.process_id))
                         break
                     time.sleep(self.sleep)
                 wait = True
@@ -110,36 +130,42 @@ class CollectionProcessor(Process):
                 return
 
 
-
 class PreviewProcessor(CollectionProcessor):
-    def __init__(self, process_id, config, filename, suffix="", zoom=0.25, **kwargs):
+    def __init__(self,
+                 process_id,
+                 config,
+                 filename,
+                 suffix="",
+                 zoom=0.25,
+                 **kwargs):
         CollectionProcessor.__init__(self, process_id, config, **kwargs)
         self.suffix = suffix
         self.zoom = zoom
         self.filename = filename
 
     def create_preview(self, filename):
-        image = imaging.load(filename)[0]    
+        image = imaging.load(filename)[0]
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
         image = imaging.filters.zoom(image, self.zoom)
         picks_path = pyfs.rext(filename) + self.suffix + '.preview.png'
         imaging.save(image, picks_path)
 
     def run_loop(self, config, replace_dict):
-        self.create_preview(string.Template(self.filename).substitute(replace_dict))
+        self.create_preview(
+            string.Template(self.filename).substitute(replace_dict))
+
 
 class CommandProcessor(CollectionProcessor):
     def __init__(self, process_id, process_command, config, **kwargs):
-        CollectionProcessor.__init__(self,process_id, config, **kwargs)
+        CollectionProcessor.__init__(self, process_id, config, **kwargs)
         self.process_command = process_command
-
 
     def run_loop(self, config, replace_dict):
         command = Template(self.process_command).substitute(replace_dict)
-        res = subprocess.run(command,shell=True)
+        res = subprocess.run(command, shell=True)
+
 
 def arguments():
-
     def floatlist(string):
         return list(map(float, string.split(',')))
 
@@ -154,9 +180,8 @@ def arguments():
     return parser.parse_args()
 
 
-
 if __name__ == '__main__':
-    
+
     args = arguments()
     print(args)
 
@@ -174,14 +199,11 @@ if __name__ == '__main__':
                                user=getpass.getuser(),
                                curr_dir_base=os.path.basename(os.path.normpath(os.getcwd())))
         with open(args.config, 'w') as config_file:
-           config_file.write(config_processed)
-
-
+            config_file.write(config_processed)
 
         sys.exit()
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
-
 
     if not os.path.exists(config["scratch_dir"]):
         os.makedirs(config["scratch_dir"])
