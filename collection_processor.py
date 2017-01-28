@@ -146,7 +146,9 @@ def arguments():
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data')
     
-    parser.add_argument('--init', default=False, action='store_true',  help='Initiates configuration file. Should be adjusted before starting')
+    parser.add_argument('--init', default=None, help='Initiates configuration file. Should be adjusted before starting')
+    parser.add_argument('--list', default=False, action='store_true',
+            help='List available configuration templates')
     parser.add_argument('--config', help='Configuration file to use', default="config.py")
     
     return parser.parse_args()
@@ -158,7 +160,14 @@ if __name__ == '__main__':
     args = arguments()
     print(args)
 
-    if args.init:
+    if args.list:
+        file_list = glob.glob(os.path.join(os.path.dirname(__file__),"collection_processor/config*.py"))
+        for filename in file_list:
+            print(os.path.basename(filename)[7:-3])
+        sys.exit()
+
+
+    if args.init is not None:
         with open(os.path.join(os.path.dirname(__file__),"collection_processor/config.py"), 'r') as config_file:
            template = string.Template(config_file.read())
         config_processed = template.substitute(curr_dir=os.getcwd(),

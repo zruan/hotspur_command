@@ -17,7 +17,7 @@ def arguments():
     parser = argparse.ArgumentParser(
         description='Serves Dashboard fom scratch directory')
     
-    parser.add_argument('--port', default=38010, help='Port to run webserver on')
+    parser.add_argument('--port', default=38010, type=int, help='Port to run webserver on')
     
     return parser.parse_args()
 
