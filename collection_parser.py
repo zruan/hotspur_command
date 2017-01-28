@@ -171,7 +171,7 @@ class StackParser(Parser):
     def parse_process(self, stackname):
         try:
             filename = string.Template(self.config["moviestack"]).substitute(
-                base=stackname)
+                base=stackname,collection_dir=self.global_config["collection_dir"])
             self.analyze_file(stackname, filename)
             print(" Done!")
         except IOError:

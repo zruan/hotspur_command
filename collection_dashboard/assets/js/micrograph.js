@@ -249,7 +249,7 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
   micrograph_time = micrograph_time.sort(sortByDateAscending);
   micrograph = findGetParameter("micrograph");
   if (micrograph == null) {
-    if (data[micrograph_time.slice(-1)[0][0]].Preview) {
+    if (data[micrograph_time.slice(-1)[0][0]].MotionCor2) {
     load_micrograph(micrograph_time.slice(-1)[0][0]);
     } else {
     load_micrograph(micrograph_time.slice(-2)[0][0]);

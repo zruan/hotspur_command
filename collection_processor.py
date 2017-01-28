@@ -94,7 +94,10 @@ class CollectionProcessor(Process):
                             ensure_dir_sub = string.Template(
                                 ensure_dir).substitute(replace_dict)
                             if not os.path.exists(ensure_dir_sub):
-                                os.makedirs(ensure_dir_sub)
+                                try:
+                                    os.makedirs(ensure_dir_sub)
+                                except IOError as e:
+                                    print("Could not create directory %s" % (ensure_dir))
                         wait = False
                         print("Processing %s on %s" %
                               (self.process_id, filename))
@@ -191,17 +194,20 @@ if __name__ == '__main__':
             print(os.path.basename(filename)[7:-3])
         sys.exit()
 
-
     if args.init is not None:
-        with open(os.path.join(os.path.dirname(__file__),"collection_processor/config.py"), 'r') as config_file:
-           template = string.Template(config_file.read())
+        try:
+            with open(os.path.join(os.path.dirname(__file__),"collection_processor/config_" + args.init + ".py"), 'r') as config_file:
+                template = string.Template(config_file.read())
+        except IOError as e:
+            print ("Config %s not found" % (args.init))
+            sys.exit()
         config_processed = template.substitute(curr_dir=os.getcwd(),
                                user=getpass.getuser(),
                                curr_dir_base=os.path.basename(os.path.normpath(os.getcwd())))
         with open(args.config, 'w') as config_file:
             config_file.write(config_processed)
-
         sys.exit()
+
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
 
