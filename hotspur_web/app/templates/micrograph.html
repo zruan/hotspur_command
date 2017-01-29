@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+ <head> 
+  <title>Micrograph</title> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
+  <link rel="stylesheet" type="text/css" href="/assets/lib/bootstrap/dist/css/bootstrap.min.css" /> 
+  <link rel="stylesheet" type="text/css" href="/assets/css/keen-dashboards.css" /> 
+  <link rel="stylesheet" type="text/css" href="/assets/css/graphs.css" /> 
+ </head> 
+ <body class="application"> 
+  <div class="navbar navbar-inverse navbar-fixed-top" role="navigation"> 
+   <div class="container-fluid center"> 
+      <ul class="nav navbar-nav nav-center"> 
+      <li><p class="navbar-text nav-title"><a href="javascript:void(0);" id="button_previous"><span class="glyphicon glyphicon-arrow-left"></span></a> <span id="title_field"></span> <a href="javascript:void(1);" id="button_next"><span class="glyphicon glyphicon-arrow-right"></span></a></p></li>
+      </ul>
+    <div class="navbar-header"> 
+     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button> 
+     <div class="collapse navbar-collapse navbar-nav" id="bs-example-navbar-collapse-1"> 
+      <ul class="nav navbar-nav"> 
+       <li><a href="statistics.html">Collection Statistics</a></li> 
+       <li class="active"><a href="micrograph.html">Micrograph</a></li> 
+      </ul> 
+     </div> 
+    </div> 
+<ul class="nav navbar-nav navbar-right">
+      <li><span class="navbar-text" id="timer">Last: ago</span></li>
+    </ul>
+   </div> 
+  </div> 
+  <div class="container-fluid"> 
+   <div class="row"> 
+    <div class="col-sm-6"> 
+     <div class="chart-wrapper"> 
+      <div class="chart-title">
+        Preview Image 
+      </div> 
+      <div class="chart-stage"> 
+       <img id="big_micro" /> 
+      </div> 
+      <div class="chart-notes">
+        This image is downsampled for file size 
+      </div> 
+     </div> 
+    </div> 
+    <div class="col-sm-6"> 
+     <div class="row"> 
+      <div class="col-sm-6"> 
+       <div class="chart-wrapper"> 
+        <div class="chart-title">
+          Gctf preview 
+        </div> 
+        <div class="chart-stage"> 
+         <img id="gctf_preview" /> 
+        </div> 
+        <div class="chart-notes">
+          Raw ft, gctf averaged and Gctf model 
+        </div> 
+       </div> 
+      </div>
+      <div class="col-sm-6"> 
+       <div class="chart-wrapper"> 
+        <div class="chart-title">
+          Micrograph motion 
+        </div> 
+        <div class="chart-stage"> 
+         <div id="motion_chart" ></div> 
+        </div> 
+        <div class="chart-notes">
+           Motion between frames as fitted by Motioncor2
+        </div> 
+       </div> 
+      </div> 
+     </div> 
+   <div class="row"> 
+    <div class="col-sm-12"> 
+     <div class="chart-wrapper"> 
+      <div class="chart-title">
+        Radial averaged CTF plot 
+      </div> 
+      <div class="chart-stage"> 
+       <div id="radial_plot"> 
+       </div> 
+      </div> 
+      <div class="chart-notes">
+        Notes about this chart 
+      </div> 
+     </div> 
+    </div> 
+   </div> 
+   </div>
+   </div>
+   <div class="row"> 
+    <div class="col-sm-12"> 
+     <div class="chart-wrapper"> 
+      <div class="chart-title">
+        Micrograph information 
+      </div> 
+      <div class="chart-stage"> 
+       <div id="micrograph_information" class="row"> 
+<div class="col-xs-4">
+             <small class="stats-label">Date acquired</small>
+                                <h4 data-label="moviestack.acquisition_time"></h4>
+                            </div>
+<div class="col-xs-4">
+                                <small class="stats-label">Defocus</small>
+                                <h4 data-label="Gctf.Defocus U"></h4>
+                            </div>
+         </div>
+       </div> 
+      </div> 
+      <div class="chart-notes">
+        Information about this Micrograph 
+      </div> 
+     </div> 
+     </div>
+     </div>
+
+  </div> 
+  <hr /> 
+  <p class="small text-muted">Built by Johannes</p>  
+  <script type="text/javascript" src="/assets/lib/jquery/dist/jquery.min.js"></script> 
+  <script type="text/javascript" src="/assets/lib/bootstrap/dist/js/bootstrap.min.js"></script> 
+  <script type="text/javascript" src="/assets/lib/holderjs/holder.js"></script> 
+  <script>
+    Holder.add_theme("white", { background:"#fff", foreground:"#a7a7a7", size:10 });
+  </script> 
+  <script type="text/javascript" src="/assets/lib/d3/d3.js"></script> 
+  <script type="text/javascript" src="/assets/lib/countdown/countdown.min.js"></script> 
+  <script type="text/javascript" src="/assets/lib/mousetrap/mousetrap.min.js"></script> 
+  <script type="text/javascript" src="/assets/js/micrograph.js"></script>  
+ </body>
+</html>

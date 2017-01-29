@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Hotspur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> 
+  <link rel="stylesheet" type="text/css" href="assets/lib/bootstrap/dist/css/bootstrap-flatly.min.css" /> 
+</head>
+<body>
+<div class="jumbotron">
+<div class="container">
+<h1>Welcome to Hotspur</h1>
+<p>The Gouaux lab's rapid cryo-EM micrograph inspection system</p>
+<blockquote class="blockquote-reverse">
+  <small>An excellent micrograph, very good particles - and full of expectations!</small>
+</blockquote>
+</div>
+</div>
+<div class="container">
+{% for user,dataset in dataset_dict.items() %} 
+<div class="panel panel-default">
+  <!-- Default panel contents -->
+  <div class="panel-heading">{{ user|e }}</div>
+  <ul class="list-group">
+  {% for dataset_name, num in dataset.items() %}
+  <a href="/{{user|e}}/{{dataset_name|e}}/statistics.html" class="list-group-item">{{ dataset_name | e }}</a>
+
+  {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+</div>
+<hr></hr>
+   <p class="small text-muted">Built by Johannes</p> 
+</div>
+
+</body>
+</html>
