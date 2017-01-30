@@ -17,6 +17,7 @@ from dateutil.tz import tzlocal
 from multiprocessing import Process
 import time
 import signal
+import gzip
 
 
 class DelayedKeyboardInterrupt(object):
@@ -275,6 +276,8 @@ class ParserProcess(Process):
                         parsed += parser.parse()
                     if parsed > 0:
                         with open(config["Database"], 'w') as outfile:
+                            json.dump(database, outfile)
+                        with gzip.open(config["Database"]+".gz", 'wt') as outfile:
                             json.dump(database, outfile)
                         seconds = 0
                     else:

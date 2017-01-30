@@ -8,10 +8,25 @@ function findGetParameter(parameterName) {
   return result;
 }
 
+
+var LABELS = [ {"label" : "Acquisition Date" , "callback":  function(d) {
+        time = d3.isoParse(d.moviestack.acquisition_time); 
+        return d3.timeFormat("%B %d, %Y %I:%M %p")(time); }},
+               {"label": "Defocus","callback" : function(d) { 
+                   return d3.format(".2f")((parseFloat(d.Gctf["Defocus U"]) + parseFloat(d.Gctf["Defocus V"]))/20000) + " µm";}},
+               {"label": "Astigmatism","callback" : function(d) { 
+                   return d3.format(".2f")(Math.abs(parseFloat(d.Gctf["Defocus U"]) - parseFloat(d.Gctf["Defocus V"]))/10000) + " µm at " + d3.format(".1f")(parseFloat(d.Gctf["Astig angle"])) + "°";}},
+    ];
+
+
 function create_micrograph_info(micrograph) {
-    labelfields = d3.selectAll("#micrograph_information").selectAll("h4");
-    labelfields.datum(function() { return this.dataset; })
-                .text(function(d) { return glob_data[micrograph][d.label.split('.')[0]][d.label.split('.')[1]]; });
+    labels = LABELS;
+    d3.selectAll("#micrograph_information").selectAll("div").remove();
+    container = d3.selectAll("#micrograph_information").selectAll("div");
+    label_fields = container.data(labels).enter().append("div")
+             .classed("col-xs-4",true);
+    label_fields.append("small").text(function (d) { return d.label; });
+    label_fields.append("h4").text(function (d) {return d.callback(glob_data[micrograph]);});
 }
 
 function create_motion_chart(micrograph) {
