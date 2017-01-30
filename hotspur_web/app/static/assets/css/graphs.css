@@ -29,6 +29,15 @@
 .nav .nav-title a {
       color: #fbfbfb;
 }
+@media (min-width: 768px) {.navbar-nav>li>label {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+}
+.navbar-nav>li>label {
+    color: #fbfbfb;
+    text-decoration: none;
+}
 .nav.nav-center {
 	margin:0;
 	float:none;

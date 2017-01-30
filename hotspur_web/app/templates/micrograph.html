@@ -6,6 +6,7 @@
   <link rel="stylesheet" type="text/css" href="/assets/lib/bootstrap/dist/css/bootstrap.min.css" /> 
   <link rel="stylesheet" type="text/css" href="/assets/css/keen-dashboards.css" /> 
   <link rel="stylesheet" type="text/css" href="/assets/css/graphs.css" /> 
+  <link rel="stylesheet" type="text/css" href="/assets/lib/bootstrap-toggle-master/css/bootstrap-toggle.min.css"/> 
  </head> 
  <body class="application"> 
   <div class="navbar navbar-inverse navbar-fixed-top" role="navigation"> 
@@ -19,6 +20,9 @@
       <ul class="nav navbar-nav"> 
        <li><a href="statistics.html">Collection Statistics</a></li> 
        <li class="active"><a href="micrograph.html">Micrograph</a></li> 
+       <li><label class="checkbox-inline">
+		       <input type="checkbox" data-toggle="toggle"> Update</label>
+</li>
       </ul> 
      </div> 
     </div> 
@@ -110,6 +114,7 @@
   <p class="small text-muted">Built by Johannes</p>  
   <script type="text/javascript" src="/assets/lib/jquery/dist/jquery.min.js"></script> 
   <script type="text/javascript" src="/assets/lib/bootstrap/dist/js/bootstrap.min.js"></script> 
+  <script type="text/javascript" src="/assets/lib/bootstrap-toggle-master/js/bootstrap-toggle.min.js"></script> 
   <script type="text/javascript" src="/assets/lib/holderjs/holder.js"></script> 
   <script>
     Holder.add_theme("white", { background:"#fff", foreground:"#a7a7a7", size:10 });
