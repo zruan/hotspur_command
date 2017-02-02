@@ -324,7 +324,12 @@ $('#timer').text("Last: "+countdown( micrograph_time.slice(-1)[0][1] ).toString(
 },1000);
 d3.json("data/data.json" + "?_=" + noCache, function(data) {
   glob_data = data;
-  micrograph_time = d3.keys(data).map(function(d) {
+  micrograph_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].moviestack)
+	{ return true; } else { return false;}
+})
+		.map(function(d) {
     acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
     return [ d, acquisition_time ];
   });
@@ -337,11 +342,15 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
 });
 
 setInterval(function () {
+if ($('#check_update').prop('checked')) {
 var noCache = new Date().getTime();
-
 d3.json("data/data.json" + "?_=" + noCache, function(data) {
   glob_data = data;
-  micrograph_time = d3.keys(data).map(function(d) {
+  micrograph_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].moviestack)
+	{ return true; } else { return false;}
+}).map(function(d) {
     acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
     return [ d, acquisition_time ];
   });
@@ -352,4 +361,5 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
   micrograph_time = micrograph_time.sort(sortByDateAscending);
   prepare_graphs(data,micrograph_time);
 });
+}
 }, 20000);

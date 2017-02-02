@@ -12,7 +12,7 @@ import getpass
 import pyfs
 import stat
 import imaging
-from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser
+from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser
 
 
 def file_age_in_seconds(pathname):
@@ -127,6 +127,8 @@ class CollectionProcessor(Process):
                             % (self.process_id))
                         break
                     time.sleep(self.sleep)
+                else:
+                    idle = 0
                 wait = True
             except KeyboardInterrupt:
                 print("%s received Ctrl-C" % (self.process_id))

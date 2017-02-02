@@ -122,11 +122,13 @@ function create_motion_chart(micrograph) {
                         .y(function(d, i) {
                                 return y(parseFloat(glob_data[micrograph].MotionCor2.y_shifts[i]));
                         });
+               if ( glob_data[micrograph].MotionCor2.x_shifts) {
                 g
                         .append("path")
                         .datum(glob_data[micrograph].MotionCor2.x_shifts)
                         .attr("class", "line motion")
                         .attr("d", line);
+       }
         }
 }
 
@@ -287,7 +289,11 @@ d3.timer(function() {
 var noCache = new Date().getTime();
 d3.json("data/data.json" + "?_=" + noCache, function(data) {
         glob_data = data;
-        micrograph_time = d3.keys(data).map(function(d) {
+        micrograph_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].moviestack)
+	{ return true; } else { return false;}
+}).map(function(d) {
                 acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
                 return [d, acquisition_time];
         });
@@ -310,10 +316,15 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
 });
 
 setInterval(function() {
+if ($('#check_update').prop('checked')) {
         var noCache = new Date().getTime();
         d3.json("data/data.json" + "?_=" + noCache, function(data) {
                 glob_data = data;
-                micrograph_time = d3.keys(data).map(function(d) {
+                micrograph_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].moviestack)
+	{ return true; } else { return false;}
+}).map(function(d) {
                         acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
                         return [d, acquisition_time];
                 });
@@ -332,4 +343,5 @@ setInterval(function() {
                         }
                 }
         });
+}
 }, 20000);

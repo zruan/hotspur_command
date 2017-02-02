@@ -5,11 +5,11 @@ config = {
         # Glob that will be used to scan for new mrc files
         "glob" : "*/stack_????.mrc",
         # Scratch directo where data processing will be done. Should be an SSD
-        "scratch_dir" : "/scratch/${user}/${curr_dir_base}/",
+        "scratch_dir" : "/hotspur/scratch/${user}/${curr_dir_base}/",
         # Archive dir. If configured files will be moved there fore permanent storage
         "archive_dir" : "/tmp/JE_test_archive/",
         # Directory that holds lock files for processing
-        "lock_dir"    : "/scratch/${user}/${curr_dir_base}/lock/",
+        "lock_dir"    : "/hotspur/scratch/${user}/${curr_dir_base}/lock/",
         "parser" :{ "MotionCor2" : {
 		"type" : MotionCor2Parser,
 		"depends" : "motioncor2",
@@ -37,7 +37,7 @@ config = {
         }
 
 processes = [
-CommandProcessor("clip", "/eppec/storage/sw/imod/4.8.58/bin/clip unpack -D defects.txt $${filename} ref.mrc $${scratch_dir}$${filename_noex}_gain.mrc > $${scratch_dir}$${filename_noex}_clip.log ",config, watch_glob= config["glob"], min_age=5, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["$${scratch_dir}$${filename_directory}","$${lock_dir}$${filename_directory}"]),
+CommandProcessor("clip", "/eppec/storage/sw/imod/4.8.58/bin/clip unpack -D defects.txt $${filename} ref.mrc $${scratch_dir}$${filename_noex}_gain.mrc > $${scratch_dir}$${filename_noex}_clip.log ",config, watch_glob= config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["$${scratch_dir}$${filename_directory}","$${lock_dir}$${filename_directory}"]),
 CommandProcessor("motioncor2", "/eppec/storage/sw/motioncor2/20161019/motioncor2 -InMrc $${stackname}_gain.mrc -OutMrc $${stackname}_mc.mrc -Patch 5 5 -Kv 300 -FtBin 2 -PixSize 0.85 -FmDose 1.0 -Iter 10 -Tol 0.5 -Gpu 0 > $${stackname}_mc.log ", config, depends="clip", min_age=0, sleep=2, work_dir=config["scratch_dir"]),
 CommandProcessor("motioncor2", "/eppec/storage/sw/motioncor2/20161019/motioncor2 -InMrc $${stackname}_gain.mrc -OutMrc $${stackname}_mc.mrc -Patch 5 5 -Kv 300 -FtBin 2 -PixSize 0.85 -FmDose 1.0 -Iter 10 -Tol 0.5 -Gpu 1 > $${stackname}_mc.log ", config, depends="clip", min_age=0, sleep=2, work_dir=config["scratch_dir"]),
 PreviewProcessor("motioncor2_prev", config, "$${stackname}_mc_DW.mrc", depends="motioncor2", min_age=0, sleep=2, work_dir=config["scratch_dir"]),

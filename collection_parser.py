@@ -42,7 +42,7 @@ class Parser:
         self.config = config
         self.global_config = global_config
         if "glob" in config:
-            self.glob = config["glob"]
+            self.glob = string.Template(config["glob"]).substitute(global_config)
         elif "depends" in config:
             self.glob = (
                 global_config["lock_dir"] + pyfs.rext(global_config["glob"]) +
@@ -50,7 +50,7 @@ class Parser:
         else:
             raise ValueError(
                 self.parserid +
-                ": Need to specify etiher watch_glob or dependency")
+                ": Need to specify either watch_glob or dependency")
 
     def parse(self):
         num_files = 0
@@ -59,7 +59,7 @@ class Parser:
             if "depends" in self.config:
                 filename = filename[len(self.global_config["lock_dir"]):]
             if "stackname_lambda" in self.config:
-                stackname = self.config["stackname_lambda"](filename)
+                stackname = self.config["stackname_lambda"](filename,self.global_config)
             else:
                 stackname = pyfs.rext(filename, full=True)
             if stackname in self.database and self.parser_id in self.database[
@@ -166,6 +166,26 @@ class MotionCor2Parser(Parser):
                         shifts = True
         except IOError:
             print("No log found")
+
+class MontageParser(Parser):
+    def parse_process(self, stackname):
+        try: 
+            filename = string.Template(self.config["montage"]).substitute(
+                base=stackname,collection_dir=self.global_config["collection_dir"])
+            self.analyze_file(stackname, filename)
+        except IOError:
+            print("Unsuccesful!", sys.exec_info())
+
+
+    def analyze_file(self, base, filename):
+        acquisition_time = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(filename))
+        self.database[base][self.parser_id] = {
+                "filename": filename,
+                "preview_filename": base+"_preview.png",
+                "acquisition_time":
+                acquisition_time.replace(tzinfo=tzlocal()).isoformat(),
+            }
 
 
 class StackParser(Parser):
