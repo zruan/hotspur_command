@@ -26,7 +26,7 @@ def arguments():
     
     parser.add_argument('--model_star', help='path to Class2D _model star file', required=True)
     parser.add_argument('--suffix', help='Suffix for output file', default="preview")
-    parser.add_argument('--top', type=int,help='Only print top x classes')
+    parser.add_argument('--top', type=int,help='Only print top x classes', default =0)
 
     
     parser.add_argument('-p', '--parallel', type=int, default=1,
@@ -146,12 +146,14 @@ def save_peaks(image, path, mic):
     print(' saving png:', picks_path)
     imaging.save(reduced_image, picks_path)
 
-def save_mult_peaks(starfile, picks_path):
+def save_mult_peaks(starfile, picks_path, top=0):
     fields = list(starfile.keys())[0]
     index_image = fields.index('rlnReferenceImage')
     index_distribution = fields.index('rlnClassDistribution')
     mrc_file = list(list(starfile.values())[0])[0][index_image].split('@')[1]
     images = imaging.load(mrc_file)    
+    if top > 0:
+        images = images[:top]
     cols = 10
     rows = len(images)/cols + 1
     montage = np.zeros((images[0].shape[0]*rows,images[0].shape[1]*cols))
