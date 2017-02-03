@@ -14,6 +14,15 @@
 	stroke-width: 1px;
 	stroke: red;
 }
+line.montage {
+	stroke-dasharray: 3, 3;
+	stroke-width: 1px;
+	stroke: black;
+}
+line.montage.highlight {
+	stroke-dasharray: none;
+	stroke-width: 2px;
+}
 .line.motion {
 	stroke-width: 2px;
 }

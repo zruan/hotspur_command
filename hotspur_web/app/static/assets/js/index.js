@@ -1,8 +1,3 @@
-var tooltip = d3
-  .select("body")
-  .append("div")
-  .attr("class", "tooltip")
-  .style("opacity", 0);
 
 function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
     setTimeout(function() {
@@ -62,43 +57,6 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
         } catch (e) { return null; }
     }) * 1.1
   ]);
-  if (arguments.length == 5) {
-
-    var y_2 = d3.scaleLinear().rangeRound([ height, 0 ]);
-
-  var line_2 = d3
-    .line()
-    .defined(function(d) {
-        try {
-            result = parseFloat(yfunc2(d));
-            if (isNaN(result)) {
-                return false;
-            }
-            return true;
-        } catch (e) {
-            return false;
-        }
-    })
-    .x(function(d) {
-      return x(d[1]);
-    })
-    .y(function(d) {
-      return y_2(yfunc2(d));
-    });
-  y_2.domain([
-    d3.min(micrograph_time, function(d) {
-        try {
-      return yfunc2(d);
-        } catch (e) { return null;}
-    }) * 0.9,
-    d3.max(micrograph_time, function(d) {
-        try {
-      return yfunc2(d);
-        } catch (e) { return null; }
-    }) * 1.1
-  ]);
-
-  }
   g
     .append("g")
     .attr("class", "axis axis--x")
@@ -118,6 +76,10 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
     .text(ylabel);
 
   g.append("path").datum(micrograph_time).attr("class", "line").attr("d", line);
+var tooltip = g
+  .append("text")
+  .attr("class", "tooltip")
+  .style("opacity", 0);
 
   g
     .selectAll(".dot")
@@ -148,8 +110,8 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
       tooltip.style("opacity", 0.9);
       tooltip
         .html(d[0] + " " + d3.format(",.2f")(yfunc(d)) + "")
-        .style("left", d3.event.pageX + 5 + "px")
-        .style("top", d3.event.pageY - 28 + "px");
+        .attr("x", margin.left)
+        .attr("y", margin.top - 2 + "px");
     })
     .on("mouseout", function(d) {
       d3.selectAll("#" + d[0].replace(/\//g, "_") + ".dot").attr("r", 3.5);
@@ -160,66 +122,29 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
       url += d[0];
       window.location = url;
     });
-    if (arguments.length == 5) {
-
-  g
-    .append("g")
-    .attr("class", "axis axis--y2")
-    .call(d3.axisRight(y_2))
-    .append("text")
-    .attr("fill", "#000")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 6)
-    .attr("dy", "0.71em")
-    .style("text-anchor", "end")
-    .text(ylabel2);
-
-  g.append("path").datum(micrograph_time).attr("class", "line2").attr("d", line_2);
-
-  g
-    .selectAll(".dot")
-    .data(micrograph_time)
-    .enter()
-    .filter(function(d) { try {
-            result = parseFloat(yfunc2(d));
-            if (isNaN(result)) {
-                return false;
-            }
-            return true;
-    } catch (e) { return false; }
-    })
-    .append("circle")
-    .attr("class", "dot")
+    g.selectAll("line.montage").data(montage_time).enter().append("line")
+	.classed("montage", true)
     .attr("id", function(d) {
       return d[0].replace(/\//g, "_");
     })
-    .attr("r", 3.5)
-    .attr("cx", function(d) {
-      return x(d[1]);
-    })
-    .attr("cy", function(d) {
-      return y_2(yfunc2(d));
-    })
+	.attr("x1", function (d) { return x(d[1]); } )
+	.attr("x2", function (d) { return x(d[1]); } )
+	.attr("y1", function (d) { return height; } )
+	.attr("y2", function (d) { return 0; } )
     .on("mouseover", function(d) {
-      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".dot").attr("r", 7);
-      tooltip.style("opacity", 0.9);
-      tooltip
-        .html(d[0] + " " + d3.format(",.2f")(yfunc(d)) + "")
-        .style("left", d3.event.pageX + 5 + "px")
-        .style("top", d3.event.pageY - 28 + "px");
+      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".montage").classed("highlight", true);
+	    console.log("gotcha");
     })
     .on("mouseout", function(d) {
-      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".dot").attr("r", 3.5);
-      tooltip.style("opacity", 0);
+      d3.selectAll("#" + d[0].replace(/\//g, "_") + ".montage").classed("highlight", false);
     })
     .on("click", function(d) {
-      var url = "micrograph.html?micrograph=";
+      var url = "montage.html?montage=";
       url += d[0];
       window.location = url;
     });
-
-    }
     }, 0);
+
 }
 
 function prepare_graphs(data, micrograph_time) {
@@ -316,6 +241,7 @@ function prepare_graphs(data, micrograph_time) {
 var glob_data;
 var noCache = new Date().getTime();
 var micrograph_time;
+var montage_time;
 
 d3.timer( function () {
     try {
@@ -331,6 +257,14 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
 })
 		.map(function(d) {
     acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
+    return [ d, acquisition_time ];
+  });
+  montage_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].montage)
+	{ return true; } else { return false;}
+}).map(function(d) {
+    acquisition_time = d3.isoParse(data[d].montage.acquisition_time);
     return [ d, acquisition_time ];
   });
   function sortByDateAscending(a, b) {
@@ -352,6 +286,14 @@ d3.json("data/data.json" + "?_=" + noCache, function(data) {
 	{ return true; } else { return false;}
 }).map(function(d) {
     acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
+    return [ d, acquisition_time ];
+  });
+  montage_time = d3.keys(data)
+		.filter(function (d) {
+			if (data[d].montage)
+	{ return true; } else { return false;}
+}).map(function(d) {
+    acquisition_time = d3.isoParse(data[d].montage.acquisition_time);
     return [ d, acquisition_time ];
   });
   function sortByDateAscending(a, b) {

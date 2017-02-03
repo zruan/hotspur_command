@@ -178,8 +178,16 @@ class MontageParser(Parser):
 
 
     def analyze_file(self, base, filename):
-        acquisition_time = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(filename))
+        header = imaging.formats.FORMATS["mrc"].load_header(filename)
+        try:
+            acquisition_time = dateutil.parser.parse(header['labels'][
+                0].decode().split()[-2] + " " + header['labels'][0].decode(
+                ).split()[-1])
+        except ValueError as e:
+            print("No date in header ... ", end="", flush=True)
+            print(e)
+            acquisition_time = datetime.datetime.fromtimestamp(
+                os.path.getmtime(filename))
         self.database[base][self.parser_id] = {
                 "filename": filename,
                 "preview_filename": base+"_preview.png",
@@ -211,8 +219,7 @@ class StackParser(Parser):
                     acquisition_time.replace(tzinfo=tzlocal()).isoformat()
                 }
                 return
-            else:
-                header = imaging.formats.FORMATS["mrc"].load_header(filename)
+            header = imaging.formats.FORMATS["mrc"].load_header(filename)
             try:
                 acquisition_time = dateutil.parser.parse(header['labels'][
                     0].decode().split()[-2] + " " + header['labels'][0].decode(
