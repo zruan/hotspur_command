@@ -20,6 +20,7 @@ def file_age_in_seconds(pathname):
 
 
 class CollectionProcessor(Process):
+
     def __init__(
             self,
             process_id,
@@ -30,8 +31,10 @@ class CollectionProcessor(Process):
             work_dir=None,
             ensure_dirs=[],
             depends=None,
-            done_lambda=lambda stackname, process_id, config: config["lock_dir"] + stackname + "." + process_id + ".done",
-            lock_lambda=lambda stackname, process_id, config: config["lock_dir"] + stackname + "." + process_id + ".lck",
+            done_lambda=lambda stackname, process_id, config: config[
+                "lock_dir"] + stackname + "." + process_id + ".done",
+            lock_lambda=lambda stackname, process_id, config: config[
+                "lock_dir"] + stackname + "." + process_id + ".lck",
     ):
         Process.__init__(self)
         self.process_id = process_id
@@ -83,13 +86,15 @@ class CollectionProcessor(Process):
                                                      self.process_id, config)
                     done_filename = self.done_lambda(stackname,
                                                      self.process_id, config)
-                    if os.path.isfile(lock_filename) or os.path.isfile(
-                            done_filename):
-                        continue
                     if self.min_age > 0 and file_age_in_seconds(
                             filename) < self.min_age:
                         continue
+                    if os.path.isfile(lock_filename) or os.path.isfile(
+                            done_filename):
+                        continue
                     try:
+                        with open(lock_filename, 'a'):
+                            os.utime(lock_filename, None)
                         for ensure_dir in self.ensure_dirs:
                             ensure_dir_sub = string.Template(
                                 ensure_dir).substitute(replace_dict)
@@ -97,13 +102,13 @@ class CollectionProcessor(Process):
                                 try:
                                     os.makedirs(ensure_dir_sub)
                                 except IOError as e:
-                                    print("Could not create directory %s" % (ensure_dir))
+                                    print("Could not create directory %s" %
+                                          (ensure_dir))
                         wait = False
                         print("Processing %s on %s" %
                               (self.process_id, filename))
                         start = time.time()
-                        with open(lock_filename, 'a'):
-                            os.utime(lock_filename, None)
+
                         self.run_loop(config, replace_dict)
 
                         with open(done_filename, 'a'):
@@ -136,6 +141,7 @@ class CollectionProcessor(Process):
 
 
 class PreviewProcessor(CollectionProcessor):
+
     def __init__(self,
                  process_id,
                  config,
@@ -161,6 +167,7 @@ class PreviewProcessor(CollectionProcessor):
 
 
 class CommandProcessor(CollectionProcessor):
+
     def __init__(self, process_id, process_command, config, **kwargs):
         CollectionProcessor.__init__(self, process_id, config, **kwargs)
         self.process_command = process_command
@@ -176,12 +183,14 @@ def arguments():
 
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data')
-    
-    parser.add_argument('--init', default=None, help='Initiates configuration file. Should be adjusted before starting')
+
+    parser.add_argument('--init', default=None,
+                        help='Initiates configuration file. Should be adjusted before starting')
     parser.add_argument('--list', default=False, action='store_true',
-            help='List available configuration templates')
-    parser.add_argument('--config', help='Configuration file to use', default="config.py")
-    
+                        help='List available configuration templates')
+    parser.add_argument(
+        '--config', help='Configuration file to use', default="config.py")
+
     return parser.parse_args()
 
 
@@ -189,23 +198,25 @@ if __name__ == '__main__':
 
     args = arguments()
     print(args)
-
+    config = {}
+    processes = []
     if args.list:
-        file_list = glob.glob(os.path.join(os.path.dirname(__file__),"collection_processor/config*.py"))
+        file_list = glob.glob(os.path.join(os.path.dirname(
+            __file__), "collection_processor/config*.py"))
         for filename in file_list:
             print(os.path.basename(filename)[7:-3])
         sys.exit()
 
     if args.init is not None:
         try:
-            with open(os.path.join(os.path.dirname(__file__),"collection_processor/config_" + args.init + ".py"), 'r') as config_file:
+            with open(os.path.join(os.path.dirname(__file__), "collection_processor/config_" + args.init + ".py"), 'r') as config_file:
                 template = string.Template(config_file.read())
         except IOError as e:
             print ("Config %s not found" % (args.init))
             sys.exit()
         config_processed = template.substitute(curr_dir=os.getcwd(),
-                               user=getpass.getuser(),
-                               curr_dir_base=os.path.basename(os.path.normpath(os.getcwd())))
+                                               user=getpass.getuser(),
+                                               curr_dir_base=os.path.basename(os.path.normpath(os.getcwd())))
         with open(args.config, 'w') as config_file:
             config_file.write(config_processed)
         sys.exit()
