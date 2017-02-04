@@ -328,12 +328,12 @@ if __name__ == '__main__':
         exec(config_file.read(), globals())
     
 
-    local_config = config["parser"]
+
 
     if args.glob:
-        config["StackParser"]["glob"] = args.glob
+        config["parser"]["StackParser"]["glob"] = args.glob
     if args.json:
-        config["Database"] = args.json
+        config["parser"]["Database"] = args.json
 
     parse_process = ParserProcess(config)
     parse_process.start()
