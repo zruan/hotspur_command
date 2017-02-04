@@ -326,38 +326,19 @@ if __name__ == '__main__':
 
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
-    if "work_dir" in config["parser"]:
-        os.chdir(config["parser"]["work_dir"])
-    else:
-        os.chdir(config["scratch_dir"])
+    
 
-    config = config["parser"]
+    local_config = config["parser"]
 
     if args.glob:
         config["StackParser"]["glob"] = args.glob
     if args.json:
         config["Database"] = args.json
 
+    parse_process = ParserProcess(config)
+    parse_process.start()
     try:
-        database = json.load(
-            open(config["Database"]), object_pairs_hook=OrderedDict)
-    except FileNotFoundError:
-        database = OrderedDict()
-
-    if not args.skip_stack:
-        StackParser = StackParser(database, config["StackParser"])
-
-        StackParser.parse()
-    with open(config["Database"], 'w') as outfile:
-        json.dump(database, outfile)
-
-    MotionCor2Parser = MotionCor2Parser(database, config)
-
-    MotionCor2Parser.parse()
-
-    GctfParser = GctfParser(database, config)
-
-    GctfParser.parse()
-
-    with open(config["Database"], 'w') as outfile:
-        json.dump(database, outfile)
+        parse_process.join()
+    except KeyboardInterrupt:
+        print("Waiting for processes to finish")
+        parse_process.join()
