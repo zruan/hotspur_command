@@ -93,8 +93,6 @@ class CollectionProcessor(Process):
                             done_filename):
                         continue
                     try:
-                        with open(lock_filename, 'a'):
-                            os.utime(lock_filename, None)
                         for ensure_dir in self.ensure_dirs:
                             ensure_dir_sub = string.Template(
                                 ensure_dir).substitute(replace_dict)
@@ -104,6 +102,8 @@ class CollectionProcessor(Process):
                                 except IOError as e:
                                     print("Could not create directory %s" %
                                           (ensure_dir))
+                        with open(lock_filename, 'a'):
+                            os.utime(lock_filename, None)
                         wait = False
                         print("Processing %s on %s" %
                               (self.process_id, filename))
@@ -126,9 +126,9 @@ class CollectionProcessor(Process):
                         raise KeyboardInterrupt
                 if wait:
                     idle += self.sleep
-                    if idle > 3600:
+                    if idle > 36000:
                         print(
-                            "Not processed anything for 60 minutes. %s Exiting."
+                            "Not processed anything for 600 minutes. %s Exiting."
                             % (self.process_id))
                         break
                     time.sleep(self.sleep)

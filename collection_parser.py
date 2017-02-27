@@ -309,8 +309,8 @@ class ParserProcess(Process):
                         seconds = 0
                     else:
                         seconds += 2
-                    if seconds > 3600:
-                        print("Nothing parsed for 60 minutes. Exiting.")
+                    if seconds > 36000:
+                        print("Nothing parsed for 600 minutes. Exiting.")
                         break
                     time.sleep(2)
             except KeyboardInterrupt:
