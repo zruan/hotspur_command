@@ -151,6 +151,9 @@ function prepare_graphs(data, micrograph_time) {
   prepare_graph(
     "#grid-1-1",
     function(d) {
+      if ( data[d[0]].moviestack.dose_per_pix_frame < 0) {
+	      return (data[d[0]].moviestack.dose_per_pix_frame + 128) / 4;
+      }
       return data[d[0]].moviestack.dose_per_pix_frame;
     },
     "e / (pix * frame)"

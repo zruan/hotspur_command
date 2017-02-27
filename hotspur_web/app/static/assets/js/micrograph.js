@@ -50,6 +50,23 @@ var LABELS = [{
                         return d3.format(".2f")(d.Gctf["Estimated resolution"]) + " ‫";
                 }
         },
+        {
+                "label": "Gctf validation score",
+                "callback": function(d) {
+                        return String(d.Gctf["Validation scores"].reduce(
+        function(a, b) {
+          return a + parseInt(b);
+        },
+        0
+      )) + 
+                         d.Gctf["Validation scores"].reduce(
+        function(a, b) {
+          return a +"," + b;
+        },
+        "("
+      ) +")";
+                }
+        },
 ];
 
 
