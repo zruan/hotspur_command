@@ -18,7 +18,64 @@ from multiprocessing import Process
 import time
 import signal
 import gzip
+import pystar2
 
+class FloatEncoder(json.JSONEncoder):
+    def __init__(self, nan_str="null", **kwargs):
+        super(FloatEncoder, self).__init__(**kwargs)
+        self.nan_str = nan_str
+
+    def iterencode(self, o, _one_shot=False):
+        """Encode the given object and yield each string
+        representation as available.
+
+        For example::
+
+            for chunk in JSONEncoder().iterencode(bigobject):
+                mysocket.write(chunk)
+        """
+        if self.check_circular:
+            markers = {}
+        else:
+            markers = None
+        if self.ensure_ascii:
+            _encoder = json.encoder.encode_basestring_ascii
+        else:
+            _encoder = json.encoder.encode_basestring
+        if self.encoding != 'utf-8':
+            def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
+                if isinstance(o, str):
+                    o = o.decode(_encoding)
+                return _orig_encoder(o)
+
+        def floatstr(o, allow_nan=self.allow_nan, _repr=json.encoder.FLOAT_REPR,
+                _inf=json.encoder.INFINITY, _neginf=-json.encoder.INFINITY,
+                nan_str=self.nan_str):
+            # Check for specials.  Note that this type of test is processor
+            # and/or platform-specific, so do tests which don't depend on the
+            # internals.
+
+            if o != o:
+                text = nan_str
+            elif o == _inf:
+                text = 'Infinity'
+            elif o == _neginf:
+                text = '-Infinity'
+            else:
+                return _repr(o)
+
+            if not allow_nan:
+                raise ValueError(
+                    "Out of range float values are not JSON compliant: " +
+                    repr(o))
+
+            return text
+
+        _iterencode = json.encoder._make_iterencode(
+                markers, self.default, _encoder, self.indent, floatstr,
+                self.key_separator, self.item_separator, self.sort_keys,
+                self.skipkeys, _one_shot)
+        return _iterencode(o, 0)
 
 class DelayedKeyboardInterrupt(object):
     def __enter__(self):
@@ -196,6 +253,28 @@ class MontageParser(Parser):
             }
 
 
+class PickParser(Parser):
+    def parse_process(self, stackname):
+        try:
+            filename = string.Template(self.config["star_file"]).substitute(
+                base=stackname)
+            self.analyze_file(stackname, filename)
+            print(" Done!")
+        except IOError:
+            print(" Unsuccesful!", sys.exc_info())
+
+    def analyze_file(self, base, filename):
+        star_data = pystar2.load(filename)['']
+        fields = list(star_data)[0]
+        index_x = fields.index('rlnCoordinateX')
+        index_y = fields.index('rlnCoordinateY')
+        index_psi = fields.index('rlnAnglePsi')
+        index_class = fields.index('rlnClassNumber')
+        index_FOM = fields.index('rlnAutopickFigureOfMerit')
+        
+
+
+
 class StackParser(Parser):
     def parse_process(self, stackname):
         try:
@@ -302,6 +381,7 @@ class ParserProcess(Process):
                     for parser in parsers:
                         parsed += parser.parse()
                     if parsed > 0:
+                        
                         with open(config["Database"], 'w') as outfile:
                             json.dump(database, outfile)
                         with gzip.open(config["Database"]+".gz", 'wt') as outfile:
@@ -309,8 +389,8 @@ class ParserProcess(Process):
                         seconds = 0
                     else:
                         seconds += 2
-                    if seconds > 36000:
-                        print("Nothing parsed for 600 minutes. Exiting.")
+                    if seconds > 3600:
+                        print("Nothing parsed for 60 minutes. Exiting.")
                         break
                     time.sleep(2)
             except KeyboardInterrupt:
