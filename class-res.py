@@ -13,11 +13,17 @@ def load(paths):
     """Loads resolution information from star files"""
     resolutions = ddict(dict)
     for file in paths:
+        _it = re.match('run_it(\d+)_model.star$', file)
+        iteration = int(_it.group(1))
         data = pystar2.load(file)
-        models = [(a.split('_'[-1],a))]
-        for _cl,_it, _rem in re.findall('(\d+)\@.+it(\d+)_classes\.mrcs\s+(.+)\n', data):
-            _pt = _rem.split()[0]
-            classes[int(_it)][int(_cl)] = float(_pt)
+        models = [(a.split('_')[-1],a) for a in data.keys() if "model_class_" in a]
+        for (i, key) in models:
+            res = 1000
+            for row in list(data[key].values())[0]:
+                if row[3] < 1:
+                    resolutions[iteration][i] = res
+                    break
+                res = row[2]
     return resolutions
 
 def bhattacharyya_distance(pd1, pd2):
@@ -40,7 +46,7 @@ lines = plt.plot(ys, xs)
 for clnm, pct in enumerate(xs[-1]):
     plt.text(ys[-1], pct, clnm+1, color=lines[clnm].get_color())
 
-plt.savefig("Class_occ.png")
+plt.savefig("Class_res.png")
 
 
    
