@@ -13,15 +13,20 @@ def load(paths):
     """Loads resolution information from star files"""
     resolutions = ddict(dict)
     for file in paths:
-        _it = re.match('run_it(\d+)_model.star$', file)
+        print(file)
+        _it = re.search('run.+it(\d+)_model.star$', file)
         iteration = int(_it.group(1))
+        print(iteration)
         data = pystar2.load(file)
         models = [(a.split('_')[-1],a) for a in data.keys() if "model_class_" in a]
         for (i, key) in models:
             res = 1000
+            i = int(i)
             for row in list(data[key].values())[0]:
                 if row[3] < 1:
                     resolutions[iteration][i] = res
+                    print(i)
+                    print(res)
                     break
                 res = row[2]
     return resolutions
