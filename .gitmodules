@@ -1,6 +1,3 @@
-[submodule "hotspur_web/app/flask-autoindex"]
-	path = hotspur_web/app/autoindex/
-	url = https://github.com/sublee/flask-autoindex.git
 [submodule "hotspur_web/app/static/assets/lib/lightbox"]
 	path = hotspur_web/app/static/assets/lib/lightbox
 	url = https://github.com/lokesh/lightbox2.git
