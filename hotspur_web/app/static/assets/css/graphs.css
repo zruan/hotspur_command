@@ -79,3 +79,17 @@ line.montage.highlight {
 	width: 100%;
 }
 
+#big_micro_wrapper {
+width:100%;  
+    position:relative;
+}
+
+#big_micro {
+	width:100%;  
+     top:0px; left:0px;
+    }
+
+#big_micro_canvas {
+	width:100%; height:100%; 
+    position:absolute; top:0px; left:0px;
+    }

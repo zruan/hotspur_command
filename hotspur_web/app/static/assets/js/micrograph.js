@@ -244,6 +244,26 @@ function create_radial_ctf_plot(micrograph) {
         }
 }
 
+function setup_canvas(micrograph) {
+	var canvas = $('#big_micro_canvas')[0];
+	var ctx = canvas.getContext("2d");
+	if (glob_data[micrograph].MotionCor2) {
+	canvas.width = glob_data[micrograph].MotionCor2.dimensions[0];
+	canvas.height = glob_data[micrograph].MotionCor2.dimensions[1];
+	}
+	if (glob_data[micrograph].gautomatch) {
+	glob_data[micrograph].gautomatch.map( function(item) {
+		ctx.beginPath();
+ctx.arc(item.x,item.y,100,0,2*Math.PI);
+		ctx.lineWidth = 10;
+
+      // set line color
+      ctx.strokeStyle = '#ff0000';
+ctx.stroke();
+})
+	}
+}
+
 function load_micrograph(micrograph) {
         curr_index = micrograph_time.findIndex(function(d) {
                 return d[0] == micrograph;
@@ -270,6 +290,7 @@ function load_micrograph(micrograph) {
         create_radial_ctf_plot(micrograph);
         create_motion_chart(micrograph);
         create_micrograph_info(micrograph);
+	setup_canvas(micrograph);
 }
 
 var tooltip = d3

@@ -4,6 +4,7 @@ MAINTAINER Johannes Elferich <elferich@ohsu.edu>
 
 # Add app configuration to Nginx
 COPY nginx.conf /etc/nginx/conf.d/
+COPY htpasswd /etc/nginx/
 
 # Copy sample app
 COPY ./app /app

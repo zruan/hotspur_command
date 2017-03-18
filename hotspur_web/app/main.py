@@ -2,8 +2,11 @@ from flask import Flask, send_from_directory
 from flask import render_template
 import glob
 from collections import defaultdict
+from autoindex.flask_autoindex import AutoIndex
 app = Flask(__name__)
 debug = False
+
+AutoIndex(app, browse_root="/hotspur/scratch/")
 
 
 @app.route("/")
