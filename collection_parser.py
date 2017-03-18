@@ -24,6 +24,7 @@ class FloatEncoder(json.JSONEncoder):
     def __init__(self, nan_str="null", **kwargs):
         super(FloatEncoder, self).__init__(**kwargs)
         self.nan_str = nan_str
+        self.encoding = 'utf-8'
 
     def iterencode(self, o, _one_shot=False):
         """Encode the given object and yield each string
@@ -163,8 +164,8 @@ class GctfParser(Parser):
         value["EPA"] = {}
         value["EPA"]["Resolution"] = list(data['f0'])
         value["EPA"]["Sim. CTF"] = list(data['f1'])
-        value["EPA"]["Meas. CTF"] = list(data['f2'])
-        value["EPA"]["Meas. CTF - BG"] = list(data['f3'])
+        value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data['f2']))
+        value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data['f3']))
 
     def parse_gctf_log(self, filename, value):
         with open(filename) as f:
@@ -199,7 +200,8 @@ class MotionCor2Parser(Parser):
             "log"]).substitute(base=stackname)
         value[self.parser_id]["preview_filename"] = string.Template(
             self.config["preview"]).substitute(base=stackname)
-        self.parse_log(stackname, value["MotionCor2"]["log_filename"])
+        self.parse_log(stackname, value[self.parser_id]["log_filename"])
+        self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
 
     def parse_log(self, base, filename):
         try:
@@ -223,6 +225,21 @@ class MotionCor2Parser(Parser):
                         shifts = True
         except IOError:
             print("No log found")
+    
+    def parse_mrc(self, base, filename):
+        
+        try:
+            header = imaging.formats.FORMATS["mrc"].load_header(filename)
+            dimensions = (int(header['dims'][0]), int(header['dims'][1]))
+            pixel_size = float(header['lengths'][0]/header['dims'][0])
+            self.database[base][self.parser_id]["dimensions"] = dimensions
+            self.database[base][self.parser_id]["pixel_size"] = pixel_size
+        except AttributeError as e:
+            print(e)
+        except IOError:
+            print("Error loading mrc!", sys.exc_info()[0])
+
+            raise
 
 class MontageParser(Parser):
     def parse_process(self, stackname):
@@ -256,7 +273,7 @@ class MontageParser(Parser):
 class PickParser(Parser):
     def parse_process(self, stackname):
         try:
-            filename = string.Template(self.config["star_file"]).substitute(
+            filename = string.Template(self.config["starfile"]).substitute(
                 base=stackname)
             self.analyze_file(stackname, filename)
             print(" Done!")
@@ -266,11 +283,20 @@ class PickParser(Parser):
     def analyze_file(self, base, filename):
         star_data = pystar2.load(filename)['']
         fields = list(star_data)[0]
+        self.database[base][self.parser_id] = []
         index_x = fields.index('rlnCoordinateX')
         index_y = fields.index('rlnCoordinateY')
         index_psi = fields.index('rlnAnglePsi')
         index_class = fields.index('rlnClassNumber')
         index_FOM = fields.index('rlnAutopickFigureOfMerit')
+        for pick in list(star_data.values())[0]:
+            self.database[base][self.parser_id].append(
+                    { "x" : pick[index_x],
+                      "y" : pick[index_y],
+                      "psi" : pick[index_psi],
+                      "cl" : pick[index_class],
+                      "fom" : pick[index_FOM] } )
+
         
 
 
@@ -389,8 +415,8 @@ class ParserProcess(Process):
                         seconds = 0
                     else:
                         seconds += 2
-                    if seconds > 3600:
-                        print("Nothing parsed for 60 minutes. Exiting.")
+                    if seconds > 36000:
+                        print("Nothing parsed for 600 minutes. Exiting.")
                         break
                     time.sleep(2)
             except KeyboardInterrupt:
