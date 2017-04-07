@@ -89,6 +89,6 @@ HOTSPUR_BASE = (function ($, d3, Mousetrap) {
     my.micrograph_time = micrograph_time;
     my.montage_time = montage_time;
 
-
+    return my;
 
 }());
