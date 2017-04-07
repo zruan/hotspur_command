@@ -240,7 +240,7 @@ function prepare_graphs(data, micrograph_time) {
   );
 }
 
-HOTSPUR_BASE.setup_ui()
+HOTSPUR_BASE.setup_counter()
 HOTSPUR_BASE.load_data(function () {
   prepare_graphs(HOTSPUR_BASE.glob_data, HOTSPUR_BASE.micrograph_time);
 })

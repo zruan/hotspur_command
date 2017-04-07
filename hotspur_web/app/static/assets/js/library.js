@@ -1,4 +1,4 @@
-var HOTSPUR_BASE = (function ($, d3, Mousetrap) {
+HOTSPUR_BASE = (function ($, d3, Mousetrap) {
     var my = {}
     var glob_data;
     var micrograph_time;
@@ -82,7 +82,7 @@ var HOTSPUR_BASE = (function ($, d3, Mousetrap) {
 
     }
 
-    my.setup_ui = setup_ui;
+    my.setup_counter = setup_counter;
     my.load_data = load_data;
 
     my.glob_data = glob_data;
