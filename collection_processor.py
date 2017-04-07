@@ -12,7 +12,7 @@ import getpass
 import pyfs
 import stat
 import imaging
-from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser
+from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser
 
 
 def file_age_in_seconds(pathname):

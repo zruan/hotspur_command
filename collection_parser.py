@@ -5,6 +5,7 @@ import glob
 import os
 import datetime
 import dateutil
+import re
 import dateutil.parser
 import pyfs
 import imaging
@@ -262,12 +263,59 @@ class MontageParser(Parser):
             print(e)
             acquisition_time = datetime.datetime.fromtimestamp(
                 os.path.getmtime(filename))
+        preview_filename = base+"_preview.png"
+        if not os.path.isfile(self.global_config["scratch_dir"]+preview_filename):
+            self.analyze_mmm_file(base,filename,preview_filename, acquisition_time)
+            return
         self.database[base][self.parser_id] = {
                 "filename": filename,
                 "preview_filename": base+"_preview.png",
                 "acquisition_time":
                 acquisition_time.replace(tzinfo=tzlocal()).isoformat(),
             }
+
+    def analyze_mmm_file(self, base, filename, preview_filename, acquisition_time):
+        i = 1
+        while os.path.isfile(self.global_config["scratch_dir"] + "%s.%03d.png" % (preview_filename, i)):
+            mmm_filename = ("%s.%03d.png" % (preview_filename, i))
+            self.database[base+"%03d" % (i)] = {}
+            self.database[base+"%03d" % (i)][self.parser_id] = {
+                "filename": filename,
+                "preview_filename": mmm_filename,
+                "acquisition_time":
+                acquisition_time.replace(tzinfo=tzlocal()).isoformat(),
+            }
+            self.database[base][self.parser_id] = {}
+            i += 1
+
+class NavigatorParser(Parser):
+    def parse_process(self, stackname):
+        try: 
+            filename = string.Template(self.config["navigatorfile"]).substitute(
+                base=stackname,collection_dir=self.global_config["collection_dir"])
+            self.analyze_file(stackname, filename)
+        except IOError:
+            print("Unsuccesful!", sys.exec_info())
+
+
+    def analyze_file(self, base, filename):
+        try:
+            with open(filename, "r") as fp:
+                self.database[base][self.parser_id] = {}
+                self.database[base][self.parser_id]["items"] = []
+                item = False
+                for line in fp:
+                    new_item_match = re.match(r"\[(.+)\]",line)
+                    if not new_item_match is None:
+                        item = { "Title" : new_item_match.group(1)}
+                        self.database[base][self.parser_id]["items"].append(item)
+                        continue
+                    if item and len(line.split('=')) > 1:
+                        item[line.split('=')[0].strip()] = line.split('=')[1].strip()
+        except IOError:
+            print("Can't open navigator")
+        return
+
 
 
 class PickParser(Parser):
