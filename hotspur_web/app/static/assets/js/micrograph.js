@@ -247,7 +247,7 @@ function create_radial_ctf_plot(micrograph) {
 function setup_canvas(micrograph) {
 	var canvas = $('#big_micro_canvas')[0];
 	var ctx = canvas.getContext("2d");
-	if (glob_data[micrograph].MotionCor2) {
+	if (glob_data[micrograph].MotionCor2 && glob_data[micrograph].MotionCor2.dimensions) {
 	canvas.width = glob_data[micrograph].MotionCor2.dimensions[0];
 	canvas.height = glob_data[micrograph].MotionCor2.dimensions[1];
 	}
@@ -262,7 +262,53 @@ ctx.arc(item.x,item.y,100,0,2*Math.PI);
 ctx.stroke();
 })
 	}
+	draw_scalebar(micrograph, ctx);
 }
+
+function draw_scalebar(micrograph, ctx) {
+
+	if (glob_data[micrograph].MotionCor2 && glob_data[micrograph].MotionCor2.pixel_size) {
+		width = glob_data[micrograph].MotionCor2.dimensions[0];
+		height = glob_data[micrograph].MotionCor2.dimensions[1];
+                ps = glob_data[micrograph].MotionCor2.pixel_size;
+		ctx.strokeStyle = '#ffffff';
+		ctx.lineWidth = 30;
+		ctx.beginPath();
+		ctx.moveTo(width - 50 - 1000/ps, height-200);
+		ctx.lineTo(width -50, height-200);
+		ctx.stroke();
+		ctx.textAlign = 'center';
+		ctx.lineWidth = 10;
+		ctx.font = '80px sans';
+		ctx.strokeText("100 nm", width -50 - 500/ps, height -50);
+	}
+}
+
+function setup_micrograph_label(micrograph) {
+	$('#micrograph_tag').empty();
+	if (glob_annotation[micrograph] && glob_annotation[micrograph].tag) {
+		$('#micrograph_tag').append('<div> </div>');
+		$('#micrograph_tag').css("text-align","center");
+		var span = $("#micrograph_tag div");
+		span.addClass('label');
+		span.css("width","100%");
+		switch (glob_annotation[micrograph].tag) {
+			case 'good':
+				span.addClass('label-success');
+				span.text("Good");
+				break;
+			case 'bad':
+				span.addClass('label-danger');
+				span.text("Bad");
+				break;
+			case 'refit':
+				span.addClass('label-warning');
+				span.text("Refit");
+				break;
+		}
+	}
+}
+
 
 function load_micrograph(micrograph) {
         curr_index = micrograph_time.findIndex(function(d) {
@@ -291,6 +337,7 @@ function load_micrograph(micrograph) {
         create_motion_chart(micrograph);
         create_micrograph_info(micrograph);
 	setup_canvas(micrograph);
+	setup_micrograph_label(micrograph);
 }
 
 var tooltip = d3
@@ -299,8 +346,25 @@ var tooltip = d3
         .attr("class", "tooltip")
         .style("opacity", 0);
 var glob_data;
+var glob_annotation = {};
+var user_annotation = {};
+var limbo_annotation = {};
+var server_annotation = {};
 var curr_index;
 var micrograph_time;
+
+function merge_annot() {
+	glob_annotation = {};
+	for (var micrograph in server_annotation) { glob_annotation[micrograph] = server_annotation[micrograph]; }
+	for (var micrograph in limbo_annotation) { glob_annotation[micrograph] = limbo_annotation[micrograph]; }
+	for (var micrograph in user_annotation) { glob_annotation[micrograph] = user_annotation[micrograph]; }
+}
+
+function sync_annot() {
+	if (Object.keys(user_annotation).length() > 0) {
+		
+	}
+}
 
 function previous() {
         if (curr_index > 0)
@@ -311,10 +375,24 @@ function next() {
         if (curr_index < micrograph_time.length - 1)
                 load_micrograph(micrograph_time[curr_index + 1][0]);
 }
+
+function set_micrograph_tag(tag) {
+	var micrograph = micrograph_time[curr_index][0];
+	if (!user_annotation[micrograph]) {
+		user_annotation[micrograph] = {};
+	}
+	user_annotation[micrograph].tag = tag;
+	merge_annot();
+	setup_micrograph_label(micrograph);
+}
 $("#button_previous").click(previous);
 $("#button_next").click(next);
 Mousetrap.bind('right', next);
 Mousetrap.bind('left', previous);
+Mousetrap.bind('g', function () { set_micrograph_tag('good');});
+Mousetrap.bind('b', function () { set_micrograph_tag('bad');});
+Mousetrap.bind('r', function () { set_micrograph_tag('refit');});
+
 d3.timer(function() {
         try {
                 $('#timer').text("Last: " + countdown(micrograph_time.slice(-1)[0][1]).toString() + " ago");
@@ -325,6 +403,10 @@ d3.timer(function() {
 
 
 var noCache = new Date().getTime();
+d3.json("user_annotation" + "?_=" + noCache, function(data) {
+	server_annotation = data["user_annotation"];
+	merge_annot();
+});
 d3.json("data/data.json" + "?_=" + noCache, function(data) {
         glob_data = data;
         micrograph_time = d3.keys(data)

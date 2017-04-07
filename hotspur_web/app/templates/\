@@ -42,33 +42,26 @@ function setup_canvas(montage) {
 	}
 	if (navigator == undefined) { return; }
 	var navigator_item = glob_data[navigator].navigator.items.find(function (item) {
+		return item.Note && item.Note.split(' ')[3] == montage.substring(0,montage.length-3) + '.mrc';
+	});
+	var navigator_item = glob_data[navigator].navigator.items.find(function (item) {
 		return item.Note && item.Note.split(' ')[3] == montage + '.mrc';
 	});
 
-	if (navigator_item == undefined) { 
-	navigator_item = glob_data[navigator].navigator.items.find(function (item) {
-		if(item.Note && item.Note.split(' ')[3] == montage.substring(0,montage.length-3) + '.mrc') {
-			if (parseInt(item.Note.split(' ')[1]) == parseInt(montage.substring(montage.length-3,montage.length) )) { return true; }
-			else {return false;}
-		}
-	});
 	if (navigator_item == undefined) { return ;}
-}
 	canvas.width = navigator_item.MapWidthHeight.split(' ')[0];
 	canvas.height = navigator_item.MapWidthHeight.split(' ')[1];
 	image_center = [canvas.width/2, canvas.height/2];
 	stage_center = navigator_item.RawStageXY.split(' ');
-	scale_coeff = navigator_item.MapScaleMat.split(' ');
 
+	scale_coeff = navigator_item.MapScaleMat.split(' ');
 	points = glob_data[navigator].navigator.items.filter( function (item) {
 		return navigator_item.MapID == item.DrawnID;
 	});
 
 	points.forEach( function (point) {
-		if (point.PtsX.split(' ').length > 1) { return ;}
 		stage_coord = [point.PtsX, point.PtsY];
 		image_coord = calc_image_coordinates(stage_coord, scale_coeff, stage_center, image_center);
-		console.log(image_coord)
 		ctx.beginPath();
 ctx.arc(image_coord[0],image_coord[1],10,0,2*Math.PI);
 		ctx.lineWidth = 10;

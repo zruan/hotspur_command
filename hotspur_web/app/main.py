@@ -1,12 +1,14 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify, request, abort
 from flask import render_template
 import glob
 from collections import defaultdict
-from autoindex.flask_autoindex import AutoIndex
+#from autoindex.flask_autoindex import AutoIndex
 app = Flask(__name__)
 debug = False
 
-AutoIndex(app, browse_root="/hotspur/scratch/")
+#AutoIndex(app, browse_root="/hotspur/scratch/")
+
+user_annotation = defaultdict(lambda: defaultdict(lambda:  defaultdict(dict)))
 
 
 @app.route("/")
@@ -32,6 +34,17 @@ def micrograph(user, dataset):
 @app.route("/<user>/<dataset>/montage.html")
 def montage(user, dataset):
     return render_template('montage.html')
+
+@app.route("/<user>/<dataset>/user_annotation",methods=['GET'])
+def get_user_annotation(user, dataset):
+    return jsonify({'user_annotation':user_annotation[user][dataset]})
+
+@app.route("/<user>/<dataset>/user_annotation",methods=['POST'])
+def add_user_annotation(user, dataset):
+    if not request.json:
+        abort(404)
+
+
 
 # Just for Debug
 
