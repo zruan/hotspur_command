@@ -1,4 +1,4 @@
-var HOTSPUR_BASE = (function ($,d3) {
+var HOTSPUR_BASE = (function ($, d3, Mousetrap) {
     var my = {}
     var glob_data;
     var micrograph_time;
@@ -9,20 +9,20 @@ var HOTSPUR_BASE = (function ($,d3) {
 
 
     // Public functions
-                
+
     function findGetParameter(parameterName) {
         var result = null,
-                tmp = [];
-        location.search.substr(1).split("&").forEach(function(item) {
-                tmp = item.split("=");
-                if (tmp[0] === parameterName)
-                        result = decodeURIComponent(tmp[1]);
+            tmp = [];
+        location.search.substr(1).split("&").forEach(function (item) {
+            tmp = item.split("=");
+            if (tmp[0] === parameterName)
+                result = decodeURIComponent(tmp[1]);
         });
         return result;
     }
 
-    function setup_ui() {
-             d3.timer(function () {
+    function setup_counter() {
+        d3.timer(function () {
             try {
                 $('#timer').text("Last: " + countdown(micrograph_time.slice(-1)[0][1]).toString() + " ago");
             } catch (e) {
@@ -31,12 +31,21 @@ var HOTSPUR_BASE = (function ($,d3) {
         }, 1000);
     }
 
+    function setup_navigation(callback_previous, callback_next) {
+
+        $("#button_previous").click(callback_previous);
+        $("#button_next").click(callback_next);
+        Mousetrap.bind('right', callback_next);
+        Mousetrap.bind('left', callback_previous);
+    }
+
+
     function load_data(callback) {
 
         var noCache = new Date().getTime();
 
 
-       
+
         d3.json("data/data.json" + "?_=" + noCache, function (data) {
             glob_data = data;
             micrograph_time = d3.keys(data)
@@ -79,7 +88,7 @@ var HOTSPUR_BASE = (function ($,d3) {
     my.glob_data = glob_data;
     my.micrograph_time = micrograph_time;
     my.montage_time = montage_time;
-       
-    
+
+
 
 }());
