@@ -91,4 +91,4 @@ HOTSPUR_BASE = (function ($, d3, Mousetrap) {
 
     return my;
 
-}());
+}($, d3, Mousetrap));
