@@ -351,6 +351,8 @@ var user_annotation = {};
 var limbo_annotation = {};
 var server_annotation = {};
 var curr_index;
+var glob_data;
+var micrograph_time;
 
 
 function merge_annot() {
