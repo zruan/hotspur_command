@@ -1,4 +1,5 @@
-from flask import Flask, send_from_directory, jsonify, request, abort, loads
+from flask import Flask, send_from_directory, jsonify, request, abort
+from flask.json import loads
 from flask import render_template
 import glob
 from collections import defaultdict
