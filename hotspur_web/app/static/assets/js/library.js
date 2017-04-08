@@ -1,8 +1,8 @@
 HOTSPUR_BASE = (function ($, d3, Mousetrap) {
     var my = {}
-    var glob_data;
-    var micrograph_time;
-    var montage_time;
+    var glob_data = {};
+    var micrograph_time = [];
+    var montage_time = [];
 
     // Private 
 
@@ -77,6 +77,9 @@ HOTSPUR_BASE = (function ($, d3, Mousetrap) {
                 return a[1] - b[1];
             }
             micrograph_time = micrograph_time.sort(sortByDateAscending);
+            my.glob_data = glob_data;
+            my.micrograph_time = micrograph_time;
+            my.montage_time = montage_time;
             callback(my);
         });
 
