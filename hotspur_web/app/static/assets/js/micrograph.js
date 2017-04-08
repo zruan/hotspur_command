@@ -267,7 +267,7 @@ ctx.stroke();
 
 function draw_scalebar(micrograph, ctx) {
 
-	if (glob_data[micrograph].MotionCor2 && glob_data[micrograph].MotionCor2.pixel_size) {
+	if (HOTSPUR_BASE.glob_data[micrograph].MotionCor2 && HOTSPUR_BASE.glob_data[micrograph].MotionCor2.pixel_size) {
 		width = glob_data[micrograph].MotionCor2.dimensions[0];
 		height = glob_data[micrograph].MotionCor2.dimensions[1];
                 ps = glob_data[micrograph].MotionCor2.pixel_size;
@@ -311,22 +311,22 @@ function setup_micrograph_label(micrograph) {
 
 
 function load_micrograph(micrograph) {
-        curr_index = micrograph_time.findIndex(function(d) {
+        curr_index = HOTSPUR_BASE.micrograph_time.findIndex(function(d) {
                 return d[0] == micrograph;
         });
-        if (glob_data[micrograph].MotionCor2) {
+        if (HOTSPUR_BASE.glob_data[micrograph].MotionCor2) {
                 d3
                         .selectAll("#big_micro")
-                        .attr("src", "data/" + glob_data[micrograph].MotionCor2.preview_filename);
+                        .attr("src", "data/" + HOTSPUR_BASE.glob_data[micrograph].MotionCor2.preview_filename);
         } else {
                 d3
                         .selectAll("#big_micro")
                         .attr("src", "");
         }
-        if (glob_data[micrograph].Gctf) {
+        if (HOTSPUR_BASE.glob_data[micrograph].Gctf) {
                 d3
                         .selectAll("#gctf_preview")
-                        .attr("src", "data/" + glob_data[micrograph].Gctf.ctf_preview_image_filename);
+                        .attr("src", "data/" + HOTSPUR_BASE.glob_data[micrograph].Gctf.ctf_preview_image_filename);
         } else {
                 d3
                         .selectAll("#gctf_preview")
@@ -404,4 +404,6 @@ micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
         } else {
                 load_micrograph(HOTSPUR_BASE.micrograph);
         }
+        glob_data = HOTSPUR_BASE.glob_data;
+        micrograph_time = HOTSPUR_BASE.micrograph_time;
 })
