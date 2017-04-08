@@ -27,12 +27,16 @@ function sync_annot() {
                 //success callback (delete limbo/replace server annot with new from server)
                 merge_annot();
         }
-        }
+        
 }
 
 // Initially loads annotation from server
-function load_annot() {
-
+function load_annot(callback) {
+        d3.json("/user_annotation", function (annotation) {
+                my.server_annotation = annotation;
+                merge_annot();
+                callback(my);
+        });
 }
 
 // Performs an annotation
@@ -44,5 +48,8 @@ function annotate (micrograph, annotation_func) {
         merge_annot();
 
 }
+
+my.load_annotation = load_annotation;
+my.annotation = glob_annotation;
 
 }());
