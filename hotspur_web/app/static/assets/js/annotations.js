@@ -28,15 +28,40 @@ HOTSPUR_ANNOTATION = (function () {
         function sync_annot() {
                 if (Object.keys(user_annotation).length() > 0) {
                         // Set put request
+                        $.ajax({
+                                type: 'POST',
+                                url: 'user_annotation',
+                                data: JSON.stringify(user_annotation),
+                                contentType: 'application/json;charset=UTF-8',
+                                dataType: 'html',
+                                success: function (responseData, textStatus, jqXHR) {
+                                        limbo_annot = {};
+                                        server_annotation = JSON.parse(responseData)['user_annotation'];
+                                        merge_annot();
+                                        my.annotation = glob_annotation;
+                                },
+                                error: function (responseData, textStatus, errorThrown) {
+                                        alert('Error: ' + errorThrown + ". Status: " + textStatus);
+                                }
+                        });
                         // add user to limbo
+                        for (var micrograph in user_annotation) {
+                        limbo_annotation[micrograph] = user_annotation[micrograph];
+                        }
                         // empty user
+                        user_annotation = {};
 
                         //success callback (delete limbo/replace server annot with new from server)
                         merge_annot();
                 }
 
         }
-
+        setInterval(function(){ 
+                console.log("Syncing");
+                console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation]);
+                sync_annot(); 
+                console.log("Synced");
+                console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation])}, 30000);
         // Initially loads annotation from server
         function load_annotation(callback) {
                 d3.json("user_annotation", function (annotation) {
@@ -60,5 +85,5 @@ HOTSPUR_ANNOTATION = (function () {
         my.load_annotation = load_annotation;
         my.annotation = glob_annotation;
 
-        return(my);
+        return (my);
 }());
