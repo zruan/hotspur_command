@@ -385,83 +385,23 @@ function set_micrograph_tag(tag) {
 	merge_annot();
 	setup_micrograph_label(micrograph);
 }
-$("#button_previous").click(previous);
-$("#button_next").click(next);
-Mousetrap.bind('right', next);
-Mousetrap.bind('left', previous);
+
 Mousetrap.bind('g', function () { set_micrograph_tag('good');});
 Mousetrap.bind('b', function () { set_micrograph_tag('bad');});
 Mousetrap.bind('r', function () { set_micrograph_tag('refit');});
 
-d3.timer(function() {
-        try {
-                $('#timer').text("Last: " + countdown(micrograph_time.slice(-1)[0][1]).toString() + " ago");
-        } catch (e) {
-                $('#timer').text("Last:  ago");
-        }
-}, 1000);
 
-
-var noCache = new Date().getTime();
-d3.json("user_annotation" + "?_=" + noCache, function(data) {
-	server_annotation = data["user_annotation"];
-	merge_annot();
-});
-d3.json("data/data.json" + "?_=" + noCache, function(data) {
-        glob_data = data;
-        micrograph_time = d3.keys(data)
-		.filter(function (d) {
-			if (data[d].moviestack)
-	{ return true; } else { return false;}
-}).map(function(d) {
-                acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
-                return [d, acquisition_time];
-        });
-
-        function sortByDateAscending(a, b) {
-                // Dates will be cast to numbers automagically:
-                return a[1] - b[1];
-        }
-        micrograph_time = micrograph_time.sort(sortByDateAscending);
-        micrograph = findGetParameter("micrograph");
+HOTSPUR_BASE.setup_counter()
+HOTSPUR_BASE.setup_navigation(previous, next)
+HOTSPUR_BASE.load_data(function() {
+micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
         if (micrograph == null) {
-                if (data[micrograph_time.slice(-1)[0][0]].MotionCor2) {
-                        load_micrograph(micrograph_time.slice(-1)[0][0]);
+                if (HOTSPUR_BASE.glob_data[HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]].MotionCor2) {
+                        load_micrograph(HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]);
                 } else {
-                        load_micrograph(micrograph_time.slice(-2)[0][0]);
+                        load_micrograph(HOTSPUR_BASE.icrograph_time.slice(-2)[0][0]);
                 }
         } else {
-                load_micrograph(micrograph);
+                load_micrograph(HOTSPUR_BASE.micrograph);
         }
-});
-
-setInterval(function() {
-if ($('#check_update').prop('checked')) {
-        var noCache = new Date().getTime();
-        d3.json("data/data.json" + "?_=" + noCache, function(data) {
-                glob_data = data;
-                micrograph_time = d3.keys(data)
-		.filter(function (d) {
-			if (data[d].moviestack)
-	{ return true; } else { return false;}
-}).map(function(d) {
-                        acquisition_time = d3.isoParse(data[d].moviestack.acquisition_time);
-                        return [d, acquisition_time];
-                });
-
-                function sortByDateAscending(a, b) {
-                        // Dates will be cast to numbers automagically:
-                        return a[1] - b[1];
-                }
-                micrograph_time = micrograph_time.sort(sortByDateAscending);
-                micrograph = findGetParameter("micrograph");
-                if (micrograph == null) {
-                        if (data[micrograph_time.slice(-1)[0][0]].MotionCor2) {
-                                load_micrograph(micrograph_time.slice(-1)[0][0]);
-                        } else {
-                                load_micrograph(micrograph_time.slice(-2)[0][0]);
-                        }
-                }
-        });
-}
-}, 20000);
+})
