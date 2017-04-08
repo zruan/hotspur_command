@@ -348,7 +348,7 @@ function merge_annot() {
 function sync_annot() {
         if (Object.keys(user_annotation).length() > 0) {
              
-        
+        }
 }
 
 function previous() {
@@ -395,4 +395,4 @@ HOTSPUR_BASE.load_data(function () {
                 load_micrograph(micrograph);
         }
 
-})
+});
