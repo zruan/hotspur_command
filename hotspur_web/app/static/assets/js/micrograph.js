@@ -397,6 +397,8 @@ HOTSPUR_BASE.setup_counter()
 HOTSPUR_BASE.setup_navigation(previous, next)
 HOTSPUR_BASE.load_data(function() {
 micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
+        glob_data = HOTSPUR_BASE.glob_data;
+        micrograph_time = HOTSPUR_BASE.micrograph_time;
         if (micrograph == null) {
                 if (HOTSPUR_BASE.glob_data[HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]].MotionCor2) {
                         load_micrograph(HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]);
@@ -406,6 +408,5 @@ micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
         } else {
                 load_micrograph(HOTSPUR_BASE.micrograph);
         }
-        glob_data = HOTSPUR_BASE.glob_data;
-        micrograph_time = HOTSPUR_BASE.micrograph_time;
+        
 })
