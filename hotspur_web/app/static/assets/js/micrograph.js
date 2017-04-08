@@ -345,13 +345,13 @@ var tooltip = d3
         .append("div")
         .attr("class", "tooltip")
         .style("opacity", 0);
-var glob_data;
+
 var glob_annotation = {};
 var user_annotation = {};
 var limbo_annotation = {};
 var server_annotation = {};
 var curr_index;
-var micrograph_time;
+
 
 function merge_annot() {
 	glob_annotation = {};
