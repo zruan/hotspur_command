@@ -42,6 +42,7 @@ HOTSPUR_ANNOTATION = (function () {
                 d3.json("user_annotation", function (annotation) {
                         my.server_annotation = annotation;
                         merge_annot();
+                        my.annotation = glob_annotation;
                         callback(my);
                 });
         }
