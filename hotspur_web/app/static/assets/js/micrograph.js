@@ -396,17 +396,17 @@ Mousetrap.bind('r', function () { set_micrograph_tag('refit');});
 HOTSPUR_BASE.setup_counter()
 HOTSPUR_BASE.setup_navigation(previous, next)
 HOTSPUR_BASE.load_data(function() {
-micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
+        micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
         glob_data = HOTSPUR_BASE.glob_data;
         micrograph_time = HOTSPUR_BASE.micrograph_time;
         if (micrograph == null) {
                 if (HOTSPUR_BASE.glob_data[HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]].MotionCor2) {
                         load_micrograph(HOTSPUR_BASE.micrograph_time.slice(-1)[0][0]);
                 } else {
-                        load_micrograph(HOTSPUR_BASE.icrograph_time.slice(-2)[0][0]);
+                        load_micrograph(HOTSPUR_BASE.micrograph_time.slice(-2)[0][0]);
                 }
         } else {
-                load_micrograph(HOTSPUR_BASE.micrograph);
+                load_micrograph(micrograph);
         }
         
 })
