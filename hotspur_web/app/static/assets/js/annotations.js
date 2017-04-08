@@ -59,4 +59,5 @@ HOTSPUR_ANNOTATION = (function () {
         my.load_annotation = load_annotation;
         my.annotation = glob_annotation;
 
+        return(my);
 }());
