@@ -40,10 +40,9 @@ HOTSPUR_ANNOTATION = (function () {
         // Initially loads annotation from server
         function load_annotation(callback) {
                 d3.json("user_annotation", function (annotation) {
-                        server_annotation = annotation;
+                        server_annotation = annotation['user_annotation'];
                         merge_annot();
                         my.annotation = glob_annotation;
-                        console.log
                         callback(my);
                 });
         }

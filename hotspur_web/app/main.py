@@ -44,8 +44,9 @@ def add_user_annotation(user, dataset):
     if not request.json:
         abort(404)
     user_annot = request.get_json()
-    user_annotation[user][dataset].update(user_annot)
-    return jsonify({'user_annotation':user_annotation[user][dataset]})
+
+    #user_annotation[user][dataset].update(user_annot)
+    return jsonify({'user_annotation':user_annot})
 
 
 
