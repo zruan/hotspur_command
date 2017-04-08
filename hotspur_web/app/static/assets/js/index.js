@@ -41,17 +41,17 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
       return y(yfunc(d));
     });
   x.domain(
-    d3.extent(micrograph_time, function(d) {
+    d3.extent(HOTSPUR_BASE.micrograph_time, function(d) {
       return d[1];
     })
   );
   y.domain([
-    d3.min(micrograph_time, function(d) {
+    d3.min(HOTSPUR_BASE.micrograph_time, function(d) {
         try {
       return parseFloat(yfunc(d));
         } catch (e) { return null;}
     }) * 0.9,
-    d3.max(micrograph_time, function(d) {
+    d3.max(HOTSPUR_BASE.micrograph_time, function(d) {
         try {
       return parseFloat(yfunc(d));
         } catch (e) { return null; }
@@ -75,7 +75,7 @@ function prepare_graph(id, yfunc, ylabel, yfunc2, ylabel2) {
     .style("text-anchor", "end")
     .text(ylabel);
 
-  g.append("path").datum(micrograph_time).attr("class", "line").attr("d", line);
+  g.append("path").datum(HOTSPUR_BASE.micrograph_time).attr("class", "line").attr("d", line);
 var tooltip = g
   .append("text")
   .attr("class", "tooltip")
@@ -83,7 +83,7 @@ var tooltip = g
 
   g
     .selectAll(".dot")
-    .data(micrograph_time)
+    .data(HOTSPUR_BASE.micrograph_time)
     .enter()
     .filter(function(d) { try {
             result = parseFloat(yfunc(d));
@@ -122,7 +122,7 @@ var tooltip = g
       url += d[0];
       window.location = url;
     });
-    g.selectAll("line.montage").data(montage_time).enter().append("line")
+    g.selectAll("line.montage").data(HOTSPUR_BASE.montage_time).enter().append("line")
 	.classed("montage", true)
     .attr("id", function(d) {
       return d[0].replace(/\//g, "_");
