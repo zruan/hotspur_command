@@ -88,7 +88,7 @@ HOTSPUR_BASE = (function ($, d3, Mousetrap) {
     my.setup_counter = setup_counter;
     my.load_data = load_data;
     my.setup_navigation = setup_navigation;
-    my.findGetParamter = findGetParameter;
+    my.findGetParameter = findGetParameter;
 
     my.glob_data = glob_data;
     my.micrograph_time = micrograph_time;
