@@ -1,72 +1,60 @@
-function findGetParameter(parameterName) {
-        var result = null,
-                tmp = [];
-        location.search.substr(1).split("&").forEach(function(item) {
-                tmp = item.split("=");
-                if (tmp[0] === parameterName)
-                        result = decodeURIComponent(tmp[1]);
-        });
-        return result;
-}
-
-
 var LABELS = [{
-                "label": "Acquisition Date",
-                "callback": function(d) {
-                        time = d3.isoParse(d.moviestack.acquisition_time);
-                        return d3.timeFormat("%B %d, %Y %I:%M %p")(time);
-                }
-        },
-        {
-                "label": "Number of frames",
-                "callback": function(d) {
-                        return d.moviestack.numframes;
-                }
-        },
-        {
-                "label": "Dose rate",
-                "callback": function(d) {
-                        return d3.format(".2f")(d.moviestack.dose_per_pix_frame) + " e/pix/frame";
-                }
-        },
-        {
-                "label": "Defocus",
-                "callback": function(d) {
-                        return d3.format(".2f")((parseFloat(d.Gctf["Defocus U"]) 
-                                               + parseFloat(d.Gctf["Defocus V"])) / 20000) + " µm";
-                }
-        },
-        {
-                "label": "Astigmatism",
-                "callback": function(d) {
-                        return d3.format(".2f")(Math.abs(parseFloat(d.Gctf["Defocus U"]) 
-                                                       - parseFloat(d.Gctf["Defocus V"])) / 10000) 
-                                    + " µm at " + d3.format(".1f")(parseFloat(d.Gctf["Astig angle"])) + "°";
-                }
-        },
-        {
-                "label": "Gctf resolution estimate",
-                "callback": function(d) {
-                        return d3.format(".2f")(d.Gctf["Estimated resolution"]) + " ‫";
-                }
-        },
-        {
-                "label": "Gctf validation score",
-                "callback": function(d) {
-                        return String(d.Gctf["Validation scores"].reduce(
-        function(a, b) {
-          return a + parseInt(b);
-        },
-        0
-      )) + 
-                         d.Gctf["Validation scores"].reduce(
-        function(a, b) {
-          return a +"," + b;
-        },
-        "("
-      ) +")";
-                }
-        },
+        "label": "Acquisition Date",
+        "callback": function (d) {
+                time = d3.isoParse(d.moviestack.acquisition_time);
+                return d3.timeFormat("%B %d, %Y %I:%M %p")(time);
+        }
+},
+{
+        "label": "Number of frames",
+        "callback": function (d) {
+                return d.moviestack.numframes;
+        }
+},
+{
+        "label": "Dose rate",
+        "callback": function (d) {
+                return d3.format(".2f")(d.moviestack.dose_per_pix_frame) + " e/pix/frame";
+        }
+},
+{
+        "label": "Defocus",
+        "callback": function (d) {
+                return d3.format(".2f")((parseFloat(d.Gctf["Defocus U"])
+                        + parseFloat(d.Gctf["Defocus V"])) / 20000) + " µm";
+        }
+},
+{
+        "label": "Astigmatism",
+        "callback": function (d) {
+                return d3.format(".2f")(Math.abs(parseFloat(d.Gctf["Defocus U"])
+                        - parseFloat(d.Gctf["Defocus V"])) / 10000)
+                        + " µm at " + d3.format(".1f")(parseFloat(d.Gctf["Astig angle"])) + "°";
+        }
+},
+{
+        "label": "Gctf resolution estimate",
+        "callback": function (d) {
+                return d3.format(".2f")(d.Gctf["Estimated resolution"]) + " ‫";
+        }
+},
+{
+        "label": "Gctf validation score",
+        "callback": function (d) {
+                return String(d.Gctf["Validation scores"].reduce(
+                        function (a, b) {
+                                return a + parseInt(b);
+                        },
+                        0
+                )) +
+                        d.Gctf["Validation scores"].reduce(
+                                function (a, b) {
+                                        return a + "," + b;
+                                },
+                                "("
+                        ) + ")";
+        }
+},
 ];
 
 
@@ -76,10 +64,10 @@ function create_micrograph_info(micrograph) {
         container = d3.selectAll("#micrograph_information").selectAll("div");
         label_fields = container.data(labels).enter().append("div")
                 .classed("col-xs-4", true);
-        label_fields.append("small").text(function(d) {
+        label_fields.append("small").text(function (d) {
                 return d.label;
         });
-        label_fields.append("h4").text(function(d) {
+        label_fields.append("h4").text(function (d) {
                 return d.callback(glob_data[micrograph]);
         });
 }
@@ -104,8 +92,8 @@ function create_motion_chart(micrograph) {
                 width = 300 - margin.left - margin.right,
                 height = 300 - margin.top - margin.bottom,
                 g = svg
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         var x = d3.scaleLinear().rangeRound([width, 0]);
 
@@ -133,19 +121,19 @@ function create_motion_chart(micrograph) {
         if (glob_data[micrograph].MotionCor2) {
                 var line = d3
                         .line()
-                        .x(function(d, i) {
+                        .x(function (d, i) {
                                 return x(parseFloat(glob_data[micrograph].MotionCor2.x_shifts[i]));
                         })
-                        .y(function(d, i) {
+                        .y(function (d, i) {
                                 return y(parseFloat(glob_data[micrograph].MotionCor2.y_shifts[i]));
                         });
-               if ( glob_data[micrograph].MotionCor2.x_shifts) {
-                g
-                        .append("path")
-                        .datum(glob_data[micrograph].MotionCor2.x_shifts)
-                        .attr("class", "line motion")
-                        .attr("d", line);
-       }
+                if (glob_data[micrograph].MotionCor2.x_shifts) {
+                        g
+                                .append("path")
+                                .datum(glob_data[micrograph].MotionCor2.x_shifts)
+                                .attr("class", "line motion")
+                                .attr("d", line);
+                }
         }
 }
 
@@ -170,8 +158,8 @@ function create_radial_ctf_plot(micrograph) {
                 width = 750 - margin.left - margin.right,
                 height = 300 - margin.top - margin.bottom,
                 g = svg
-                .append("g")
-                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+                        .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
         if (glob_data[micrograph].Gctf) {
                 var x = d3.scaleLinear().rangeRound([width, 0]);
@@ -185,19 +173,19 @@ function create_radial_ctf_plot(micrograph) {
 
                 var line = d3
                         .line()
-                        .x(function(d, i) {
+                        .x(function (d, i) {
                                 return x(parseFloat(glob_data[micrograph].Gctf.EPA.Resolution[i]));
                         })
-                        .y(function(d, i) {
+                        .y(function (d, i) {
                                 return y(parseFloat(glob_data[micrograph].Gctf.EPA["Sim. CTF"][i]));
                         });
 
                 var back_line = d3
                         .line()
-                        .x(function(d, i) {
+                        .x(function (d, i) {
                                 return x(parseFloat(glob_data[micrograph].Gctf.EPA.Resolution[i]));
                         })
-                        .y(function(d, i) {
+                        .y(function (d, i) {
                                 return back_y(parseFloat(glob_data[micrograph].Gctf.EPA["Meas. CTF - BG"][i]));
                         });
 
@@ -245,73 +233,73 @@ function create_radial_ctf_plot(micrograph) {
 }
 
 function setup_canvas(micrograph) {
-	var canvas = $('#big_micro_canvas')[0];
-	var ctx = canvas.getContext("2d");
-	if (glob_data[micrograph].MotionCor2 && glob_data[micrograph].MotionCor2.dimensions) {
-	canvas.width = glob_data[micrograph].MotionCor2.dimensions[0];
-	canvas.height = glob_data[micrograph].MotionCor2.dimensions[1];
-	}
-	if (glob_data[micrograph].gautomatch) {
-	glob_data[micrograph].gautomatch.map( function(item) {
-		ctx.beginPath();
-ctx.arc(item.x,item.y,100,0,2*Math.PI);
-		ctx.lineWidth = 10;
+        var canvas = $('#big_micro_canvas')[0];
+        var ctx = canvas.getContext("2d");
+        if (glob_data[micrograph].MotionCor2 && glob_data[micrograph].MotionCor2.dimensions) {
+                canvas.width = glob_data[micrograph].MotionCor2.dimensions[0];
+                canvas.height = glob_data[micrograph].MotionCor2.dimensions[1];
+        }
+        if (glob_data[micrograph].gautomatch) {
+                glob_data[micrograph].gautomatch.map(function (item) {
+                        ctx.beginPath();
+                        ctx.arc(item.x, item.y, 100, 0, 2 * Math.PI);
+                        ctx.lineWidth = 10;
 
-      // set line color
-      ctx.strokeStyle = '#ff0000';
-ctx.stroke();
-})
-	}
-	draw_scalebar(micrograph, ctx);
+                        // set line color
+                        ctx.strokeStyle = '#ff0000';
+                        ctx.stroke();
+                })
+        }
+        draw_scalebar(micrograph, ctx);
 }
 
 function draw_scalebar(micrograph, ctx) {
 
-	if (HOTSPUR_BASE.glob_data[micrograph].MotionCor2 && HOTSPUR_BASE.glob_data[micrograph].MotionCor2.pixel_size) {
-		width = glob_data[micrograph].MotionCor2.dimensions[0];
-		height = glob_data[micrograph].MotionCor2.dimensions[1];
+        if (HOTSPUR_BASE.glob_data[micrograph].MotionCor2 && HOTSPUR_BASE.glob_data[micrograph].MotionCor2.pixel_size) {
+                width = glob_data[micrograph].MotionCor2.dimensions[0];
+                height = glob_data[micrograph].MotionCor2.dimensions[1];
                 ps = glob_data[micrograph].MotionCor2.pixel_size;
-		ctx.strokeStyle = '#ffffff';
-		ctx.lineWidth = 30;
-		ctx.beginPath();
-		ctx.moveTo(width - 50 - 1000/ps, height-200);
-		ctx.lineTo(width -50, height-200);
-		ctx.stroke();
-		ctx.textAlign = 'center';
-		ctx.lineWidth = 10;
-		ctx.font = '80px sans';
-		ctx.strokeText("100 nm", width -50 - 500/ps, height -50);
-	}
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 30;
+                ctx.beginPath();
+                ctx.moveTo(width - 50 - 1000 / ps, height - 200);
+                ctx.lineTo(width - 50, height - 200);
+                ctx.stroke();
+                ctx.textAlign = 'center';
+                ctx.lineWidth = 10;
+                ctx.font = '80px sans';
+                ctx.strokeText("100 nm", width - 50 - 500 / ps, height - 50);
+        }
 }
 
 function setup_micrograph_label(micrograph) {
-	$('#micrograph_tag').empty();
-	if (glob_annotation[micrograph] && glob_annotation[micrograph].tag) {
-		$('#micrograph_tag').append('<div> </div>');
-		$('#micrograph_tag').css("text-align","center");
-		var span = $("#micrograph_tag div");
-		span.addClass('label');
-		span.css("width","100%");
-		switch (glob_annotation[micrograph].tag) {
-			case 'good':
-				span.addClass('label-success');
-				span.text("Good");
-				break;
-			case 'bad':
-				span.addClass('label-danger');
-				span.text("Bad");
-				break;
-			case 'refit':
-				span.addClass('label-warning');
-				span.text("Refit");
-				break;
-		}
-	}
+        $('#micrograph_tag').empty();
+        if (glob_annotation[micrograph] && glob_annotation[micrograph].tag) {
+                $('#micrograph_tag').append('<div> </div>');
+                $('#micrograph_tag').css("text-align", "center");
+                var span = $("#micrograph_tag div");
+                span.addClass('label');
+                span.css("width", "100%");
+                switch (glob_annotation[micrograph].tag) {
+                        case 'good':
+                                span.addClass('label-success');
+                                span.text("Good");
+                                break;
+                        case 'bad':
+                                span.addClass('label-danger');
+                                span.text("Bad");
+                                break;
+                        case 'refit':
+                                span.addClass('label-warning');
+                                span.text("Refit");
+                                break;
+                }
+        }
 }
 
 
 function load_micrograph(micrograph) {
-        curr_index = HOTSPUR_BASE.micrograph_time.findIndex(function(d) {
+        curr_index = HOTSPUR_BASE.micrograph_time.findIndex(function (d) {
                 return d[0] == micrograph;
         });
         if (HOTSPUR_BASE.glob_data[micrograph].MotionCor2) {
@@ -336,15 +324,10 @@ function load_micrograph(micrograph) {
         create_radial_ctf_plot(micrograph);
         create_motion_chart(micrograph);
         create_micrograph_info(micrograph);
-	setup_canvas(micrograph);
-	setup_micrograph_label(micrograph);
+        setup_canvas(micrograph);
+        setup_micrograph_label(micrograph);
 }
 
-var tooltip = d3
-        .select("body")
-        .append("div")
-        .attr("class", "tooltip")
-        .style("opacity", 0);
 
 var glob_annotation = {};
 var user_annotation = {};
@@ -356,16 +339,16 @@ var micrograph_time;
 
 
 function merge_annot() {
-	glob_annotation = {};
-	for (var micrograph in server_annotation) { glob_annotation[micrograph] = server_annotation[micrograph]; }
-	for (var micrograph in limbo_annotation) { glob_annotation[micrograph] = limbo_annotation[micrograph]; }
-	for (var micrograph in user_annotation) { glob_annotation[micrograph] = user_annotation[micrograph]; }
+        glob_annotation = {};
+        for (var micrograph in server_annotation) { glob_annotation[micrograph] = server_annotation[micrograph]; }
+        for (var micrograph in limbo_annotation) { glob_annotation[micrograph] = limbo_annotation[micrograph]; }
+        for (var micrograph in user_annotation) { glob_annotation[micrograph] = user_annotation[micrograph]; }
 }
 
 function sync_annot() {
-	if (Object.keys(user_annotation).length() > 0) {
-		
-	}
+        if (Object.keys(user_annotation).length() > 0) {
+             
+        
 }
 
 function previous() {
@@ -379,23 +362,26 @@ function next() {
 }
 
 function set_micrograph_tag(tag) {
-	var micrograph = micrograph_time[curr_index][0];
-	if (!user_annotation[micrograph]) {
-		user_annotation[micrograph] = {};
-	}
-	user_annotation[micrograph].tag = tag;
-	merge_annot();
-	setup_micrograph_label(micrograph);
+        var micrograph = micrograph_time[curr_index][0];
+        //HOTSPUT_ANNOTATION.annotate(micrograph, function (ann_obj) {
+        //        ann_obj.tag = tag;
+        //})
+        if (!user_annotation[micrograph]) {
+                user_annotation[micrograph] = {};
+        }
+        user_annotation[micrograph].tag = tag;
+        merge_annot();
+        setup_micrograph_label(micrograph);
 }
 
-Mousetrap.bind('g', function () { set_micrograph_tag('good');});
-Mousetrap.bind('b', function () { set_micrograph_tag('bad');});
-Mousetrap.bind('r', function () { set_micrograph_tag('refit');});
+Mousetrap.bind('g', function () { set_micrograph_tag('good'); });
+Mousetrap.bind('b', function () { set_micrograph_tag('bad'); });
+Mousetrap.bind('r', function () { set_micrograph_tag('refit'); });
 
 
 HOTSPUR_BASE.setup_counter()
 HOTSPUR_BASE.setup_navigation(previous, next)
-HOTSPUR_BASE.load_data(function() {
+HOTSPUR_BASE.load_data(function () {
         micrograph = HOTSPUR_BASE.findGetParameter("micrograph");
         glob_data = HOTSPUR_BASE.glob_data;
         micrograph_time = HOTSPUR_BASE.micrograph_time;
@@ -408,5 +394,5 @@ HOTSPUR_BASE.load_data(function() {
         } else {
                 load_micrograph(micrograph);
         }
-        
+
 })
