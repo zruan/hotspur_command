@@ -94,10 +94,17 @@ var tooltip = g
     } catch (e) { return false; }
     })
     .append("circle")
-    .attr("class", "dot")
+    .attr("class", function (d) {
+      if (HOTSPUR_ANNOTATION.annotation[d[0]] && HOTSPUR_ANNOTATION.annotation[d[0]].tag) {
+       return "dot " + HOTSPUR_ANNOTATION.annotation[d[0]].tag;
+      } else {
+        return "dot";
+      }
+    })
     .attr("id", function(d) {
       return d[0].replace(/\//g, "_");
     })
+    
     .attr("r", 3.5)
     .attr("cx", function(d) {
       return x(d[1]);
@@ -243,4 +250,11 @@ function prepare_graphs(data, micrograph_time) {
 HOTSPUR_BASE.setup_counter();
 HOTSPUR_BASE.load_data(function () {
   prepare_graphs(HOTSPUR_BASE.glob_data, HOTSPUR_BASE.micrograph_time);
+});
+
+HOTSPUR_ANNOTATION.load_annotation(function () {
+        if (micrograph) {
+      setup_micrograph_label(micrograph); 
+        }
+      console.log(HOTSPUR_ANNOTATION.annotation);
 });
