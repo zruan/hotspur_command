@@ -93,3 +93,12 @@ width:100%;
 	width:100%; height:100%; 
     position:absolute; top:0px; left:0px;
     }
+.good {
+	fill: #5cb85c;
+}
+.refit {
+	fill: #f0ad4e;
+}
+.bad {
+	fill: #d9534f;
+}
