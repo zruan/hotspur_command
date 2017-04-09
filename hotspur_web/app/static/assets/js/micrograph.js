@@ -274,13 +274,13 @@ function draw_scalebar(micrograph, ctx) {
 
 function setup_micrograph_label(micrograph) {
         $('#micrograph_tag').empty();
-        if (glob_annotation[micrograph] && glob_annotation[micrograph].tag) {
+        if (HOTSPUR_ANNOTATION.annotation[micrograph] && HOTSPUR_ANNOTATION.annotation[micrograph].tag) {
                 $('#micrograph_tag').append('<div> </div>');
                 $('#micrograph_tag').css("text-align", "center");
                 var span = $("#micrograph_tag div");
                 span.addClass('label');
                 span.css("width", "100%");
-                switch (glob_annotation[micrograph].tag) {
+                switch (HOTSPUR_ANNOTATION.annotation[micrograph].tag) {
                         case 'good':
                                 span.addClass('label-success');
                                 span.text("Good");
@@ -329,27 +329,12 @@ function load_micrograph(micrograph) {
 }
 
 
-var glob_annotation = {};
-var user_annotation = {};
-var limbo_annotation = {};
-var server_annotation = {};
+
 var curr_index;
 var glob_data;
 var micrograph_time;
 var micrograph;
 
-function merge_annot() {
-        glob_annotation = {};
-        for (var micrograph in server_annotation) { glob_annotation[micrograph] = server_annotation[micrograph]; }
-        for (var micrograph in limbo_annotation) { glob_annotation[micrograph] = limbo_annotation[micrograph]; }
-        for (var micrograph in user_annotation) { glob_annotation[micrograph] = user_annotation[micrograph]; }
-}
-
-function sync_annot() {
-        if (Object.keys(user_annotation).length() > 0) {
-             
-        }
-}
 
 function previous() {
         if (curr_index > 0)
@@ -363,14 +348,10 @@ function next() {
 
 function set_micrograph_tag(tag) {
         var micrograph = micrograph_time[curr_index][0];
-        //HOTSPUT_ANNOTATION.annotate(micrograph, function (ann_obj) {
-        //        ann_obj.tag = tag;
-        //})
-        if (!user_annotation[micrograph]) {
-                user_annotation[micrograph] = {};
-        }
-        user_annotation[micrograph].tag = tag;
-        merge_annot();
+        HOTSPUR_ANNOTATION.annotate(micrograph, function (ann_obj) {
+                ann_obj.tag = tag;
+        })
+        
         setup_micrograph_label(micrograph);
 }
 
