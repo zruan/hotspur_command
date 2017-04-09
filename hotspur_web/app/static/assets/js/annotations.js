@@ -36,7 +36,7 @@ HOTSPUR_ANNOTATION = (function () {
                                 contentType: 'application/json;charset=UTF-8',
                                 dataType: 'html',
                                 success: function (responseData, textStatus, jqXHR) {
-                                        limbo_annot = {};
+                                        limbo_annotation = {};
                                         server_annotation = JSON.parse(responseData)['user_annotation'];
                                         merge_annot();
                                         my.annotation = glob_annotation;
