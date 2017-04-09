@@ -253,8 +253,8 @@ HOTSPUR_BASE.load_data(function () {
 });
 
 HOTSPUR_ANNOTATION.load_annotation(function () {
-        if (micrograph) {
-      setup_micrograph_label(micrograph); 
-        }
+        //if (micrograph) {
+      //#setup_micrograph_label(micrograph); 
+       // }
       console.log(HOTSPUR_ANNOTATION.annotation);
 });
