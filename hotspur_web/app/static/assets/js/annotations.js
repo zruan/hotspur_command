@@ -22,6 +22,7 @@ HOTSPUR_ANNOTATION = (function () {
                 for (var micrograph in user_annotation) {
                         glob_annotation[micrograph] = user_annotation[micrograph];
                 }
+                my.annotation = glob_annotation;
         }
 
         // Perfoms synchronization cycle: Send user to server, copy to limbo, update server when done
@@ -62,12 +63,13 @@ HOTSPUR_ANNOTATION = (function () {
                 sync_annot(); 
                 console.log("Synced");
                 console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation])}, 30000);
+
         // Initially loads annotation from server
         function load_annotation(callback) {
                 d3.json("user_annotation", function (annotation) {
                         server_annotation = annotation['user_annotation'];
                         merge_annot();
-                        my.annotation = glob_annotation;
+                        
                         callback(my);
                 });
         }
