@@ -70,15 +70,15 @@ class CollectionProcessor(Process):
                     replace_dict = config.copy()
                     if self.depends:
                         filename = filename[len(config["lock_dir"]):]
-                    stackname = pyfs.rext(filename, full=True)
+                    stackname = pyfs.rext(filename, full=False)
                     replace_dict.update({
                         "filename": filename,
                         "filename_noex": pyfs.rext(
-                            filename, full=True),
+                            filename, full=False),
                         "filename_base": os.path.basename(filename),
                         "filename_directory": os.path.dirname(filename),
                         "filename_base_noext": pyfs.rext(
-                            os.path.basename(filename), full=True),
+                            os.path.basename(filename), full=False),
                         "stackname": stackname
                     })
 
