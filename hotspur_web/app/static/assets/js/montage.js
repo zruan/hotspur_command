@@ -61,20 +61,34 @@ function setup_canvas(montage) {
 	scale_coeff = navigator_item.MapScaleMat.split(' ');
 
 	points = glob_data[navigator].navigator.items.filter( function (item) {
-		return navigator_item.MapID == item.DrawnID;
+		//return navigator_item.MapID == item.DrawnID;
+		return true;
 	});
 
 	points.forEach( function (point) {
 		if (point.PtsX.split(' ').length > 1) { return ;}
 		stage_coord = [point.PtsX, point.PtsY];
 		image_coord = calc_image_coordinates(stage_coord, scale_coeff, stage_center, image_center);
-		console.log(image_coord)
 		ctx.beginPath();
 ctx.arc(image_coord[0],image_coord[1],10,0,2*Math.PI);
 		ctx.lineWidth = 10;
 
       // set line color
-      ctx.strokeStyle = '#ff0000';
+      res = Object.keys(HOTSPUR_ANNOTATION.annotation).find(function (annot) {
+	      if (annot.split('/')[0].replace(/_/g, "") == navigator.replace(/_/g, "")) {
+		      
+		return annot.split('/')[1].split('_')[1] == point.Title.split(' ')[2];
+	      }
+	      return false;
+      });
+      console.log(res);
+      color_code = { "good" : "#5cb85c", "refit" : "#f0ad4e", "bad" : '#d9534f' }
+      color = undefined;
+      if ( res && HOTSPUR_ANNOTATION.annotation[res].tag ) {
+	      ctx.strokeStyle = color_code[HOTSPUR_ANNOTATION.annotation[res].tag];
+      } else {
+      ctx.strokeStyle = '#222222';
+      }
 ctx.stroke();
 	});
 
@@ -101,8 +115,17 @@ HOTSPUR_BASE.setup_navigation(previous, next)
 HOTSPUR_BASE.load_data(function () {
         montage = HOTSPUR_BASE.findGetParameter("montage");
         glob_data = HOTSPUR_BASE.glob_data;
-        montage_time = HOTSPUR_BASE.micrograph_time;
+        montage_time = HOTSPUR_BASE.montage_time;
         
-        load_micrograph(montage);
+        if (montage == null) {
+		load_montage(HOTSPUR_BASE.montage_time.slice(-1)[0][0]);
+        } else {
+                load_montage(montage);
+        }
         
+});
+
+
+HOTSPUR_ANNOTATION.load_annotation(function () {
+      console.log(HOTSPUR_ANNOTATION.annotation);
 });
