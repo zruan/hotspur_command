@@ -13,6 +13,8 @@ import pyfs
 import stat
 import imaging
 from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser
+from random import randint
+from time import sleep
 
 
 def file_age_in_seconds(pathname):
@@ -69,7 +71,7 @@ class CollectionProcessor(Process):
                 for filename in file_list:
                     replace_dict = config.copy()
                     if self.depends:
-                        filename = filename[len(config["lock_dir"]):]
+                        filename = filename[len(config["lock_dir"]):-len(".done")]
                     stackname = pyfs.rext(filename, full=False)
                     replace_dict.update({
                         "filename": filename,
@@ -89,6 +91,7 @@ class CollectionProcessor(Process):
                     if self.min_age > 0 and file_age_in_seconds(
                             filename) < self.min_age:
                         continue
+                    sleep(randint(100,1000)*0.001)
                     if os.path.isfile(lock_filename) or os.path.isfile(
                             done_filename):
                         continue
