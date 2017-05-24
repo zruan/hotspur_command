@@ -27,7 +27,7 @@ HOTSPUR_ANNOTATION = (function () {
 
         // Perfoms synchronization cycle: Send user to server, copy to limbo, update server when done
         function sync_annot() {
-                if (Object.keys(user_annotation).length > 0) {
+                if (Object.keys(user_annotation).length > 0 && Object.keys(limbo_annotation).length == 0) {
                         // Set put request
                         $.ajax({
                                 type: 'POST',
@@ -62,7 +62,7 @@ HOTSPUR_ANNOTATION = (function () {
                 console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation]);
                 sync_annot(); 
                 console.log("Synced");
-                console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation])}, 30000);
+                console.log([glob_annotation,server_annotation,user_annotation,limbo_annotation])}, 3000);
 
         // Initially loads annotation from server
         function load_annotation(callback) {

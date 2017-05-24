@@ -3,13 +3,102 @@ from flask.json import loads
 from flask import render_template
 import glob
 from collections import defaultdict
+import pickle, json, csv, os, shutil
+
+class PersistentDict(dict):
+    ''' Persistent dictionary with an API compatible with shelve and anydbm.
+
+    The dict is kept in memory, so the dictionary operations run as fast as
+    a regular dictionary.
+
+    Write to disk is delayed until close or sync (similar to gdbm's fast mode).
+
+    Input file format is automatically discovered.
+    Output file format is selectable between pickle, json, and csv.
+    All three serialization formats are backed by fast C implementations.
+
+    '''
+
+    def __init__(self, filename, flag='c', mode=None, format='pickle', *args, **kwds):
+        self.flag = flag                    # r=readonly, c=create, or n=new
+        self.mode = mode                    # None or an octal triple like 0644
+        self.format = format                # 'csv', 'json', or 'pickle'
+        self.filename = filename
+        if flag != 'n' and os.access(filename, os.R_OK):
+            fileobj = open(filename, 'rb' if format=='pickle' else 'r')
+            with fileobj:
+                self.load(fileobj)
+        dict.__init__(self, *args, **kwds)
+
+    def sync(self):
+        'Write dict to disk'
+        if self.flag == 'r':
+            return
+        filename = self.filename
+        tempname = filename + '.tmp'
+        fileobj = open(tempname, 'wb' if self.format=='pickle' else 'w')
+        try:
+            self.dump(fileobj)
+        except Exception:
+            os.remove(tempname)
+            raise
+        finally:
+            fileobj.close()
+        shutil.move(tempname, self.filename)    # atomic commit
+        if self.mode is not None:
+            os.chmod(self.filename, self.mode)
+
+    def close(self):
+        self.sync()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+    def dump(self, fileobj):
+        if self.format == 'csv':
+            csv.writer(fileobj).writerows(self.items())
+        elif self.format == 'json':
+            json.dump(self, fileobj, separators=(',', ':'))
+        elif self.format == 'pickle':
+            pickle.dump(dict(self), fileobj, 2)
+        else:
+            raise NotImplementedError('Unknown format: ' + repr(self.format))
+
+    def load(self, fileobj):
+        # try formats from most restrictive to least restrictive
+        for loader in (pickle.load, json.load, csv.reader):
+            fileobj.seek(0)
+            try:
+                return self.update(loader(fileobj))
+            except Exception:
+                pass
+        raise ValueError('File not in a supported format')
+
+class CustomDefaultdict(defaultdict):
+    def __missing__(self, key):
+        if self.default_factory:
+            dict.__setitem__(self, key, self.default_factory(key))
+            return self[key]
+        else:
+            defaultdict.__missing__(self, key)
 #from autoindex.flask_autoindex import AutoIndex
 app = Flask(__name__)
 debug = False
 
+
+
 #AutoIndex(app, browse_root="/hotspur/scratch/")
 
-user_annotation = defaultdict(lambda: defaultdict(lambda:  defaultdict(dict)))
+user_annotation = CustomDefaultdict(
+         lambda user: CustomDefaultdict(
+             lambda dataset: PersistentDict("{root}/{user}/{dataset}/annotation.json".format(
+              root="/hotspur/scratch" if debug else "/scratch",
+              user=user,
+              dataset=dataset
+          ))))
 
 
 @app.route("/")
@@ -46,6 +135,7 @@ def add_user_annotation(user, dataset):
         abort(404)
     user_annot = request.get_json()
     user_annotation[user][dataset].update(user_annot)
+    user_annotation[user][dataset].sync()
     #user_annotation[user][dataset].update(user_annot)
     return jsonify({'user_annotation':user_annotation[user][dataset]})
 
