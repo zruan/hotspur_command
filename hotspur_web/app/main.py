@@ -98,7 +98,7 @@ user_annotation = CustomDefaultdict(
               root="/hotspur/scratch" if debug else "/scratch",
               user=user,
               dataset=dataset
-          ))))
+          ).format='json')))
 
 
 @app.route("/")
