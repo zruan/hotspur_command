@@ -1,3 +1,0 @@
-[submodule "hotspur_web/app/static/assets/lib/lightbox"]
-	path = hotspur_web/app/static/assets/lib/lightbox
-	url = https://github.com/lokesh/lightbox2.git

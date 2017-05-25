@@ -116,11 +116,11 @@ class Parser:
         files = glob.glob(self.glob)
         for filename in files:
             if "depends" in self.config:
-                filename = filename[len(self.global_config["lock_dir"]):]
+                filename = filename[len(self.global_config["lock_dir"]):-len(".done")]
             if "stackname_lambda" in self.config:
                 stackname = self.config["stackname_lambda"](filename,self.global_config)
             else:
-                stackname = pyfs.rext(filename, full=True)
+                stackname = pyfs.rext(filename, full=False)
             if stackname in self.database and self.parser_id in self.database[
                     stackname]:
                 continue
@@ -377,11 +377,15 @@ class StackParser(Parser):
                 acquisition_time = dateutil.parser.parse(header['labels'][
                     0].decode().split()[-2] + " " + header['labels'][0].decode(
                     ).split()[-1])
-            except ValueError as e:
+            except (ValueError, IndexError) as e:
                 print("No date in header ... ", end="", flush=True)
-                print(e)
-                acquisition_time = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(filename))
+                try:
+                    acquisition_time = datetime.datetime.strptime("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[:2]),"%b%d_%H.%M.%S")
+                except ValueError:
+                    print("Filename has no date")
+                    print("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[:2]))
+                    acquisition_time = datetime.datetime.fromtimestamp(
+                      os.path.getmtime(filename))
             numframes = int(header['dims'][2])
             dimensions = (int(header['dims'][0]), int(header['dims'][1]))
             dose_per_frame = float(header['mean'])
@@ -411,6 +415,7 @@ def arguments():
     parser.add_argument('--glob', help='glob pattern for MRC images')
     parser.add_argument('--json', help='glob pattern for MRC images')
     parser.add_argument('--config', default="config.py")
+    parser.add_argument('--refresh')
     parser.add_argument(
         '--numfiles',
         default=-1,
@@ -488,6 +493,20 @@ if __name__ == '__main__':
         config["parser"]["StackParser"]["glob"] = args.glob
     if args.json:
         config["parser"]["Database"] = args.json
+    if args.refresh:
+        if "work_dir" in config["parser"]:
+            os.chdir(config["parser"]["work_dir"])
+        else:
+            os.chdir(config["scratch_dir"])
+        with open(config["parser"]["Database"]) as database:
+            database = json.load(database, object_pairs_hook=OrderedDict)
+        for key in database.keys():
+            if args.refresh in database[key]:
+                del database[key][args.refresh]
+        with open(config["parser"]["Database"], 'w') as outfile:
+            json.dump(database, outfile)
+        with gzip.open(config["parser"]["Database"]+".gz", 'wt') as outfile:
+            json.dump(database, outfile)
 
     parse_process = ParserProcess(config)
     parse_process.start()
