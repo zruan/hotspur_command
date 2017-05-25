@@ -197,8 +197,7 @@ def arguments():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-
+def start_processing():
     args = arguments()
     print(args)
     config = {}
@@ -246,3 +245,6 @@ if __name__ == '__main__':
         for process in processes:
             process.join()
         parse_process.join()
+
+if __name__ == '__main__':
+    start_processing()
