@@ -3,7 +3,7 @@ config = {
         # Directory that will be scanned for micrographs
         "collection_dir" : "${curr_dir}/",
         # Glob that will be used to scan for new mrc files
-        "glob" : "*/stack_????.mrc",
+        "glob" : "*/*.mrc",
         # Scratch directo where data processing will be done. Should be an SSD
         "scratch_dir" : "/hotspur/scratch/${user}/${curr_dir_base}/",
         # Archive dir. If configured files will be moved there fore permanent storage

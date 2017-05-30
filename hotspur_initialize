@@ -1,0 +1,163 @@
+#!/eppec/storage/sw/cky-tools/site/bin/python
+import sys, argparse, logging
+import imaging
+import os
+import getpass
+import glob
+from jinja2 import Environment, FileSystemLoader
+
+
+
+def parse_micrograph(filename, default_config):
+    try:
+        header = imaging.formats.FORMATS["mrc"].load_header(filename)
+        dimension = int(header['dims'][0])
+        pixel_size = float(header['lengths'][0]/header['dims'][0])
+        dose_rate = float(header['mean']) / (pixel_size ** 2)
+
+        if dimension < 5000:
+            default_config['mode'] = 'counting'
+            
+        else:
+            default_config['mode'] = 'superres'
+
+        default_config['pixel_size_mc'] = pixel_size
+        default_config['pixel_size_gctf'] = pixel_size
+        default_config['dose_rate'] = dose_rate
+    except IOError:
+        print("Error loading mrc!", sys.exc_info()[0])
+        sys.exit()
+    folder = os.path.dirname(os.path.normpath(filename))
+
+    if(default_config['mode'] == 'counting'):
+        globn=os.path.join(folder,"CountRef*.dm4")
+    else:
+        globn=os.path.join(folder,"SuperRef*.dm4")
+
+    print(globn)
+
+    files = glob.glob(globn)
+
+    if (len(files) > 0):
+        default_config['gainref'] = files[-1]
+
+
+    return 0
+
+
+def copy_gainreference(gainref):
+    os.system("dm2mrc {} ref.mrc".format(gainref))
+
+
+
+def main(args, loglevel):
+    logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+    default_config = {
+          "curr_dir" : os.getcwd(),
+          "curr_dir_base" : os.path.basename(os.path.normpath(os.getcwd())),
+          "user" : getpass.getuser(),
+          "pixel_size_mc" : 1.72,
+          "dose_rate" : 1.0,
+          "pixel_size_gctf" : 1.72,
+          "mc_para" : "",
+          "ac": 0.1,
+          "gctf_para" : "",
+          "mode" : "counting",
+          "phaseplate" : False,
+          "gainref" : ""
+          }
+    if (args.micrograph):
+        parse_micrograph(args.micrograph, default_config)
+
+    if (args.pixelsize):
+        default_config['pixel_size_mc'] = args.pixelsize
+        default_config['pixel_size_gctf'] = args.pixelsize
+    if (args.doserate):
+        default_config['dose_rate'] = args.doserate
+    if (args.pixelsize):
+        default_config['pixelsize'] = args.pixelsize
+    if (args.detectormode):
+        default_config['mode'] = args.detectormode
+    if (args.gainref):
+        default_config['gainref'] = args.gainref
+
+    if (args.phaseplate):
+        default_config['phaseplate'] = True
+        default_config['gctf_para'] += "--phase_shift_L 30 --phase_shift_H 140 --phase_shift_S 5"
+        default_config['ac'] = 0.01
+
+    if (default_config['mode'] == "superres"):
+        default_config['pixel_size_gctf'] = default_config['pixel_size_mc']/2
+        default_config['mc_para'] += "-FtBin 2 -Tile 5 5"
+
+    print(default_config)
+    copy_gainreference(default_config['gainref'])
+
+    templatefolder = os.path.join(os.path.dirname(__file__), "config_templates/")
+    env = Environment(loader = FileSystemLoader(templatefolder))
+    template = env.get_template("config_template.pyt")
+    created_config = template.render(default_config)
+    print(created_config)
+    with open(args.outputfile, "w") as fp:
+        fp.write(created_config)
+
+
+  
+ 
+# Standard boilerplate to call the main() function to begin
+# the program.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser( 
+                                    description = "Generates a config file for the hotspur application",
+                                    epilog = "",
+                                    fromfile_prefix_chars = '@' )
+    # TODO Specify your real parameters here.
+    parser.add_argument(
+                      "outputfile",
+                      help = "Output file",
+                      default = "config.py",
+                      metavar = "OUTPUT")
+    parser.add_argument(
+                      "--micrograph",
+                      help = "Micrograph to read pixelsize, doserate, and gain reference from",
+                      metavar = "ARG")
+    parser.add_argument(
+                      "--gainref",
+                      help = "Gain reference file, will overwrite value parsed from micrograph")
+    parser.add_argument(
+                      "--pixelsize",
+                      help = "Pixel size, will overwrite value parsed from micrograph",
+                      type = float)
+    parser.add_argument(
+                      "--doserate",
+                      help = "Doserate, will overwrite value parsed from micrograph",
+                      type = float)
+    parser.add_argument(
+                      "--detectormode",
+                      help = "Counting or Superresolution",
+                      choices=['counting','superres'])
+    parser.add_argument(
+                      "--phaseplate",
+                      help = "Are you using phase plate",
+                      action='store_true')
+    parser.add_argument(
+                      "--nummc2",
+                      help = "Number of motioncor2 jobs in parallel",
+                      type=int,
+                      default=1,
+                      choices=range(1,5))
+                      
+    parser.add_argument(
+                      "-v",
+                      "--verbose",
+                      help="increase output verbosity",
+                      action="store_true")
+    args = parser.parse_args()
+
+    # Setup logging
+    if args.verbose:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.INFO
+
+    main(args, loglevel)

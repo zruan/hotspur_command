@@ -275,7 +275,7 @@ class MontageParser(Parser):
             }
 
     def analyze_mmm_file(self, base, filename, preview_filename, acquisition_time):
-        i = 1
+        i = 0
         while os.path.isfile(self.global_config["scratch_dir"] + "%s.%03d.png" % (preview_filename, i)):
             mmm_filename = ("%s.%03d.png" % (preview_filename, i))
             self.database[base+"%03d" % (i)] = {}

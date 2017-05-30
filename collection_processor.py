@@ -16,6 +16,8 @@ from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, Stack
 from random import randint
 from time import sleep
 
+config = {}
+processes = []
 
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
@@ -200,8 +202,6 @@ def arguments():
 def start_processing():
     args = arguments()
     print(args)
-    config = {}
-    processes = []
     if args.list:
         file_list = glob.glob(os.path.join(os.path.dirname(
             __file__), "collection_processor/config*.py"))
@@ -222,10 +222,8 @@ def start_processing():
         with open(args.config, 'w') as config_file:
             config_file.write(config_processed)
         sys.exit()
-
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
-
     if not os.path.exists(config["scratch_dir"]):
         os.makedirs(config["scratch_dir"])
     if not os.path.exists(config["lock_dir"]):
