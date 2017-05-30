@@ -88,7 +88,7 @@ def main(args, loglevel):
 
     if (default_config['mode'] == "superres"):
         default_config['pixel_size_gctf'] = default_config['pixel_size_mc']/2
-        default_config['mc_para'] += "-FtBin 2 -Tile 5 5"
+        default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
 
     print(default_config)
     copy_gainreference(default_config['gainref'])
