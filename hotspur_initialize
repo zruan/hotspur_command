@@ -87,7 +87,7 @@ def main(args, loglevel):
         default_config['ac'] = 0.01
 
     if (default_config['mode'] == "superres"):
-        default_config['pixel_size_gctf'] = default_config['pixel_size_mc']/2
+        default_config['pixel_size_gctf'] = default_config['pixel_size_mc']*2
         default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
 
     print(default_config)
