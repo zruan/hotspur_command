@@ -331,6 +331,11 @@ class PickParser(Parser):
     def analyze_file(self, base, filename):
         star_data = pystar2.load(filename)['']
         fields = list(star_data)[0]
+        if "picks" in self.database[base]:
+            self.database[base]["picks"][self.parser_id] = []
+        else:
+            self.database[base]["picks"] = {}
+            self.database[base]["picks"][self.parser_id] = []
         self.database[base][self.parser_id] = []
         index_x = fields.index('rlnCoordinateX')
         index_y = fields.index('rlnCoordinateY')
@@ -338,7 +343,7 @@ class PickParser(Parser):
         index_class = fields.index('rlnClassNumber')
         index_FOM = fields.index('rlnAutopickFigureOfMerit')
         for pick in list(star_data.values())[0]:
-            self.database[base][self.parser_id].append(
+            self.database[base]["picks"][self.parser_id].append(
                     { "x" : pick[index_x],
                       "y" : pick[index_y],
                       "psi" : pick[index_psi],
@@ -346,7 +351,6 @@ class PickParser(Parser):
                       "fom" : pick[index_FOM] } )
 
         
-
 
 
 class StackParser(Parser):
