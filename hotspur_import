@@ -1,0 +1,102 @@
+#!/eppec/storage/sw/cky-tools/site/bin/python
+import sys, argparse, logging
+import imaging
+import os
+import getpass
+import glob
+from jinja2 import Environment, FileSystemLoader
+from collections import defaultdict, OrderedDict
+from collection_parser import ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser
+from collection_processor import CommandProcessor, PreviewProcessor
+import json
+import pystar2
+import gzip
+
+def parse_particle_star(starfile):
+    result = defaultdict(list)
+    star_data = pystar2.load(starfile)['']
+    fields = list(star_data)[0]
+    index_x = fields.index('rlnCoordinateX')
+    index_micrograph = fields.index('rlnMicrographName')
+    index_y = fields.index('rlnCoordinateY')
+    index_psi = fields.index('rlnAnglePsi')
+    index_class = fields.index('rlnClassNumber')
+    index_FOM = fields.index('rlnAutopickFigureOfMerit')
+    for pick in list(star_data.values())[0]:
+        base = pick[index_micrograph][:-len("_mc_DW.mrc")]
+        result[base].append(
+                { "x" : pick[index_x],
+                  "y" : pick[index_y],
+                  "psi" : pick[index_psi],
+                  "cl" : pick[index_class],
+                  "fom" : pick[index_FOM] } )
+    return(result)
+
+
+  
+
+
+
+def main(args, loglevel):
+    logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
+    result = parse_particle_star(args.particles)
+    with open(args.config, 'r') as config_file:
+        exec(config_file.read(), globals())
+    if "work_dir" in config["parser"]:
+        os.chdir(self.config["parser"]["work_dir"])
+    else:
+        os.chdir(config["scratch_dir"])
+    try:
+        with open(config["parser"]["Database"]) as database:
+            database = json.load(database, object_pairs_hook=OrderedDict)
+    except FileNotFoundError:
+        database = OrderedDict()
+    for micrograph in database:
+        if micrograph in result:
+            if "pick" not in database[micrograph]:
+                database[micrograph]["picks"] = {}
+            database[micrograph]["picks"][args.name] = result[micrograph]
+            print("Added {} picks for {}".format(len(result[micrograph]),micrograph))
+    with open(config["parser"]["Database"], 'w') as outfile:
+        json.dump(database, outfile)
+    with gzip.open(config["parser"]["Database"]+".gz", 'wt') as outfile:
+        json.dump(database, outfile)
+
+
+
+ 
+# Standard boilerplate to call the main() function to begin
+# the program.
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser( 
+                                    description = "Generates a config file for the hotspur application",
+                                    epilog = "",
+                                    fromfile_prefix_chars = '@' )
+    # TODO Specify your real parameters here.
+    parser.add_argument(
+                      "--particles",
+                      help = "Particles star file",
+                      metavar = "ARG")
+    parser.add_argument(
+                      "--name",
+                      help = "Name of particle set",
+                      metavar = "ARG")
+    parser.add_argument(
+                      "--config",
+                      help = "Gain reference file, will overwrite value parsed from micrograph",
+                      default = "config.py")
+                      
+    parser.add_argument(
+                      "-v",
+                      "--verbose",
+                      help="increase output verbosity",
+                      action="store_true")
+    args = parser.parse_args()
+
+    # Setup logging
+    if args.verbose:
+        loglevel = logging.DEBUG
+    else:
+        loglevel = logging.INFO
+
+    main(args, loglevel)
