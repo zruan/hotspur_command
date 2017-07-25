@@ -384,10 +384,10 @@ class StackParser(Parser):
             except (ValueError, IndexError) as e:
                 print("No date in header ... ", end="", flush=True)
                 try:
-                    acquisition_time = datetime.datetime.strptime("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[:2]),"%b%d_%H.%M.%S")
+                    acquisition_time = datetime.datetime.strptime("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[-3:-1]),"%b%d_%H.%M.%S")
                 except ValueError:
                     print("Filename has no date")
-                    print("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[:2]))
+                    print("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[-3:-1]))
                     acquisition_time = datetime.datetime.fromtimestamp(
                       os.path.getmtime(filename))
             numframes = int(header['dims'][2])

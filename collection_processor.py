@@ -136,7 +136,12 @@ class CollectionProcessor(Process):
                             "Not processed anything for 600 minutes. %s Exiting."
                             % (self.process_id))
                         break
+                    start = time.time()
                     time.sleep(self.sleep)
+                    end = time.time()
+                    duration = end - start
+                    print("%s slept for %.2f seconds" %
+                          (self.process_id, duration))
                 else:
                     idle = 0
                 wait = True
