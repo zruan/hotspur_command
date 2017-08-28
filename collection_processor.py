@@ -70,6 +70,7 @@ class CollectionProcessor(Process):
             try:
                 file_list = glob.glob(self.watch_glob)
                 wait = True
+                sleep(randint(100,1000)*0.001)
                 for filename in file_list:
                     replace_dict = config.copy()
                     if self.depends:
@@ -93,7 +94,6 @@ class CollectionProcessor(Process):
                     if self.min_age > 0 and file_age_in_seconds(
                             filename) < self.min_age:
                         continue
-                    sleep(randint(100,1000)*0.001)
                     if os.path.isfile(lock_filename) or os.path.isfile(
                             done_filename):
                         continue
