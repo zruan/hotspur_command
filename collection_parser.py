@@ -164,7 +164,7 @@ class GctfParser(Parser):
             usecols=(0, 1, 2, 3, 4))
         value["EPA"] = {}
         value["EPA"]["Resolution"] = list(data['f0'])
-        value["EPA"]["Sim. CTF"] = list(data['f1'])
+        value["EPA"]["Sim. CTF"] = list(np.nan_to_num(data['f1']))
         value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data['f2']))
         value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data['f3']))
 
@@ -475,7 +475,7 @@ class ParserProcess(Process):
                     if parsed > 0:
                         
                         with open(config["Database"], 'w') as outfile:
-                            json.dump(database, outfile)
+                            json.dump(database, outfile, allow_nan=False)
                         with gzip.open(config["Database"]+".gz", 'wt') as outfile:
                             json.dump(database, outfile)
                         seconds = 0
