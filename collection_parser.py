@@ -20,6 +20,7 @@ import time
 import signal
 import gzip
 import pystar2
+import traceback
 
 class FloatEncoder(json.JSONEncoder):
     def __init__(self, nan_str="null", **kwargs):
@@ -127,11 +128,17 @@ class Parser:
             if stackname not in self.database:
                 self.database[stackname] = {}
             print("%s: Parsing %s ..." % (self.parser_id, stackname))
-            self.parse_process(stackname)
+            try:
+                self.parse_process(stackname)
+            except KeyboardInterrupt:
+                raise KeyboardInterrupt
+            except:
+                with open("parse_error.log", 'a') as fp:
+                    traceback.print_exc(file=fp)
             num_files += 1
             print("Done!")
             if ("num_files_max" in self.config and num_files >=
-                    self.config["num_files_max"]) or num_files > 10:
+                    self.config["num_files_max"]) or num_files > 50:
                 break
         return num_files
 
@@ -370,7 +377,9 @@ class StackParser(Parser):
             self.analyze_file(stackname, filename)
             print(" Done!")
         except IOError:
+            self.database[stackname][self.parser_id] = {}
             print(" Unsuccesful!", sys.exc_info())
+            raise
 
     def analyze_file(self, base, filename):
 
@@ -412,6 +421,7 @@ class StackParser(Parser):
             }
         except AttributeError as e:
             print(e)
+            raise
         except IOError:
             print("Error loading mrc!", sys.exc_info()[0])
 

@@ -7,6 +7,7 @@ import time
 from random import randint
 import stat
 import string
+import traceback
 
 def file_age_in_seconds(pathname):
     return time.time() - os.stat(pathname)[stat.ST_MTIME]
@@ -48,6 +49,7 @@ class CollectionProcessor(Process):
         self.ensure_dirs = ensure_dirs
         self.done_lambda = done_lambda
         self.lock_lambda = lock_lambda
+        self.error_lambda = error_lambda
         if work_dir is None:
             self.work_dir = self.config["scratch_dir"]
         else:
@@ -139,8 +141,6 @@ class CollectionProcessor(Process):
                     time.sleep(self.sleep)
                     end = time.time()
                     duration = end - start
-                else:
-                    idle = 0
                 wait = True
             except KeyboardInterrupt:
                 print("%s received Ctrl-C" % (self.process_id))
