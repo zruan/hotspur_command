@@ -4,6 +4,7 @@ import numpy as np
 import pyfs
 from collection_processor_base import CollectionProcessor
 import string
+import json
 
 def log(image, size):
     # this is the sigma that gives zero-crossings at given radius
@@ -44,6 +45,7 @@ def detect(image, size, mint=None, maxt=None, debug=None, meanmax=None):
             for idx in range(len(counts)):
                 print('  % 13.2f -> % 13.2f: %d' % (bins[idx], bins[idx+1], counts[idx]))
             save_peaks(reduced_image, log_image, peaks, reduced_size, debug)
+        peaks = [(p, (1+v)*1000) for p, v in peaks]
         return zoom_peaks(peaks, [rzoom, czoom])
     return []
 
@@ -76,6 +78,20 @@ _rlnAutopickFigureOfMerit #5
             cls = 1
             dst.write('%.6f %.6f %.6f %d %.6f\n' % (keypoint[0][1], keypoint[0][0], psi, cls, keypoint[1]))
 
+class PrettyFloat(float):
+    def __repr__(self):
+        return '%i' % int(self+0.5)
+
+def pretty_floats(obj):
+    if isinstance(obj, float):
+        return str(int(obj+0.5))
+    elif isinstance(obj, np.float32):
+        return str(int(obj+0.5))
+    elif isinstance(obj, dict):
+        return dict((k, pretty_floats(v)) for k, v in obj.items())
+    elif isinstance(obj, (list, tuple)):
+        return list(map(pretty_floats, obj))             
+    return obj
 
 class IdogpickerProcessor(CollectionProcessor):
 
@@ -84,8 +100,8 @@ class IdogpickerProcessor(CollectionProcessor):
                  config,
                  filename,
                  suffix="",
-                 size_range=[10,900],
-                 size_steps=10,
+                 size_range=[60,700],
+                 size_steps=20,
                  **kwargs):
         CollectionProcessor.__init__(self, process_id, config, **kwargs)
         self.suffix = suffix
@@ -104,13 +120,17 @@ class IdogpickerProcessor(CollectionProcessor):
         maxt = None
         debug = None
         meanmax=None
-        sizes = [self.size_range[0] + i * ((self.size_range[1] - self.size_range[0])/(self.size_steps-1)) for i in np.arange(self.size_steps)]
+        sizes = np.logspace(np.log10(self.size_range[0]), np.log10(self.size_range[1]) ,num=self.size_steps)
+        idogpicker_data = {}
         for size in sizes:
             keys = list(detect(image, size, mint, maxt, debug, meanmax))
             star = pyfs.rext(mic, full=False) + '_%s.star' % (size)
-            if len(keys) > 5:
-                save_star(keys, star)
-                print('found %d particles in image %s -> %s' % (len(keys), mic, star))
+            print("%i -> %i" % (size, len(keys)))
+            idogpicker_data[int(size+0.5)] = keys
+        idog_filename = pyfs.rext(mic) +".idogpicker.json"
+        with open(idog_filename,'w') as fp:
+            json.dump(pretty_floats(idogpicker_data),fp)
+
 
 
     def run_loop(self, config, replace_dict):

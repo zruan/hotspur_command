@@ -142,6 +142,12 @@ class Parser:
                 break
         return num_files
 
+class IdogpickerParser(Parser):
+    def parse_process(self, stackname):
+        value = self.database[stackname]
+        value[self.parser_id] = {}
+        value[self.parser_id]["idogpicker_filename"] = string.Template(
+            self.config["filename"]).substitute(base=stackname)
 
 class GctfParser(Parser):
     def parse_process(self, stackname):
