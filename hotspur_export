@@ -44,28 +44,45 @@ def check_directory(args):
     mydict = SqliteDict("annotation.db")
     return((data,mydict))
 
+def export_particles(data,annotation,micrographs_list,name):
+    if "idogpicker_global" not in annotation:
+        logging.error("Not iDoGPicker defaults found")
+    size = annotation["idogpicker_global"]["size"]
+    ranges = annotation["idogpicker_global"]["threshold"]
+    for micrograph in micrographs_list:
+        if "idogpicker" not in data[micrograph] or not os.path.isfile(data[micrograph]["idogpicker"]["idogpicker_filename"]):
+            continue
+        with open(data[micrograph]["idogpicker"]["idogpicker_filename"],"r") as fp:
+            idogpicker_data = json.load(fp)
+        chosen_picks = []
+        for pick in idogpicker_data[size]:
+            if float(pick[1]) > ranges[0] and float(pick[1]) < ranges[1]:
+                chosen_picks.append(((float(pick[0][0]),float(pick[0][1])),float(pick[1])))
+        save_star(chosen_picks,micrograph+"_mc_DW_picks"+name+".star")
+
+
 def export_micrographs(data,annotation,micrograph_set,name):
-    logging.debug(list(data.values())[0]["Gctf"])
-    list_micrographs = [ (k,v["Gctf"]["ctf_star_filename"]) for k,v in data.items() if "Gctf" in v ]
+    list_micrographs = [ (k,v["Gctf"]["ctf_star_filename"]) for k,v in data.items() if "Gctf" in v and os.path.isfile(v["Gctf"]["ctf_star_filename"]) ]
     list_export = []
     logging.debug(list_micrographs)
-    star_data = 0
+    star_data = []
     star_data_list=[]
     if micrograph_set == "all":
         list_export = list_micrographs
     elif micrograph_set == "good":
         for (key, v) in list_micrographs:
-            if "tag" in mydict[key] and mydict[key]["tag"] == "good":
+            if key in annotation and "tag" in annotation[key] and annotation[key]["tag"] == "good":
                 list_export.append((key, v))
     elif micrograph_set == "notbad":
         for (key, v) in list_micrographs:
-            if "tag" not in mydict[key] or mydict[key]["tag"] != "bad":
+            if key not in annotation or "tag" not in annotation[key] or annotation[key]["tag"] != "bad":
                 list_export.append((key, v))
 
 
     for (key, starfile) in list_export:
-        if star_data == 0:
+        if not star_data:
             star_data = load(starfile)
+            
             star_data_list.append(star_data[0])
         else:
             star_data_list.append(load(starfile)[0])
@@ -73,13 +90,16 @@ def export_micrographs(data,annotation,micrograph_set,name):
     filename = "microgaphs_"+name+".star"
     logging.info("Exporting %i microgaphs as %s" % (len(list_export), filename))
     save(star_data_list, star_data, filename)
+    return(([x[0] for x in list_export], filename))
 # Gather our code in a main() function
 def main(args, loglevel):
     logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
   
   # TODO Replace this with your actual code.
     (data, annotation) = check_directory(args)
-    export_micrographs(data,annotation,args.set,args.name)
+    (micrographs_list, micrographs_starfile) = export_micrographs(data,annotation,args.set,args.name)
+    if args.type == "particles":
+        export_particles(data,annotation,micrographs_list,args.name)
 
  
 # Standard boilerplate to call the main() function to begin
