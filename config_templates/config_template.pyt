@@ -23,7 +23,7 @@ config = {
 		"depends" : "gctf",
                 "ctf_image" : "${base}_mc_DW.ctf",
                 "ctf_image_preview" : "${base}_mc_DW_ctf.preview.png",
-                "ctf_star" : "${base}_mwc_DW_gctf.star",
+                "ctf_star" : "${base}_mc_DW_gctf.star",
                 "ctf_epa_log" : "${base}_mc_DW_EPA.log",
                 "ctf_log" : "${base}_mc_DW_gctf.log"
                 },
