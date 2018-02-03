@@ -104,6 +104,7 @@ class CollectionProcessor(Process):
                         with open(lock_filename, 'a'):
                             os.utime(lock_filename, None)
                         wait = False
+                        idle = 0
                         print("Processing %s on %s" %
                               (self.process_id, filename))
                         start = time.time()

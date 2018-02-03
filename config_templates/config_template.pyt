@@ -36,7 +36,8 @@ config = {
                "type": NavigatorParser,
                "glob" : "${collection_dir}*.nav",
                "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["collection_dir"]):],full=True),
-               "navigatorfile" : "${collection_dir}${base}.nav"
+               "navigatorfile" : "${collection_dir}${base}.nav",
+	       "run_once" : True
                },
            "idogpicker" : {
                "type": IdogpickerParser,

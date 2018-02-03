@@ -122,7 +122,7 @@ class Parser:
                 stackname = self.config["stackname_lambda"](filename,self.global_config)
             else:
                 stackname = pyfs.rext(filename, full=False)
-            if stackname in self.database and self.parser_id in self.database[
+            if  ("run_once" not in self.config or self.config["run_once"]) and stackname in self.database and self.parser_id in self.database[
                     stackname]:
                 continue
             if stackname not in self.database:
