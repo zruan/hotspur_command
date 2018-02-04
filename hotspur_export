@@ -56,7 +56,7 @@ def export_particles(data,annotation,micrographs_list,name):
             idogpicker_data = json.load(fp)
         chosen_picks = []
         for pick in idogpicker_data[size]:
-            if float(pick[1]) > ranges[0] and float(pick[1]) < ranges[1]:
+            if float(pick[1]) > ranges['low'] and float(pick[1]) < ranges['high']:
                 chosen_picks.append(((float(pick[0][0]),float(pick[0][1])),float(pick[1])))
         save_star(chosen_picks,micrograph+"_mc_DW_picks"+name+".star")
 
