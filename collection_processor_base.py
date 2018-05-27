@@ -5,6 +5,7 @@ import glob
 from time import sleep
 import time
 from random import randint
+from random import shuffle
 import stat
 import string
 import traceback
@@ -58,9 +59,11 @@ class CollectionProcessor(Process):
     def run(self):
         os.chdir(self.work_dir)
         idle = 0
+        sleep(randint(1000,9000)*0.001)
         while True:
             try:
                 file_list = glob.glob(self.watch_glob)
+                shuffle(file_list)
                 wait = True
                 sleep(randint(100,1000)*0.001)
                 for filename in file_list:
