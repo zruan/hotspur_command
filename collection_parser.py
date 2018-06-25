@@ -154,15 +154,15 @@ class GctfParser(Parser):
         value = self.database[stackname]
         value[self.parser_id] = {}
         value[self.parser_id]["ctf_image_filename"] = string.Template(
-            self.config["ctf_image"]).substitute(base=stackname)
+            self.config["ctf_image"]).substitute(base=stackname,collection_dir=self.global_config["collection_dir"])
         value[self.parser_id]["ctf_preview_image_filename"] = string.Template(
-            self.config["ctf_image_preview"]).substitute(base=stackname)
+            self.config["ctf_image_preview"]).substitute(base=stackname,collection_dir=self.global_config["collection_dir"])
         value[self.parser_id]["ctf_star_filename"] = string.Template(
-            self.config["ctf_star"]).substitute(base=stackname)
+            self.config["ctf_star"]).substitute(base=stackname,collection_dir=self.global_config["collection_dir"])
         value[self.parser_id]["ctf_epa_log_filename"] = string.Template(
-            self.config["ctf_epa_log"]).substitute(base=stackname)
+            self.config["ctf_epa_log"]).substitute(base=stackname,collection_dir=self.global_config["collection_dir"])
         value[self.parser_id]["ctf_log_filename"] = string.Template(
-            self.config["ctf_log"]).substitute(base=stackname)
+            self.config["ctf_log"]).substitute(base=stackname,collection_dir=self.global_config["collection_dir"])
         self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"],
                            value[self.parser_id])
         self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
