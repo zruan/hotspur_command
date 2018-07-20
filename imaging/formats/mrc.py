@@ -6,7 +6,7 @@ from imaging import filters
 
 np.seterr(all='raise')
 
-NAMES = ["mrc", "rec", "ali", "mrcs", "ctf"]
+NAMES = ["mrc", "rec", "ali", "mrcs", "ctf", "tmp"]
 
 MRCModes = {
     0: np.dtype("u1"),

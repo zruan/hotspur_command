@@ -121,6 +121,19 @@ if __name__ == '__main__':
                           choices = ["micrographs","particles"],
                           default = "micrographs"
                           )
+
+    parser.add_argument(
+                          "--particles",
+                          help = "Which particleset to export",
+                          choices = ["idogpicker","manual"],
+                          default = "idogpicker"
+                          )
+    parser.add_argument(
+                          "--location",
+                          help = "Where should the exported particles be saved",
+                          choices = ["here","falstaff-scratch1","falstaff-scratch2","lustre"],
+                          default = "idogpicker"
+                          )
     parser.add_argument(
                           "--name",
                           help = "Name for the exported data",
