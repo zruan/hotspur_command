@@ -69,6 +69,7 @@ def export_particles(data,annotation,micrographs_list,name,location):
             if float(pick[1]) > ranges['low'] and float(pick[1]) < ranges['high']:
                 chosen_picks.append(((float(pick[0][0]),float(pick[0][1])),float(pick[1])))
         filename = os.path.join(location,micrograph+"_mc_DW_picks"+name+".star")
+        os.makedirs(os.path.split(filename)[0],exist_ok=True)
         save_star(chosen_picks,filename)
 
 
