@@ -7,6 +7,7 @@ import sys, argparse, logging, os
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 def load(path):
     return list(pystar2.load(path)[''].values())[0]
@@ -117,6 +118,8 @@ def export_micrographs(data,annotation,micrograph_set,name,location):
     return(([x[0] for x in list_export], filename))
 
 def extract_particles(micrographs_starfile,location,radius,name,bin_list,pad):
+    subprocess.run("module load relion", shell=True)
+    os.chdir(location)
     for binning in bin_list:
         size = radius * 2 + pad
         bin_size = int(size/binning)
@@ -124,6 +127,7 @@ def extract_particles(micrographs_starfile,location,radius,name,bin_list,pad):
             micrographs_starfile, name, name, binning, size, radius, bin_size
         )
         logging.info("Running following command for extraction: %s"%(command))
+        subprocess.run(command, shell=True)
 # Gather our code in a main() function
 def main(args, loglevel):
     logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
