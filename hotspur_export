@@ -123,6 +123,8 @@ def extract_particles(micrographs_starfile,location,radius,name,bin_list,pad):
     for binning in bin_list:
         size = radius * 2 + pad
         bin_size = int(size/binning)
+        if (bin_size % 2) == 1:
+            bin_size += 1
         command = "relion_preprocess --i %s --coord_dir ./ --coord_suffix _picks_%s.star --part_star particles_%s_bin%i.star --extract  --extract_size %i --norm --bg_radius %i --invert_contrast --scale %i" % (
             micrographs_starfile, name, name, binning, size, radius, bin_size
         )
