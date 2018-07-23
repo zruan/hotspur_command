@@ -6,6 +6,7 @@ import numpy as np
 import sys, argparse, logging, os
 import json
 from pathlib import Path
+import shutil
 
 def load(path):
     return list(pystar2.load(path)[''].values())[0]
@@ -68,10 +69,21 @@ def export_particles(data,annotation,micrographs_list,name,location):
         for pick in idogpicker_data[size]:
             if float(pick[1]) > ranges['low'] and float(pick[1]) < ranges['high']:
                 chosen_picks.append(((float(pick[0][0]),float(pick[0][1])),float(pick[1])))
-        filename = os.path.join(location,micrograph+"_mc_DW_picks"+name+".star")
+        filename = os.path.join(location,micrograph+"_mc_DW_picks_"+name+".star")
         os.makedirs(os.path.split(filename)[0],exist_ok=True)
+        logging.debug("Exporting %i picks to %s" % (len(chosen_picks),filename))
         save_star(chosen_picks,filename)
 
+def copy_micrographs(micrographs_list,location):
+    copied = 0 
+    for micrograph in micrographs_list:
+        dest_path = os.path.join(location,micrograph)
+        os.makedirs(os.path.split(dest_path)[0],exist_ok=True)
+        if not os.path.exists(dest_path):
+            logging.debug("Copying %s to %s" % (micrograph,dest_path))
+            shutil.copy2(micrograph,dest_path)
+            copied += 1
+    logging.info("Copied %i micrographs" % (copied))
 
 def export_micrographs(data,annotation,micrograph_set,name,location):
     list_micrographs = [ (k,v["Gctf"]["ctf_star_filename"]) for k,v in data.items() if "Gctf" in v and os.path.isfile(v["Gctf"]["ctf_star_filename"]) ]
@@ -113,6 +125,9 @@ def main(args, loglevel):
     (micrographs_list, micrographs_starfile) = export_micrographs(data,annotation,args.set,args.name,final_location)
     if args.type == "particles":
         export_particles(data,annotation,micrographs_list,args.name,final_location)
+    
+    if not args.nocopy:
+        copy_micrographs(micrographs_list, final_location)
 
  
 # Standard boilerplate to call the main() function to begin
@@ -151,6 +166,10 @@ if __name__ == '__main__':
                           help = "Name for the exported data",
                           required=True
                           )
+    parser.add_argument(
+                          "--nocopy",
+                          help = "Do not copy motioncorrected micrographs to export location",
+                          action="store_true")
     parser.add_argument(
                           "-v",
                           "--verbose",
