@@ -5,6 +5,7 @@ import numpy as np
 # import modules used here -- sys is a very standard one
 import sys, argparse, logging, os
 import json
+from pathlib import Path
 
 def load(path):
     return list(pystar2.load(path)[''].values())[0]
@@ -44,7 +45,16 @@ def check_directory(args):
     mydict = SqliteDict("annotation.db")
     return((data,mydict))
 
-def export_particles(data,annotation,micrographs_list,name):
+def ensure_dir(curr_dir,dest_dir):
+    user = Path(curr_dir).parts[-2]
+    dataset = Path(curr_dir).parts[-1]
+    final_directory = os.path.join(dest_dir,user,dataset)
+
+    os.makedirs(final_directory,exist_ok=True)
+
+    return(final_directory)
+
+def export_particles(data,annotation,micrographs_list,name,location):
     if "idogpicker_global" not in annotation:
         logging.error("Not iDoGPicker defaults found")
     size = annotation["idogpicker_global"]["size"]
@@ -58,10 +68,11 @@ def export_particles(data,annotation,micrographs_list,name):
         for pick in idogpicker_data[size]:
             if float(pick[1]) > ranges['low'] and float(pick[1]) < ranges['high']:
                 chosen_picks.append(((float(pick[0][0]),float(pick[0][1])),float(pick[1])))
-        save_star(chosen_picks,micrograph+"_mc_DW_picks"+name+".star")
+        filename = os.path.join(location,micrograph+"_mc_DW_picks"+name+".star")
+        save_star(chosen_picks,filename)
 
 
-def export_micrographs(data,annotation,micrograph_set,name):
+def export_micrographs(data,annotation,micrograph_set,name,location):
     list_micrographs = [ (k,v["Gctf"]["ctf_star_filename"]) for k,v in data.items() if "Gctf" in v and os.path.isfile(v["Gctf"]["ctf_star_filename"]) ]
     list_export = []
     logging.debug(list_micrographs)
@@ -87,7 +98,7 @@ def export_micrographs(data,annotation,micrograph_set,name):
         else:
             star_data_list.append(load(starfile)[0])
 
-    filename = "microgaphs_"+name+".star"
+    filename = os.path.join(location,"micrographs_"+name+".star")
     logging.info("Exporting %i microgaphs as %s" % (len(list_export), filename))
     save(star_data_list, star_data, filename)
     return(([x[0] for x in list_export], filename))
@@ -97,9 +108,10 @@ def main(args, loglevel):
   
   # TODO Replace this with your actual code.
     (data, annotation) = check_directory(args)
-    (micrographs_list, micrographs_starfile) = export_micrographs(data,annotation,args.set,args.name)
+    final_location = ensure_dir(os.getcwd(),args.location)
+    (micrographs_list, micrographs_starfile) = export_micrographs(data,annotation,args.set,args.name,final_location)
     if args.type == "particles":
-        export_particles(data,annotation,micrographs_list,args.name)
+        export_particles(data,annotation,micrographs_list,args.name,final_location)
 
  
 # Standard boilerplate to call the main() function to begin
@@ -130,9 +142,8 @@ if __name__ == '__main__':
                           )
     parser.add_argument(
                           "--location",
-                          help = "Where should the exported particles be saved",
-                          choices = ["here","falstaff-scratch1","falstaff-scratch2","lustre"],
-                          default = "idogpicker"
+                          help = "Where should the exported files be saved",
+                          default = "/goliath/processing/Gouaux/"
                           )
     parser.add_argument(
                           "--name",
@@ -153,4 +164,3 @@ if __name__ == '__main__':
         loglevel = logging.INFO
       
     main(args, loglevel)
-
