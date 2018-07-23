@@ -115,6 +115,15 @@ def export_micrographs(data,annotation,micrograph_set,name,location):
     logging.info("Exporting %i microgaphs as %s" % (len(list_export), filename))
     save(star_data_list, star_data, filename)
     return(([x[0] for x in list_export], filename))
+
+def extract_particles(micrographs_starfile,location,radius,name,bin_list,pad):
+    for binning in bin_list:
+        size = radius * 2 + pad
+        bin_size = int(size/binning)
+        command = "relion_preprocess --i %s --coord_dir ./ --coord_suffix _picks_%s.star --part_star particles_%s_bin%i.star --extract  --extract_size %i --norm --bg_radius %i --invert_contrast --scale %i" % (
+            micrographs_starfile, name, name, binning, size, radius, bin_size
+        )
+        logging.info("Running following command for extraction: %s"%(command))
 # Gather our code in a main() function
 def main(args, loglevel):
     logging.basicConfig(format="%(levelname)s: %(message)s", level=loglevel)
@@ -128,6 +137,13 @@ def main(args, loglevel):
     
     if not args.nocopy:
         copy_micrographs(micrographs_list, final_location)
+
+    if args.extract:
+        if not args.type == "particles":
+            logging.error("Can't extract particles without export picks")
+        else:
+            extract_particles(micrographs_starfile,final_location,int(annotation["idogpicker_global"]["size"]/2),args.name,args.bin,args.padparticle)
+
 
  
 # Standard boilerplate to call the main() function to begin
@@ -190,7 +206,7 @@ if __name__ == '__main__':
                           "--bin",
                           help= "Which bin levels to use for extraction",
                           type=int,
-                          nargs = '?',
+                          nargs = '*',
                           default = [1,4]
     )
     
