@@ -77,6 +77,7 @@ def export_particles(data,annotation,micrographs_list,name,location):
 def copy_micrographs(micrographs_list,location):
     copied = 0 
     for micrograph in micrographs_list:
+        micrograph += "_mc_DW.mrc"
         dest_path = os.path.join(location,micrograph)
         os.makedirs(os.path.split(dest_path)[0],exist_ok=True)
         if not os.path.exists(dest_path):
@@ -88,7 +89,6 @@ def copy_micrographs(micrographs_list,location):
 def export_micrographs(data,annotation,micrograph_set,name,location):
     list_micrographs = [ (k,v["Gctf"]["ctf_star_filename"]) for k,v in data.items() if "Gctf" in v and os.path.isfile(v["Gctf"]["ctf_star_filename"]) ]
     list_export = []
-    logging.debug(list_micrographs)
     star_data = []
     star_data_list=[]
     if micrograph_set == "all":
