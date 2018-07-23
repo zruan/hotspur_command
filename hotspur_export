@@ -142,7 +142,7 @@ def main(args, loglevel):
         if not args.type == "particles":
             logging.error("Can't extract particles without export picks")
         else:
-            extract_particles(micrographs_starfile,final_location,int(annotation["idogpicker_global"]["size"]/2),args.name,args.bin,args.padparticle)
+            extract_particles(micrographs_starfile,final_location,int(int(annotation["idogpicker_global"]["size"])/2),args.name,args.bin,args.padparticle)
 
 
  
