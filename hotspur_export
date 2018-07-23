@@ -134,7 +134,8 @@ def main(args, loglevel):
 # the program.
 if __name__ == '__main__':
     parser = argparse.ArgumentParser( 
-                                        description = "This tool exports micrographs or particles from hotspur. Use in /hotspur/scratch/<user>/<dataset>"
+                                        description = "This tool exports micrographs or particles from hotspur. Use in /hotspur/scratch/<user>/<dataset>",
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter
                                          )
       # TODO Specify your real parameters here.
     parser.add_argument(
@@ -175,6 +176,24 @@ if __name__ == '__main__':
                           "--verbose",
                           help="increase output verbosity",
                           action="store_true")
+    parser.add_argument(
+                          "--extract",
+                          help = "Extract particles accroding to exported picks",
+                          action="store_true")
+    parser.add_argument(
+                          "--padparticle",
+                          help = "How many pixels to add to pick radius for extraction",
+                          type=int,
+                          default=50
+    )
+    parser.add_argument(
+                          "--bin",
+                          help= "Which bin levels to use for extraction",
+                          type=int,
+                          nargs = '?',
+                          default = [1,4]
+    )
+    
     args = parser.parse_args()
       
       # Setup logging
