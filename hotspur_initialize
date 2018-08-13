@@ -78,6 +78,8 @@ def main(args, loglevel):
         default_config['pixelsize'] = args.pixelsize
     if (args.detectormode):
         default_config['mode'] = args.detectormode
+    if (args.voltage):
+        default_config['voltage'] = args.voltage
     if (args.gainref):
         default_config['gainref'] = args.gainref
 
@@ -136,6 +138,11 @@ if __name__ == '__main__':
                       "--detectormode",
                       help = "Counting or Superresolution",
                       choices=['counting','superres'])
+    parser.add_argument(
+                      "--voltage",
+                      help = "What is the voltage of the microscope",
+                      choices=['200','300'],
+                      default = '300')
     parser.add_argument(
                       "--phaseplate",
                       help = "Are you using phase plate",
