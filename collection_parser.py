@@ -21,6 +21,8 @@ import signal
 import gzip
 import pystar2
 import traceback
+import couchdb
+
 
 class FloatEncoder(json.JSONEncoder):
     def __init__(self, nan_str="null", **kwargs):
@@ -96,11 +98,12 @@ class DelayedKeyboardInterrupt(object):
 
 
 class Parser:
-    def __init__(self, parser_id, database, config, global_config):
+    def __init__(self, parser_id, database, config, global_config,db):
         self.parser_id = parser_id
         self.database = database
         self.config = config
         self.global_config = global_config
+        self.db = db
         if "glob" in config:
             self.glob = string.Template(config["glob"]).substitute(global_config)
         elif "depends" in config:
@@ -138,7 +141,7 @@ class Parser:
             num_files += 1
             print("Done!")
             if ("num_files_max" in self.config and num_files >=
-                    self.config["num_files_max"]) or num_files > 50:
+                    self.config["num_files_max"]) or num_files > 500:
                 break
         return num_files
 
@@ -148,6 +151,15 @@ class IdogpickerParser(Parser):
         value[self.parser_id] = {}
         value[self.parser_id]["idogpicker_filename"] = string.Template(
             self.config["filename"]).substitute(base=stackname)
+        doc = {}
+        doc['_id'] = key+"_particles_hotspurdefault"
+        doc['micrograph'] = key
+        doc['type'] = "particles"
+        doc['program'] = "idogpicker"
+
+        doc['idogpicker_file'] = string.Template(
+            self.config["filename"]).substitute(base=stackname)
+        self.db.save(doc)
 
 class GctfParser(Parser):
     def parse_process(self, stackname):
@@ -167,6 +179,39 @@ class GctfParser(Parser):
                            value[self.parser_id])
         self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
+        doc = {}
+        doc['_id'] = key+"_ctf_hotspurdefault"
+        doc['micrograph'] = key
+        doc['type'] = "ctf"
+        doc['program'] = "Gctf 1.06"
+
+        doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
+        doc['defocus_u'] = value[self.parser_id]['Defocus U']
+        doc['defocus_v'] = value[self.parser_id]['Defocus V']
+        #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
+        #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
+        #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
+        #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
+        doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
+        doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
+        doc['phase_shift'] = value[self.parser_id]['Phase shift']
+        doc['gctf_validation_scores'] = value[self.parser_id]['Validation scores']
+        doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
+        doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
+        doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
+        doc['file_ctf_star'] = value[self.parser_id]['ctf_star_filename']
+        doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
+        doc['file_ctf_curve'] = stackname + "_ctfcurve.json"
+        with open(cdoc['file_ctf_curve'], 'w') as outfile:
+            json.dump({
+                'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
+                'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
+                'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
+                'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
+            }, outfile, allow_nan=False)
+        
+        self.db.save(doc)    
+        
 
     def parse_EPA_log(self, filename, value):
         """Parses the EPA log of Gctf to provide radial average of CTF"""
@@ -216,6 +261,29 @@ class MotionCor2Parser(Parser):
             self.config["preview"]).substitute(base=stackname)
         self.parse_log(stackname, value[self.parser_id]["log_filename"])
         self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
+
+        doc = {}
+        doc['_id'] = key+"_motioncorrection_datajsonimport"
+        doc['micrograph'] = key
+        doc['type'] = "motioncorrection"
+        doc['program'] = "motioncor2 1.10"
+
+        doc['dimensions'] = value[self.parser_id]['dimensions']
+        doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
+        doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
+        doc['file_log'] = value[self.parser_id]['log_filename']
+        doc['pixel_size'] = value[self.parser_id]['pixel_size']
+        doc['file_preview'] = value[self.parser_id]['preview_filename']
+        #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
+        doc['initial_shift'] = math.sqrt(value[self.parser_id]['x_shifts'][0]**2 + value[self.parser_id]['y_shifts'][0]**2)
+        total = 0
+        for i,a in enumerate(value[self.parser_id]['x_shifts']):
+            total += math.sqrt(a**2 + value[self.parser_id]['y_shifts'][i]**2)
+        doc['total_shift'] = total
+
+
+
+        self.db.save(doc)
 
     def parse_log(self, base, filename):
         try:
@@ -425,6 +493,18 @@ class StackParser(Parser):
                 "dimensions": dimensions,
                 "dose_per_pix_frame": dose_per_frame
             }
+            doc = {}
+            doc['_id'] = key+"_movie"
+            doc['micrograph'] = key
+            doc['type'] = "movie"
+
+            doc['acquisition_time'] = self.database[base][self.parser_id]['acquisition_time']
+            doc['dimensions'] = self.database[base][self.parser_id]['dimensions']
+            doc['number_frames'] = self.database[base][self.parser_id]['numframes']
+            doc['pixel_size'] = 0
+            doc['dose_pixel_frame'] = self.database[base][self.parser_id]['dose_per_pix_frame']
+            doc['file'] = self.database[base][self.parser_id]['filename']
+            db.save(doc)
         except AttributeError as e:
             print(e)
             raise
@@ -476,11 +556,18 @@ class ParserProcess(Process):
                 database = json.load(database, object_pairs_hook=OrderedDict)
         except FileNotFoundError:
             database = OrderedDict()
+
+            couch = couchdb.Server('http://elferich:particles@localhost:5984/')
+
+            user = os.path.split(self.config["scratch_dir"])[-2]
+            dataset = os.path.split(self.config["scratch_dir"])[-1]
+            db = couch.create(user+"_"+dataset)
+
         parsers = []
         for (key, value) in config.items():
             if type(value) is dict:
                 parsers.append(value["type"](key, database, value,
-                                             self.config))
+                                             self.config,db))
 
         while True:
             try:
