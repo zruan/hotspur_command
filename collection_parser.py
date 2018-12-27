@@ -218,7 +218,7 @@ class CtffindParser(Parser):
 
         self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"],
                            value[self.parser_id])
-        self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
+        self.parse_ctffind_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
 
     def parse_EPA_log(self, filename, value):
@@ -242,6 +242,25 @@ class CtffindParser(Parser):
         value["EPA"]["Sim. CTF"] = list(np.nan_to_num(data[3]))
         value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data[2]))
         value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data[5]))
+
+    def parse_ctffind_log(self, filename, value):
+        # ctffind output is diagnostic_output.txt
+        # the last line has the non-input data in it, space-delimited
+        # values:
+        # 0: micrograph number; 1: defocus 1 (A); 2: defocus 2 (A); 3: astig azimuth;
+        # 4: additional phase shift (radians); 5: cross correlation;
+        # 6: spacing (in A) up to which CTF fit
+        with open(filename) as f:
+            lines = f.readlines()
+        ctf_params = lines[5].split(' ')
+        value["Defocus U"] = (float(ctf_params[1])/10000)
+        value["Defocus V"] = (float(ctf_params[2])/10000)
+        value["Astig angle"] = ctf_params[3]
+        value["Phase shift"] = ctf_params[4]
+        value["CCC"] = ctf_params[5]
+        value["Estimated resolution"] = ctf_params[6]
+        value["Estimated b-factor"] = 0
+
 
 class MotionCor2Parser(Parser):
     def parse_process(self, stackname):
