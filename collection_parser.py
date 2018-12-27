@@ -209,8 +209,6 @@ class CtffindParser(Parser):
             self.config["ctf_image"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
         value[self.parser_id]["ctf_preview_image_filename"] = string.Template(
             self.config["ctf_image_preview"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
-        value[self.parser_id]["ctf_star_filename"] = string.Template(
-            self.config["ctf_star"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
         value[self.parser_id]["ctf_epa_log_filename"] = string.Template(
             self.config["ctf_epa_log"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
         value[self.parser_id]["ctf_log_filename"] = string.Template(
