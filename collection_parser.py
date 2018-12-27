@@ -201,6 +201,30 @@ class GctfParser(Parser):
             lines[a].split()[-1] for a in [-2, -3, -4, -5]
         ]
 
+class CtffindParser(Parser):
+    def parse_process(self, stackname):
+        value = self.database[stackname]
+        value[self.parser_id] = {}
+        value[self.parser_id]["ctf_image_filename"] = string.Template(
+            self.config["ctf_image"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_preview_image_filename"] = string.Template(
+            self.config["ctf_image_preview"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_star_filename"] = string.Template(
+            self.config["ctf_star"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_epa_log_filename"] = string.Template(
+            self.config["ctf_epa_log"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_log_filename"] = string.Template(
+            self.config["ctf_log"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+
+        self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"],
+                           value[self.parser_id])
+        self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
+                            value[self.parser_id])
+
+    def parse_EPA_log(self, filename, value):
+        #ctffind4 outputs similar data in an absolutely bizzare format
+        tmp_df = np.genfromtxt(filename)
+        data = np.array()
 
 class MotionCor2Parser(Parser):
     def parse_process(self, stackname):
@@ -239,9 +263,9 @@ class MotionCor2Parser(Parser):
                         shifts = True
         except IOError:
             print("No log found")
-    
+
     def parse_mrc(self, base, filename):
-        
+
         try:
             header = imaging.formats.FORMATS["mrc"].load_header(filename)
             dimensions = (int(header['dims'][0]), int(header['dims'][1]))
@@ -257,7 +281,7 @@ class MotionCor2Parser(Parser):
 
 class MontageParser(Parser):
     def parse_process(self, stackname):
-        try: 
+        try:
             filename = string.Template(self.config["montage"]).substitute(
                 base=stackname,collection_dir=self.global_config["collection_dir"])
             self.analyze_file(stackname, filename)
@@ -303,7 +327,7 @@ class MontageParser(Parser):
 
 class NavigatorParser(Parser):
     def parse_process(self, stackname):
-        try: 
+        try:
             filename = string.Template(self.config["navigatorfile"]).substitute(
                 base=stackname,collection_dir=self.global_config["collection_dir"])
             self.analyze_file(stackname, filename)
@@ -372,7 +396,7 @@ class PickParser(Parser):
             self.database[base][self.parser_id] = []
 
 
-        
+
 
 
 class StackParser(Parser):
@@ -489,7 +513,7 @@ class ParserProcess(Process):
                     for parser in parsers:
                         parsed += parser.parse()
                     if parsed > 0:
-                        
+
                         with open(config["Database"], 'w') as outfile:
                             json.dump(database, outfile, allow_nan=False)
                         with gzip.open(config["Database"]+".gz", 'wt') as outfile:
@@ -514,7 +538,7 @@ if __name__ == '__main__':
 
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
-    
+
 
 
 
