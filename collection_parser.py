@@ -22,6 +22,7 @@ import gzip
 import pystar2
 import traceback
 import couchdb
+import math
 
 
 class FloatEncoder(json.JSONEncoder):
@@ -152,8 +153,8 @@ class IdogpickerParser(Parser):
         value[self.parser_id]["idogpicker_filename"] = string.Template(
             self.config["filename"]).substitute(base=stackname)
         doc = {}
-        doc['_id'] = key+"_particles_hotspurdefault"
-        doc['micrograph'] = key
+        doc['_id'] = stackname+"_particles_hotspurdefault"
+        doc['micrograph'] = stackname
         doc['type'] = "particles"
         doc['program'] = "idogpicker"
 
@@ -180,8 +181,8 @@ class GctfParser(Parser):
         self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
         doc = {}
-        doc['_id'] = key+"_ctf_hotspurdefault"
-        doc['micrograph'] = key
+        doc['_id'] = stackname+"_ctf_hotspurdefault"
+        doc['micrograph'] = stackname
         doc['type'] = "ctf"
         doc['program'] = "Gctf 1.06"
 
@@ -202,7 +203,7 @@ class GctfParser(Parser):
         doc['file_ctf_star'] = value[self.parser_id]['ctf_star_filename']
         doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
         doc['file_ctf_curve'] = stackname + "_ctfcurve.json"
-        with open(cdoc['file_ctf_curve'], 'w') as outfile:
+        with open(doc['file_ctf_curve'], 'w') as outfile:
             json.dump({
                 'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
                 'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
@@ -263,8 +264,8 @@ class MotionCor2Parser(Parser):
         self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
 
         doc = {}
-        doc['_id'] = key+"_motioncorrection_datajsonimport"
-        doc['micrograph'] = key
+        doc['_id'] = stackname+"_motioncorrection_datajsonimport"
+        doc['micrograph'] = stackname
         doc['type'] = "motioncorrection"
         doc['program'] = "motioncor2 1.10"
 
@@ -275,7 +276,7 @@ class MotionCor2Parser(Parser):
         doc['pixel_size'] = value[self.parser_id]['pixel_size']
         doc['file_preview'] = value[self.parser_id]['preview_filename']
         #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
-        doc['initial_shift'] = math.sqrt(value[self.parser_id]['x_shifts'][0]**2 + value[self.parser_id]['y_shifts'][0]**2)
+        doc['initial_shift'] = math.sqrt(value[self.parser_id]['x_shifts'][1]**2 + value[self.parser_id]['y_shifts'][1]**2)
         total = 0
         for i,a in enumerate(value[self.parser_id]['x_shifts']):
             total += math.sqrt(a**2 + value[self.parser_id]['y_shifts'][i]**2)
@@ -494,8 +495,8 @@ class StackParser(Parser):
                 "dose_per_pix_frame": dose_per_frame
             }
             doc = {}
-            doc['_id'] = key+"_movie"
-            doc['micrograph'] = key
+            doc['_id'] = base+"_movie"
+            doc['micrograph'] = base
             doc['type'] = "movie"
 
             doc['acquisition_time'] = self.database[base][self.parser_id]['acquisition_time']
@@ -504,7 +505,7 @@ class StackParser(Parser):
             doc['pixel_size'] = 0
             doc['dose_pixel_frame'] = self.database[base][self.parser_id]['dose_per_pix_frame']
             doc['file'] = self.database[base][self.parser_id]['filename']
-            db.save(doc)
+            self.db.save(doc)
         except AttributeError as e:
             print(e)
             raise
@@ -557,11 +558,14 @@ class ParserProcess(Process):
         except FileNotFoundError:
             database = OrderedDict()
 
-            couch = couchdb.Server('http://elferich:particles@localhost:5984/')
+        couch = couchdb.Server('http://elferich:particles@localhost:5984/')
 
-            user = os.path.split(self.config["scratch_dir"])[-2]
-            dataset = os.path.split(self.config["scratch_dir"])[-1]
+        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
+        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
+        try:
             db = couch.create(user+"_"+dataset)
+        except couchdb.http.PreconditionFailed:
+            db = couch[user+"_"+dataset]
 
         parsers = []
         for (key, value) in config.items():
