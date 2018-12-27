@@ -222,9 +222,26 @@ class CtffindParser(Parser):
                             value[self.parser_id])
 
     def parse_EPA_log(self, filename, value):
-        #ctffind4 outputs similar data in an absolutely bizzare format
-        tmp_df = np.genfromtxt(filename)
-        data = np.array()
+        # ctffind4 log output filename: diagnostic_output_avrot.txt
+        # columns:
+        # 0 = spatial frequency (1/Angstroms)
+        # 1 = 1D rotational average of spectrum (assuming no astigmatism)
+        # 2 = 1D rotational average of spectrum
+        # 3 = CTF fit
+        # 4 = cross-correlation between spectrum and CTF fit
+        # 5 = 2sigma of expected cross correlation of noise
+        data = np.genfromtxt(
+            filename,
+            skip_header=5
+        )
+        # the first entry in spatial frequency is 0
+        data[0] = np.reciprocal(data[0], where = data[0]!=0)
+        data[0][0] = None
+        value["EPA"] = {}
+        value["EPA"]["Resolution"] = list(np.nan_to_num(data[0]))
+        value["EPA"]["Sim. CTF"] = list(np.nan_to_num(data[3]))
+        value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data[2]))
+        value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data[5]))
 
 class MotionCor2Parser(Parser):
     def parse_process(self, stackname):
