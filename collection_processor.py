@@ -13,7 +13,7 @@ import pyfs
 import stat
 import imaging
 from collection_processor_base import CollectionProcessor
-from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser
+from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser, CtffindParser
 from idogpicker_processor import IdogpickerProcessor
 from random import randint
 from time import sleep
