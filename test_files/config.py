@@ -28,11 +28,11 @@ config = {
                 },
            "ctffind4" : {
                 "type" : CtffindParser,
-                "depends" : "${stackname}_mc_DW_ctffind.ctf",
-                "ctf_image" : "${stackname}_mc_DW_ctffind.ctf",
-                "ctf_image_preview" : "${stackname}_mc_DW_ctffind_ctf.preview.png",
-                "ctf_epa_log" : "${stackname}_mc_DW_ctffind_avrot.txt",
-                "ctf_log" : "${stackname}_mc_DW_ctffind.txt"
+                "depends" : "ctffind",
+                "ctf_image" : "${base}_mc_DW_ctffind.ctf",
+                "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
+                "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
+                "ctf_log" : "${base}_mc_DW_ctffind.txt"
            },
           # "moviestack" : {
           #     "type": StackParser,
