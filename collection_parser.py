@@ -247,6 +247,64 @@ class GctfParser(Parser):
             lines[a].split()[-1] for a in [-2, -3, -4, -5]
         ]
 
+class CtffindParser(Parser):
+    def parse_process(self, stackname):
+        value = self.database[stackname]
+        value[self.parser_id] = {}
+        value[self.parser_id]["ctf_image_filename"] = string.Template(
+            self.config["ctf_image"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_preview_image_filename"] = string.Template(
+            self.config["ctf_image_preview"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_epa_log_filename"] = string.Template(
+            self.config["ctf_epa_log"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+        value[self.parser_id]["ctf_log_filename"] = string.Template(
+            self.config["ctf_log"]).substitute(base = stackname, collection_dir = self.global_config["collection_dir"])
+
+        self.parse_EPA_log(value[self.parser_id]["ctf_epa_log_filename"],
+                           value[self.parser_id])
+        self.parse_ctffind_log(value[self.parser_id]["ctf_log_filename"],
+                            value[self.parser_id])
+
+    def parse_EPA_log(self, filename, value):
+        # ctffind4 log output filename: diagnostic_output_avrot.txt
+        # columns:
+        # 0 = spatial frequency (1/Angstroms)
+        # 1 = 1D rotational average of spectrum (assuming no astigmatism)
+        # 2 = 1D rotational average of spectrum
+        # 3 = CTF fit
+        # 4 = cross-correlation between spectrum and CTF fit
+        # 5 = 2sigma of expected cross correlation of noise
+        data = np.genfromtxt(
+            filename,
+            skip_header=5
+        )
+        # the first entry in spatial frequency is 0
+        data[0] = np.reciprocal(data[0], where = data[0]!=0)
+        data[0][0] = None
+        value["EPA"] = {}
+        value["EPA"]["Resolution"] = list(np.nan_to_num(data[0]))
+        value["EPA"]["Sim. CTF"] = list(np.nan_to_num(data[3]))
+        value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data[2]))
+        value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data[5]))
+
+    def parse_ctffind_log(self, filename, value):
+        # ctffind output is diagnostic_output.txt
+        # the last line has the non-input data in it, space-delimited
+        # values:
+        # 0: micrograph number; 1: defocus 1 (A); 2: defocus 2 (A); 3: astig azimuth;
+        # 4: additional phase shift (radians); 5: cross correlation;
+        # 6: spacing (in A) up to which CTF fit
+        with open(filename) as f:
+            lines = f.readlines()
+        ctf_params = lines[5].split(' ')
+        value["Defocus U"] = (float(ctf_params[1])/10000)
+        value["Defocus V"] = (float(ctf_params[2])/10000)
+        value["Astig angle"] = ctf_params[3]
+        value["Phase shift"] = ctf_params[4]
+        value["CCC"] = ctf_params[5]
+        value["Estimated resolution"] = ctf_params[6]
+        value["Estimated b-factor"] = 0
+
 
 class MotionCor2Parser(Parser):
     def parse_process(self, stackname):
@@ -308,9 +366,9 @@ class MotionCor2Parser(Parser):
                         shifts = True
         except IOError:
             print("No log found")
-    
+
     def parse_mrc(self, base, filename):
-        
+
         try:
             header = imaging.formats.FORMATS["mrc"].load_header(filename)
             dimensions = (int(header['dims'][0]), int(header['dims'][1]))
@@ -326,7 +384,7 @@ class MotionCor2Parser(Parser):
 
 class MontageParser(Parser):
     def parse_process(self, stackname):
-        try: 
+        try:
             filename = string.Template(self.config["montage"]).substitute(
                 base=stackname,collection_dir=self.global_config["collection_dir"])
             self.analyze_file(stackname, filename)
@@ -372,7 +430,7 @@ class MontageParser(Parser):
 
 class NavigatorParser(Parser):
     def parse_process(self, stackname):
-        try: 
+        try:
             filename = string.Template(self.config["navigatorfile"]).substitute(
                 base=stackname,collection_dir=self.global_config["collection_dir"])
             self.analyze_file(stackname, filename)
@@ -441,7 +499,7 @@ class PickParser(Parser):
             self.database[base][self.parser_id] = []
 
 
-        
+
 
 
 class StackParser(Parser):
@@ -580,7 +638,7 @@ class ParserProcess(Process):
                     for parser in parsers:
                         parsed += parser.parse()
                     if parsed > 0:
-                        
+
                         with open(config["Database"], 'w') as outfile:
                             json.dump(database, outfile, allow_nan=False)
                         with gzip.open(config["Database"]+".gz", 'wt') as outfile:
@@ -605,7 +663,7 @@ if __name__ == '__main__':
 
     with open(args.config, 'r') as config_file:
         exec(config_file.read(), globals())
-    
+
 
 
 
