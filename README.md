@@ -70,7 +70,7 @@ in the processes list at the bottom of the config file, as well as
 the parsers as specified in the parser dictionary of that same config file.
 
 ## Contributing
-###Adding programs to hotspur
+**Adding programs to hotspur**
 
 To add a new program, only two components are needed: a collection parser and an
 updated config template. The collection parser, added to `collection_parser.py`,
