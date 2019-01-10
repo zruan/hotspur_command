@@ -195,7 +195,7 @@ class GctfParser(Parser):
         #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
         doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
         doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
-        doc['phase_shift'] = value[self.parser_id]['Phase shift']
+        doc['cross_correlation'] = value[self.parser_id]['Phase shift']
         doc['gctf_validation_scores'] = value[self.parser_id]['Validation scores']
         doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
         doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
@@ -264,6 +264,36 @@ class CtffindParser(Parser):
                            value[self.parser_id])
         self.parse_ctffind_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
+        doc = {}
+        doc['_id'] = stackname+"_ctf_ctffind"
+        doc['micrograph'] = stackname
+        doc['type'] = "ctf"
+        doc['program'] = "Ctffind 4"
+
+        doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
+        doc['defocus_u'] = value[self.parser_id]['Defocus U']
+        doc['defocus_v'] = value[self.parser_id]['Defocus V']
+        #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
+        #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
+        #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
+        #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
+        doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
+        doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
+        doc['cross_correlation'] = value[self.parser_id]["CCC"] 
+        doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
+        doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
+        doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
+        doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
+        doc['file_ctf_curve'] = stackname + "_ctfcurve_ctffind.json"
+        with open(doc['file_ctf_curve'], 'w') as outfile:
+            json.dump({
+                'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
+                'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
+                'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
+                'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
+            }, outfile, allow_nan=False)
+        
+        self.db.save(doc)    
 
     def parse_EPA_log(self, filename, value):
         # ctffind4 log output filename: diagnostic_output_avrot.txt
@@ -297,14 +327,77 @@ class CtffindParser(Parser):
         with open(filename) as f:
             lines = f.readlines()
         ctf_params = lines[5].split(' ')
-        value["Defocus U"] = (float(ctf_params[1])/10000)
-        value["Defocus V"] = (float(ctf_params[2])/10000)
+        value["Defocus U"] = (float(ctf_params[1]))
+        value["Defocus V"] = (float(ctf_params[2]))
         value["Astig angle"] = ctf_params[3]
         value["Phase shift"] = ctf_params[4]
         value["CCC"] = ctf_params[5]
         value["Estimated resolution"] = ctf_params[6]
         value["Estimated b-factor"] = 0
 
+class Negstainparser(Parser):
+    def parse_process(self, stackname):
+        value = self.database[stackname]
+        value[self.parser_id] = {}
+        value[self.parser_id]["sum_micrograph_filename"] = string.Template(
+            self.config["sum_micrograph"]).substitute(base=stackname)
+        value[self.parser_id]["dw_micrograph_filename"] = string.Template(
+            self.config["dw_micrograph"]).substitute(base=stackname)
+        value[self.parser_id]["log_filename"] = string.Template(self.config[
+            "log"]).substitute(base=stackname)
+        value[self.parser_id]["preview_filename"] = string.Template(
+            self.config["preview"]).substitute(base=stackname)
+
+        doc = {}
+        doc['_id'] = stackname+"_motioncorrection_datajsonimport"
+        doc['micrograph'] = stackname
+        doc['type'] = "motioncorrection"
+        doc['program'] = "Its just negativestain,come on"
+
+        doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
+        doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
+        doc['file_log'] = value[self.parser_id]['log_filename']
+        doc['file_preview'] = value[self.parser_id]['preview_filename']
+        #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
+        self.db.save(doc)
+
+    def parse_log(self, base, filename):
+        try:
+            with open(filename, "r") as fp:
+                shifts = False
+                self.database[base][self.parser_id]["x_shifts"] = []
+                self.database[base][self.parser_id]["y_shifts"] = []
+                for line in fp:
+                    if shifts:
+                        if line.find(':') >= 0:
+                            numbers = line.split(':')[1]
+                            (x_shift,
+                             y_shift) = [float(x) for x in numbers.split()]
+                            self.database[base][self.parser_id][
+                                "x_shifts"].append(x_shift)
+                            self.database[base][self.parser_id][
+                                "y_shifts"].append(y_shift)
+                        else:
+                            shifts = False
+                    if line.find('Full-frame alignment shift') >= 0:
+                        shifts = True
+        except IOError:
+            print("No log found")
+
+    def parse_mrc(self, base, filename):
+
+        try:
+            header = imaging.formats.FORMATS["mrc"].load_header(filename)
+            dimensions = (int(header['dims'][0]), int(header['dims'][1]))
+            pixel_size = float(header['lengths'][0]/header['dims'][0])
+            self.database[base][self.parser_id]["dimensions"] = dimensions
+            self.database[base][self.parser_id]["pixel_size"] = pixel_size
+        except AttributeError as e:
+            print(e)
+        except IOError:
+            print("Error loading mrc!", sys.exc_info()[0])
+
+            raise
 
 class MotionCor2Parser(Parser):
     def parse_process(self, stackname):
@@ -339,6 +432,10 @@ class MotionCor2Parser(Parser):
         for i,a in enumerate(value[self.parser_id]['x_shifts']):
             total += math.sqrt(a**2 + value[self.parser_id]['y_shifts'][i]**2)
         doc['total_shift'] = total
+        doc['file_shifts'] = stackname + "_motioncor_shifts.json"
+        with open(doc['file_shifts'], 'w') as outfile:
+            json.dump([value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']],outfile)
+        
 
 
 
@@ -527,11 +624,17 @@ class StackParser(Parser):
                     acquisition_time.replace(tzinfo=tzlocal()).isoformat()
                 }
                 return
-            header = imaging.formats.FORMATS["mrc"].load_header(filename)
+            numframes = 1
+            dimensions =[1,1] 
+            dose_per_frame = 1
             try:
+                header = imaging.formats.FORMATS["mrc"].load_header(filename)
                 acquisition_time = dateutil.parser.parse(header['labels'][
                     0].decode().split()[-2] + " " + header['labels'][0].decode(
                     ).split()[-1])
+                numframes = int(header['dims'][2])
+                dimensions = (int(header['dims'][0]), int(header['dims'][1]))
+                dose_per_frame = float(header['mean'])
             except (ValueError, IndexError) as e:
                 print("No date in header ... ", end="", flush=True)
                 try:
@@ -541,9 +644,6 @@ class StackParser(Parser):
                     print("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[-3:-1]))
                     acquisition_time = datetime.datetime.fromtimestamp(
                       os.path.getmtime(filename))
-            numframes = int(header['dims'][2])
-            dimensions = (int(header['dims'][0]), int(header['dims'][1]))
-            dose_per_frame = float(header['mean'])
             self.database[base][self.parser_id] = {
                 "filename": filename,
                 "numframes": numframes,
