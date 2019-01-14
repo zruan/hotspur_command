@@ -61,22 +61,22 @@ config = {
          }
         }
 
-def make_processes_list():
-    # edit values here to change them in all processes
-    voltage = {{ voltage }}
-    pixel_size_mc = {{ pixel_size_mc }}
-    pixel_size_gctf = {{ pixel_size_gctf }}
-    dose_rate = {{ dose_rate }}
-    ac = {{ ac }}
-    mc_para = {{ mc_para }}
-    gctf_para = {{ gctf_para }}
-    # you can add multiple GPUs here (e.g., [0,1]) to create multiple processes
-    motioncor_gpus = [0]
-    gctf_gpus = [0]
 
-    # make the processes (don't edit this unless you know what you're doing)
+# edit values here to change them in all processes
+voltage = {{ voltage }}
+pixel_size_mc = {{ pixel_size_mc }}
+pixel_size_gctf = {{ pixel_size_gctf }}
+dose_rate = {{ dose_rate }}
+ac = {{ ac }}
+mc_para = {{ mc_para }}
+gctf_para = {{ gctf_para }}
+# you can add multiple GPUs here (e.g., [0,1]) to create multiple processes
+motioncor_gpus = [0]
+gctf_gpus = [0]
 
-    ctffind_hereDoc = """ctffind << EOF
+# make the processes (don't edit this unless you know what you're doing)
+
+ctffind_hereDoc = """ctffind << EOF
 ${stackname}_mc_DW.mrc
 ${scratch_dir}${filename_noex}_mc_DW_ctffind.ctf
 ${pixel_size} # pixelsize
@@ -97,6 +97,7 @@ no # find additional phase shift
 no # set expert options
 EOF"""
 
+def make_processes_list():
     processes = []
     for gpu in motioncor_gpus:
         processes.append(CommandProcessor("motioncor2", "motioncor2 -InMrc ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv ${voltage} -gain ref.mrc -PixSize ${pixel_size_mc} -FmDose ${dose_rate} ${mc_para} -Iter 10 -Tol 0.5 -Gpu ${gpu} > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
