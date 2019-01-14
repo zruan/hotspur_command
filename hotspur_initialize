@@ -17,7 +17,7 @@ def parse_micrograph(filename, default_config):
 
         if dimension < 5000:
             default_config['mode'] = 'counting'
-            
+
         else:
             default_config['mode'] = 'superres'
 
@@ -104,12 +104,12 @@ def main(args, loglevel):
         fp.write(created_config)
 
 
-  
- 
+
+
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser( 
+    parser = argparse.ArgumentParser(
                                     description = "Generates a config file for the hotspur application",
                                     epilog = "",
                                     fromfile_prefix_chars = '@' )
@@ -153,7 +153,7 @@ if __name__ == '__main__':
                       type=int,
                       default=1,
                       choices=range(1,5))
-                      
+
     parser.add_argument(
                       "-v",
                       "--verbose",
