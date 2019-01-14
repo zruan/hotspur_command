@@ -111,7 +111,7 @@ EOF"""
 
     return processes
 
-processes = make_processes_list
+processes = make_processes_list()
 
 # processes = [
 # CommandProcessor("motioncor2", "motioncor2 -InMrc ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv {{ voltage }} -gain ref.mrc -PixSize {{ pixel_size_mc }} -FmDose {{ dose_rate }} {{ mc_para }} -Iter 10 -Tol 0.5 -Gpu 0 > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]),
