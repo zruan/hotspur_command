@@ -94,7 +94,6 @@ def main(args, loglevel):
         default_config['pixel_size_gctf'] = default_config['pixel_size_mc']*2
         default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
 
-    print(default_config)
     copy_gainreference(default_config['gainref'])
 
     templatefolder = os.path.join(os.path.dirname(__file__), "config_templates/")
@@ -122,7 +121,7 @@ if __name__ == '__main__':
                       metavar = "OUTPUT")
     parser.add_argument(
                       "--micrograph",
-                      help = "Micrograph from which to read pixelsize, doserate, and gain reference\nOnly works on .mrcs, manually adjust params for .tif",
+                      help = "Micrograph from which to read pixelsize, doserate, and gain reference. Only works on .mrc, manually adjust params for .tif",
                       metavar = "ARG")
     parser.add_argument(
                       "--gainref",
