@@ -1,68 +1,18 @@
+def configure_project(config):
+    ##################################
+    ##### Make your changes here #####
+    ##################################
+    # where to look for micrographs
+    collection_dir = "{{ curr_dir }}/"
+    # glob for micrograph scanning
+    glob = "*/*.tif"
+    # Scratch directory where data processing will be done. Should be an SSD
+    scratch_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/"
+    #Archive dir. If configured files will be moved there fore permanent storage
+    archive_dir = "/tmp/JE_test_archive/"
+    # Directory that holds lock files for processing
+    lock_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/lock/"
 
-config = {
-        # Directory that will be scanned for micrographs
-        "collection_dir" : "{{curr_dir}}/",
-        # Glob that will be used to scan for new mrc files
-        "glob" : "*/*.mrc",
-        # Scratch directo where data processing will be done. Should be an SSD
-        "scratch_dir" : "/hotspur/scratch/{{user}}/{{curr_dir_base}}/",
-        # Archive dir. If configured files will be moved there fore permanent storage
-        "archive_dir" : "/tmp/JE_test_archive/",
-        # Directory that holds lock files for processing
-        "lock_dir"    : "/hotspur/scratch/{{user}}/{{curr_dir_base}}/lock/",
-        "parser" :{ "MotionCor2" : {
-		"type" : MotionCor2Parser,
-		"depends" : "motioncor2",
-                "sum_micrograph" : "${base}_mc.mrc",
-                "dw_micrograph" : "${base}_mc_DW.mrc",
-                "log" : "${base}_mc.log",
-                "preview" : "${base}_mc_DW.preview.png"
-                },
-           "Gctf" : {
-		"type" : GctfParser,
-		"depends" : "gctf",
-                "ctf_image" : "${base}_mc_DW.ctf",
-                "ctf_image_preview" : "${base}_mc_DW_ctf.preview.png",
-                "ctf_star" : "${base}_mc_DW_gctf.star",
-                "ctf_epa_log" : "${base}_mc_DW_EPA.log",
-                "ctf_log" : "${base}_mc_DW_gctf.log"
-                },
-           "ctffind4" : {
-                "type" : CtffindParser,
-                "depends" : "ctffind",
-                "ctf_image" : "${base}_mc_DW_ctffind.ctf",
-                "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
-                "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
-                "ctf_log" : "${base}_mc_DW_ctffind.txt"
-           },
-           "moviestack" : {
-               "type": StackParser,
-               "depends" : "motioncor2",
-               "moviestack" : "${collection_dir}${base}.mrc"
-               },
-           "navigator" : {
-               "type": NavigatorParser,
-               "glob" : "${collection_dir}*.nav",
-               "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["collection_dir"]):],full=True),
-               "navigatorfile" : "${collection_dir}${base}.nav",
-	       "run_once" : True
-               },
-           "idogpicker" : {
-               "type": IdogpickerParser,
-               "depends" : "idogpicker",
-               "filename" : "${base}_mc_DW.idogpicker.json"
-               },
-           "montage" : {
-               "type": MontageParser,
-               "glob" : "${lock_dir}/*.montage.done",
-               "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["lock_dir"]):],full=True),
-               "montage" : "${collection_dir}${base}.mrc"
-               },
-      "Database" : "data.json"
-         }
-        }
-
-def make_processes_list(config):
     # edit values here to change them in all processes
     voltage = {{ voltage }}
     pixel_size_mc = {{ pixel_size_mc }}
@@ -75,7 +25,9 @@ def make_processes_list(config):
     motioncor_gpus = [0]
     gctf_gpus = [0]
 
-    # make the processes (don't edit this unless you know what you're doing)
+    ###############################################################
+    ###### Don't edit below unless you know what you're doing #####
+    ###############################################################
 
     ctffind_hereDoc = """ctffind << EOF
 ${stackname}_mc_DW.mrc
@@ -111,6 +63,11 @@ EOF"""
     processes.append(IdogpickerProcessor("idogpicker", config, "${stackname}_mc_DW.mrc", depends="motioncor2",min_age=0, sleep=2, work_dir=config["scratch_dir"]))
 
     config.update({
+        'collection_dir' : collection_dir,
+        'glob' : glob,
+        'scratch_dir' : scratch_dir,
+        'archive_dir' : archive_dir,
+        'lock_dir' : lock_dir,
         'voltage': voltage,
         'pixel_size_mc': pixel_size_mc,
         'pixel_size_gctf': pixel_size_gctf,
@@ -121,5 +78,3 @@ EOF"""
     })
 
     return processes
-
-processes = make_processes_list(config)
