@@ -195,6 +195,8 @@ def start_processing():
         for process in processes:
             process.join()
         parse_process.join()
+    except exception as e:
+        print(e)
 
 if __name__ == '__main__':
     start_processing()
