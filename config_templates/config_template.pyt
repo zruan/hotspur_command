@@ -50,6 +50,21 @@ no # find additional phase shift
 no # set expert options
 EOF"""
 
+    config.update({
+        'collection_dir' : collection_dir,
+        'glob' : glob,
+        'scratch_dir' : scratch_dir,
+        'archive_dir' : archive_dir,
+        'lock_dir' : lock_dir,
+        'voltage': voltage,
+        'pixel_size_mc': pixel_size_mc,
+        'pixel_size_gctf': pixel_size_gctf,
+        'dose_rate': dose_rate,
+        'ac': ac,
+        'mc_para': mc_para,
+        'gctf_para': gctf_para
+    })
+
     processes = []
     if '.tif' in glob:
         for gpu in motioncor_gpus:
@@ -65,20 +80,5 @@ EOF"""
     processes.append(PreviewProcessor('ctffind', config, "${stackname}_mc_DW_ctffind.ctf", depends = "ctffind", min_age = 0, sleep = 2, work_dir = config["scratch_dir"],suffix = '_ctffind', zoom=1.0))
     processes.append(CommandProcessor("montage", "( edmont -imin ${filename} -plout ${scratch_dir}${filename_noex}.plist.tmp -imout ${scratch_dir}${filename_noex}.mont.mrc.tmp && blendmont -imin ${scratch_dir}${filename_noex}.mont.mrc.tmp -imout ${scratch_dir}${filename_noex}.blend.mrc.tmp -plin ${scratch_dir}${filename_noex}.plist.tmp -roo tmp -bin 8 && mrc2tif -p ${scratch_dir}${filename_noex}.blend.mrc.tmp ${scratch_dir}${filename_noex}_preview.png && rm ${scratch_dir}${filename_noex}.*.tmp ) > ${scratch_dir}${filename_noex}.montage.log", config, watch_glob="grid*mm*.mrc", min_age=1800, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
     processes.append(IdogpickerProcessor("idogpicker", config, "${stackname}_mc_DW.mrc", depends="motioncor2",min_age=0, sleep=2, work_dir=config["scratch_dir"]))
-
-    config.update({
-        'collection_dir' : collection_dir,
-        'glob' : glob,
-        'scratch_dir' : scratch_dir,
-        'archive_dir' : archive_dir,
-        'lock_dir' : lock_dir,
-        'voltage': voltage,
-        'pixel_size_mc': pixel_size_mc,
-        'pixel_size_gctf': pixel_size_gctf,
-        'dose_rate': dose_rate,
-        'ac': ac,
-        'mc_para': mc_para,
-        'gctf_para': gctf_para
-    })
 
     return processes
