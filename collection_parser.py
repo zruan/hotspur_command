@@ -210,9 +210,9 @@ class GctfParser(Parser):
                 'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
                 'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
             }, outfile, allow_nan=False)
-        
-        self.db.save(doc)    
-        
+
+        self.db.save(doc)
+
 
     def parse_EPA_log(self, filename, value):
         """Parses the EPA log of Gctf to provide radial average of CTF"""
@@ -279,7 +279,7 @@ class CtffindParser(Parser):
         #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
         doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
         doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
-        doc['cross_correlation'] = value[self.parser_id]["CCC"] 
+        doc['cross_correlation'] = value[self.parser_id]["CCC"]
         doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
         doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
         doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
@@ -292,8 +292,8 @@ class CtffindParser(Parser):
                 'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
                 'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
             }, outfile, allow_nan=False)
-        
-        self.db.save(doc)    
+
+        self.db.save(doc)
 
     def parse_EPA_log(self, filename, value):
         # ctffind4 log output filename: diagnostic_output_avrot.txt
@@ -435,7 +435,7 @@ class MotionCor2Parser(Parser):
         doc['file_shifts'] = stackname + "_motioncor_shifts.json"
         with open(doc['file_shifts'], 'w') as outfile:
             json.dump([value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']],outfile)
-        
+
 
 
 
@@ -625,7 +625,7 @@ class StackParser(Parser):
                 }
                 return
             numframes = 1
-            dimensions =[1,1] 
+            dimensions =[1,1]
             dose_per_frame = 1
             try:
                 header = imaging.formats.FORMATS["mrc"].load_header(filename)
@@ -718,8 +718,8 @@ class ParserProcess(Process):
 
         couch = couchdb.Server('http://elferich:particles@localhost:5984/')
 
-        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
-        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
+        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2].lower()
+        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1].lower()
         try:
             db = couch.create(user+"_"+dataset)
         except couchdb.http.PreconditionFailed:
