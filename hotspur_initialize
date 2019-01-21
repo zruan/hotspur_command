@@ -17,7 +17,7 @@ def parse_micrograph(filename, default_config):
 
         if dimension < 5000:
             default_config['mode'] = 'counting'
-            
+
         else:
             default_config['mode'] = 'superres'
 
@@ -68,6 +68,8 @@ def main(args, loglevel):
           }
     if (args.micrograph):
         parse_micrograph(args.micrograph, default_config)
+        if '.tif' in args.micrograph:
+            print('WARNING: --micrograph used with .tif. Parameters will be wrong.')
 
     if (args.pixelsize):
         default_config['pixel_size_mc'] = args.pixelsize
@@ -92,24 +94,22 @@ def main(args, loglevel):
         default_config['pixel_size_gctf'] = default_config['pixel_size_mc']*2
         default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
 
-    print(default_config)
     copy_gainreference(default_config['gainref'])
 
     templatefolder = os.path.join(os.path.dirname(__file__), "config_templates/")
     env = Environment(loader = FileSystemLoader(templatefolder))
     template = env.get_template("config_template.pyt")
     created_config = template.render(default_config)
-    print(created_config)
     with open(args.outputfile, "w") as fp:
         fp.write(created_config)
 
 
-  
- 
+
+
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser( 
+    parser = argparse.ArgumentParser(
                                     description = "Generates a config file for the hotspur application",
                                     epilog = "",
                                     fromfile_prefix_chars = '@' )
@@ -121,7 +121,7 @@ if __name__ == '__main__':
                       metavar = "OUTPUT")
     parser.add_argument(
                       "--micrograph",
-                      help = "Micrograph to read pixelsize, doserate, and gain reference from",
+                      help = "Micrograph from which to read pixelsize, doserate, and gain reference. Only works on .mrc, manually adjust params for .tif",
                       metavar = "ARG")
     parser.add_argument(
                       "--gainref",
@@ -153,7 +153,7 @@ if __name__ == '__main__':
                       type=int,
                       default=1,
                       choices=range(1,5))
-                      
+
     parser.add_argument(
                       "-v",
                       "--verbose",
