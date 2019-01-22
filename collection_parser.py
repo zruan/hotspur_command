@@ -718,8 +718,15 @@ class ParserProcess(Process):
 
         couch = couchdb.Server('http://elferich:particles@localhost:5984/')
 
-        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2].lower()
-        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1].lower()
+        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
+        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
+
+        dataset_disallowed_chars = re.compile('[A-Z]')
+        if re.search(dataset_disallowed_chars, dataset):
+            os.symlink(dataset, dataset.lower())
+            dataset = dataset.lower()
+
+
         try:
             db = couch.create(user+"_"+dataset)
         except couchdb.http.PreconditionFailed:
