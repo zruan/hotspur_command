@@ -65,6 +65,11 @@ EOF"""
         'gctf_para': gctf_para
     })
 
+    if '.tif' in glob:
+        config['moviestack'].update({
+            "moviestack" : "${collection_dir}${base}.tif"
+        })
+
     processes = []
     if '.tif' in glob:
         for gpu in motioncor_gpus:
