@@ -5,6 +5,7 @@ import os
 import getpass
 import glob
 from jinja2 import Environment, FileSystemLoader
+import hotspur_setup
 
 
 
@@ -67,6 +68,7 @@ def main(args, loglevel):
           "curr_dir" : os.getcwd(),
           "curr_dir_base" : os.path.basename(os.path.normpath(os.getcwd())),
           "user" : getpass.getuser(),
+          "voltage": 300,
           "pixel_size_mc" : 1.72,
           "dose_rate" : 1.0,
           "pixel_size_gctf" : 1.72,
@@ -87,10 +89,9 @@ def main(args, loglevel):
     sample_id = os.path.basename(os.path.normpath(sample_directory))
     user_id = os.path.basename(os.path.normpath(user_directory))
 
-    hotspur_dir = "/pncc/storage/1/processing/hotspur"
-    scratch_dir = "{}/{}/{}__{}/".format(hotspur_dir, user_id, sample_id, session_id)
+    scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
 
-    default_config['frames_directory'] = normalize_dir_path(frames_directory)
+    default_config['frames_directory'] = frames_directory
     default_config['user_id'] = user_id
     default_config['scratch_dir'] = scratch_dir
     default_config['lock_dir'] = os.path.join(scratch_dir, "lock") + '/' 
@@ -124,8 +125,9 @@ def main(args, loglevel):
     #     default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
 
     default_config['gain_ref'] = find_gainreference(frames_directory)
-    config_file_path = "{}/configs/{}__{}__{}_config.py".format(hotspur_dir, user_id, sample_id, session_id)
 
+    config_file_name = "{}__{}__{}_config.py".format(user_id, sample_id, session_id)
+    config_file_path = os.path.join(hotspur_setup.config_dir, config_file_name)
     templatefolder = os.path.join(os.path.dirname(__file__), "config_templates/")
     env = Environment(loader = FileSystemLoader(templatefolder))
     template = env.get_template("config_template.pyt")
