@@ -4,11 +4,11 @@ def configure_project(config):
     ##################################
     # where to look for micrographs
     collection_dir = "{{ frames_directory }}"
-    user = {{ user_id }}
+    user = "{{ user_id }}"
     # glob for micrograph scanning
     glob = "*/*.tif"
     # The path to the .dm4 gain reference file.
-    gain_ref = {{ gain_ref }}
+    gain_ref = "{{ gain_ref }}"
 
     # edit values here to change them in all processes
     voltage = {{ voltage }}
@@ -68,7 +68,9 @@ EOF"""
         'dose_rate': dose_rate,
         'ac': ac,
         'mc_para': mc_para,
-        'gctf_para': gctf_para
+        'gctf_para': gctf_para,
+        'user_id': user,
+        'gain_ref': gain_ref
     })
 
     processes = []
