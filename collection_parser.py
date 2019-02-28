@@ -21,7 +21,7 @@ import signal
 import gzip
 import pystar2
 import traceback
-import couchdb
+# import pouchdb
 import math
 
 
