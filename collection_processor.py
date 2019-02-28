@@ -150,7 +150,7 @@ def prepare_directory_structure(config):
     user_id_hash = get_user_id_hash(config["user_id"])
     symlink_path = os.path.join(hotspur_setup.hashlinks_dir, user_id_hash)
     if not os.path.exists(symlink_path):
-        os.symlink(config["scratch"], symlink_path)
+        os.symlink(config["scratch_dir"], symlink_path)
 
 
 def arguments():
