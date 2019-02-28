@@ -3,15 +3,12 @@ def configure_project(config):
     ##### Make your changes here #####
     ##################################
     # where to look for micrographs
-    collection_dir = "{{ curr_dir }}/"
+    collection_dir = "{{ frames_directory }}"
+    user = {{ user_id }}
     # glob for micrograph scanning
     glob = "*/*.tif"
-    # Scratch directory where data processing will be done. Should be an SSD
-    scratch_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/"
-    #Archive dir. If configured files will be moved there fore permanent storage
-    archive_dir = "/tmp/JE_test_archive/"
-    # Directory that holds lock files for processing
-    lock_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/lock/"
+    # The path to the .dm4 gain reference file.
+    gain_ref = {{ gain_ref }}
 
     # edit values here to change them in all processes
     voltage = {{ voltage }}
@@ -19,11 +16,20 @@ def configure_project(config):
     pixel_size_gctf = {{ pixel_size_gctf }}
     dose_rate = {{ dose_rate }}
     ac = {{ ac }}
+    # Additional motioncor2 arguements
     mc_para = '{{ mc_para }}'
+    # Additional gctf arguements
     gctf_para = '{{ gctf_para }}'
     # you can add multiple GPUs here (e.g., [0,1]) to create multiple processes
     motioncor_gpus = [0]
     gctf_gpus = [0]
+
+    # Scratch directory where data processing will be done. Should be an SSD
+    scratch_dir = "{{ scratch_dir }}"
+    # Directory that holds lock files for processing
+    lock_dir = "{{ lock_dir }}"
+    # Archive dir. If configured files will be moved there fore permanent storage
+    archive_dir = "/tmp/JE_test_archive/"
 
     ###############################################################
     ###### Don't edit below unless you know what you're doing #####
@@ -78,7 +84,7 @@ EOF"""
     processes.append(PreviewProcessor("gctf_prev", config, "${stackname}_mc_DW.ctf", depends="gctf", min_age=0, sleep=2, work_dir=config["scratch_dir"],suffix="_ctf",zoom=1.0))
     processes.append(CommandProcessor('ctffind', ctffind_hereDoc, config, depends="motioncor2", min_age=0, sleep=2, work_dir=config["scratch_dir"]))
     processes.append(PreviewProcessor('ctffind', config, "${stackname}_mc_DW_ctffind.ctf", depends = "ctffind", min_age = 0, sleep = 2, work_dir = config["scratch_dir"],suffix = '_ctffind', zoom=1.0))
-    processes.append(CommandProcessor("montage", "( edmont -imin ${filename} -plout ${scratch_dir}${filename_noex}.plist.tmp -imout ${scratch_dir}${filename_noex}.mont.mrc.tmp && blendmont -imin ${scratch_dir}${filename_noex}.mont.mrc.tmp -imout ${scratch_dir}${filename_noex}.blend.mrc.tmp -plin ${scratch_dir}${filename_noex}.plist.tmp -roo tmp -bin 8 && mrc2tif -p ${scratch_dir}${filename_noex}.blend.mrc.tmp ${scratch_dir}${filename_noex}_preview.png && rm ${scratch_dir}${filename_noex}.*.tmp ) > ${scratch_dir}${filename_noex}.montage.log", config, watch_glob="grid*mm*.mrc", min_age=1800, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
+    # processes.append(CommandProcessor("montage", "( edmont -imin ${filename} -plout ${scratch_dir}${filename_noex}.plist.tmp -imout ${scratch_dir}${filename_noex}.mont.mrc.tmp && blendmont -imin ${scratch_dir}${filename_noex}.mont.mrc.tmp -imout ${scratch_dir}${filename_noex}.blend.mrc.tmp -plin ${scratch_dir}${filename_noex}.plist.tmp -roo tmp -bin 8 && mrc2tif -p ${scratch_dir}${filename_noex}.blend.mrc.tmp ${scratch_dir}${filename_noex}_preview.png && rm ${scratch_dir}${filename_noex}.*.tmp ) > ${scratch_dir}${filename_noex}.montage.log", config, watch_glob="grid*mm*.mrc", min_age=1800, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
     processes.append(IdogpickerProcessor("idogpicker", config, "${stackname}_mc_DW.mrc", depends="motioncor2",min_age=0, sleep=2, work_dir=config["scratch_dir"]))
 
     return processes

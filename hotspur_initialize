@@ -44,10 +44,21 @@ def parse_micrograph(filename, default_config):
 
     return 0
 
+def normalize_dir_path(path):
+    return os.path.abspath(path) + '/'
 
-def copy_gainreference(gainref):
-    os.system("dm2mrc {} ref.mrc".format(gainref))
+def copy_gainreference(gain_ref_path, target_directory_path):
+    target_directory_path = normalize_dir_path(target_directory_path)
+    os.system("dm2mrc {} {}/ref.mrc".format(gain_ref_path, target_directory_path))
 
+def find_gainreference(directory_path):
+    ref_glob = "*Ref*.dm4"
+    globn = os.path.join(directory_path, ref_glob)
+    gain_refs = glob.glob(globn)
+    try:
+        return gain_refs[0]
+    except:
+        print("Couldn't find a gain ref file in '{}' using glob '{}'", directory_path, ref_glob)
 
 
 def main(args, loglevel):
@@ -66,42 +77,67 @@ def main(args, loglevel):
           "phaseplate" : False,
           "gainref" : ""
           }
-    if (args.micrograph):
-        parse_micrograph(args.micrograph, default_config)
-        if '.tif' in args.micrograph:
-            print('WARNING: --micrograph used with .tif. Parameters will be wrong.')
 
-    if (args.pixelsize):
-        default_config['pixel_size_mc'] = args.pixelsize
-        default_config['pixel_size_gctf'] = args.pixelsize
-    if (args.doserate):
-        default_config['dose_rate'] = args.doserate
-    if (args.pixelsize):
-        default_config['pixelsize'] = args.pixelsize
-    if (args.detectormode):
-        default_config['mode'] = args.detectormode
-    if (args.voltage):
-        default_config['voltage'] = args.voltage
-    if (args.gainref):
-        default_config['gainref'] = args.gainref
+    frames_directory = normalize_dir_path(args.frames_directory)
+    session_directory = os.path.join(frames_directory, os.pardir)
+    sample_directory = os.path.join(session_directory, os.pardir)
+    user_directory = os.path.join(sample_directory, os.pardir)
+ 
+    session_id = os.path.basename(os.path.normpath(session_directory))
+    sample_id = os.path.basename(os.path.normpath(sample_directory))
+    user_id = os.path.basename(os.path.normpath(user_directory))
 
-    if (args.phaseplate):
-        default_config['phaseplate'] = True
-        default_config['gctf_para'] += "--phase_shift_L 30 --phase_shift_H 140 --phase_shift_S 5"
-        default_config['ac'] = 0.01
+    hotspur_dir = "/pncc/storage/1/processing/hotspur"
+    scratch_dir = "{}/{}/{}__{}/".format(hotspur_dir, user_id, sample_id, session_id)
 
-    if (default_config['mode'] == "superres"):
-        default_config['pixel_size_gctf'] = default_config['pixel_size_mc']*2
-        default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
+    default_config['frames_directory'] = normalize_dir_path(frames_directory)
+    default_config['user_id'] = user_id
+    default_config['scratch_dir'] = scratch_dir
+    default_config['lock_dir'] = os.path.join(scratch_dir, "lock") + '/' 
 
-    copy_gainreference(default_config['gainref'])
+    # if (args.micrograph):
+    #     parse_micrograph(args.micrograph, default_config)
+    #     if '.tif' in args.micrograph:
+    #         print('WARNING: --micrograph used with .tif. Parameters will be wrong.')
+
+    # if (args.pixelsize):
+    #     default_config['pixel_size_mc'] = args.pixelsize
+    #     default_config['pixel_size_gctf'] = args.pixelsize
+    # if (args.doserate):
+    #     default_config['dose_rate'] = args.doserate
+    # if (args.pixelsize):
+    #     default_config['pixelsize'] = args.pixelsize
+    # if (args.detectormode):
+    #     default_config['mode'] = args.detectormode
+    # if (args.voltage):
+    #     default_config['voltage'] = args.voltage
+    # if (args.gainref):
+    #     default_config['gainref'] = args.gainref
+
+    # if (args.phaseplate):
+    #     default_config['phaseplate'] = True
+    #     default_config['gctf_para'] += "--phase_shift_L 30 --phase_shift_H 140 --phase_shift_S 5"
+    #     default_config['ac'] = 0.01
+
+    # if (default_config['mode'] == "superres"):
+    #     default_config['pixel_size_gctf'] = default_config['pixel_size_mc']*2
+    #     default_config['mc_para'] += "-FtBin 2 -Patch 5 5"
+
+    default_config['gain_ref'] = find_gainreference(frames_directory)
+    config_file_path = "{}/configs/{}__{}__{}_config.py".format(hotspur_dir, user_id, sample_id, session_id)
 
     templatefolder = os.path.join(os.path.dirname(__file__), "config_templates/")
     env = Environment(loader = FileSystemLoader(templatefolder))
     template = env.get_template("config_template.pyt")
     created_config = template.render(default_config)
-    with open(args.outputfile, "w") as fp:
+
+    with open(config_file_path, "w") as fp:
         fp.write(created_config)
+    print("Saved config file: '{}'".format(config_file_path))
+
+    editor = os.environ["EDITOR"]
+    editor = editor if editor is not None else 'vi'
+    os.system('{} {}'.format(editor, config_file_path))
 
 
 
@@ -114,57 +150,62 @@ if __name__ == '__main__':
                                     epilog = "",
                                     fromfile_prefix_chars = '@' )
     # TODO Specify your real parameters here.
-    parser.add_argument(
-                      "outputfile",
-                      help = "Output file",
-                      default = "config.py",
-                      metavar = "OUTPUT")
-    parser.add_argument(
-                      "--micrograph",
-                      help = "Micrograph from which to read pixelsize, doserate, and gain reference. Only works on .mrc, manually adjust params for .tif",
-                      metavar = "ARG")
-    parser.add_argument(
-                      "--gainref",
-                      help = "Gain reference file, will overwrite value parsed from micrograph")
-    parser.add_argument(
-                      "--pixelsize",
-                      help = "Pixel size, will overwrite value parsed from micrograph",
-                      type = float)
-    parser.add_argument(
-                      "--doserate",
-                      help = "Doserate, will overwrite value parsed from micrograph",
-                      type = float)
-    parser.add_argument(
-                      "--detectormode",
-                      help = "Counting or Superresolution",
-                      choices=['counting','superres'])
-    parser.add_argument(
-                      "--voltage",
-                      help = "What is the voltage of the microscope",
-                      choices=['200','300'],
-                      default = '300')
-    parser.add_argument(
-                      "--phaseplate",
-                      help = "Are you using phase plate",
-                      action='store_true')
-    parser.add_argument(
-                      "--nummc2",
-                      help = "Number of motioncor2 jobs in parallel",
-                      type=int,
-                      default=1,
-                      choices=range(1,5))
+    # parser.add_argument(
+    #                   "outputfile",
+    #                   help = "Output file",
+    #                   default = "config.py",
+    #                   metavar = "OUTPUT")
+    # parser.add_argument(
+    #                   "--micrograph",
+    #                   help = "Micrograph from which to read pixelsize, doserate, and gain reference. Only works on .mrc, manually adjust params for .tif",
+    #                   metavar = "ARG")
+    # parser.add_argument(
+    #                   "--gainref",
+    #                   help = "Gain reference file, will overwrite value parsed from micrograph")
+    # parser.add_argument(
+    #                   "--pixelsize",
+    #                   help = "Pixel size, will overwrite value parsed from micrograph",
+    #                   type = float)
+    # parser.add_argument(
+    #                   "--doserate",
+    #                   help = "Doserate, will overwrite value parsed from micrograph",
+    #                   type = float)
+    # parser.add_argument(
+    #                   "--detectormode",
+    #                   help = "Counting or Superresolution",
+    #                   choices=['counting','superres'])
+    # parser.add_argument(
+    #                   "--voltage",
+    #                   help = "What is the voltage of the microscope",
+    #                   choices=['200','300'],
+    #                   default = '300')
+    # parser.add_argument(
+    #                   "--phaseplate",
+    #                   help = "Are you using phase plate",
+    #                   action='store_true')
+    # parser.add_argument(
+    #                   "--nummc2",
+    #                   help = "Number of motioncor2 jobs in parallel",
+    #                   type=int,
+    #                   default=1,
+    #                   choices=range(1,5))
 
+    # parser.add_argument(
+    #                   "-v",
+    #                   "--verbose",
+    #                   help="increase output verbosity",
+    #                   action="store_true")
     parser.add_argument(
-                      "-v",
-                      "--verbose",
-                      help="increase output verbosity",
-                      action="store_true")
+        "frames_directory",
+        help = "The directory with your raw data frames.",
+        metavar = "frames-directory"
+    )
     args = parser.parse_args()
 
-    # Setup logging
-    if args.verbose:
-        loglevel = logging.DEBUG
-    else:
-        loglevel = logging.INFO
-
+    # # Setup logging
+    # if args.verbose:
+    #     loglevel = logging.DEBUG
+    # else:
+    #     loglevel = logging.INFO
+    loglevel = logging.INFO
     main(args, loglevel)
