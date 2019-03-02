@@ -13,7 +13,7 @@ import pyfs
 import stat
 import imaging
 from collection_processor_base import CollectionProcessor
-from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser, CtffindParser, Negstainparser
+from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, StackParser, MontageParser, PickParser, NavigatorParser
 from idogpicker_processor import IdogpickerProcessor
 from random import randint
 from time import sleep
@@ -48,19 +48,19 @@ config = {
                 "ctf_epa_log" : "${base}_mc_DW_EPA.log",
                 "ctf_log" : "${base}_mc_DW_gctf.log"
                 },
-           "ctffind4" : {
-                "type" : CtffindParser,
-                "depends" : "ctffind",
-                "ctf_image" : "${base}_mc_DW_ctffind.ctf",
-                "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
-                "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
-                "ctf_log" : "${base}_mc_DW_ctffind.txt"
-           },
-           "moviestack" : {
-               "type": StackParser,
-               "depends" : "motioncor2",
-               "moviestack" : "${collection_dir}${base}.mrc"
-               },
+        #    "ctffind4" : {
+        #         "type" : CtffindParser,
+        #         "depends" : "ctffind",
+        #         "ctf_image" : "${base}_mc_DW_ctffind.ctf",
+        #         "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
+        #         "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
+        #         "ctf_log" : "${base}_mc_DW_ctffind.txt"
+        #    },
+        #    "moviestack" : {
+        #        "type": StackParser,
+        #        "depends" : "motioncor2",
+        #        "moviestack" : "${collection_dir}${base}.mrc"
+        #        },
            "navigator" : {
                "type": NavigatorParser,
                "glob" : "${collection_dir}*.nav",
@@ -183,6 +183,7 @@ def prepare_gain_reference(gain_ref, scratch_dir):
         else:
             raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
 
+    print(target_path)
     return target_path
 
 
