@@ -21,8 +21,11 @@ import signal
 import gzip
 import pystar2
 import traceback
-import couchdb
 import math
+try:
+	import couchdb
+except ModuleNotFoundError:
+	print('ERROR: You are missing couchdb.\nTo install, try:\ncky-python -m pip install --user couchdb\n')
 
 
 class FloatEncoder(json.JSONEncoder):
