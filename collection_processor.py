@@ -56,11 +56,11 @@ config = {
         #         "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
         #         "ctf_log" : "${base}_mc_DW_ctffind.txt"
         #    },
-        #    "moviestack" : {
-        #        "type": StackParser,
-        #        "depends" : "motioncor2",
-        #        "moviestack" : "${collection_dir}${base}.mrc"
-        #        },
+           "moviestack" : {
+               "type": StackParser,
+               "depends" : "motioncor2",
+               "moviestack" : "${collection_dir}${base}.mrc"
+               },
            "navigator" : {
                "type": NavigatorParser,
                "glob" : "${collection_dir}*.nav",
