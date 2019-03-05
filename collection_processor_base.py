@@ -1,6 +1,7 @@
 from multiprocessing import Process
 import pyfs
 import os
+import sys
 import glob
 from time import sleep
 import time
@@ -56,7 +57,18 @@ class CollectionProcessor(Process):
         else:
             self.work_dir = work_dir
 
+    def initialize_logging(self):
+        processing_path = self.config["scratch_dir"]
+        out_path = os.path.join(processing_path, "hotspur_{}.out".format(self.process_id))
+        err_path = os.path.join(processing_path, "hotspur_{}.err".format(self.process_id))
+        sys.stdout = open(out_path, "w", buffering=1)
+        sys.stderr = open(err_path, "w", buffering=1)
+
+        print('Hotspur {} stdout redirected to {}'.format(self.process_id, out_path))
+        print('Hotspur {} stderr redirected to {}'.format(self.process_id, err_path))
+
     def run(self):
+        self.initialize_logging()
         os.chdir(self.work_dir)
         idle = 0
         sleep(randint(1000,9000)*0.001)
