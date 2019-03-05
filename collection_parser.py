@@ -152,15 +152,15 @@ class IdogpickerParser(Parser):
         value[self.parser_id] = {}
         value[self.parser_id]["idogpicker_filename"] = string.Template(
             self.config["filename"]).substitute(base=stackname)
-        doc = {}
-        doc['_id'] = stackname+"_particles_hotspurdefault"
-        doc['micrograph'] = stackname
-        doc['type'] = "particles"
-        doc['program'] = "idogpicker"
+        # doc = {}
+        # doc['_id'] = stackname+"_particles_hotspurdefault"
+        # doc['micrograph'] = stackname
+        # doc['type'] = "particles"
+        # doc['program'] = "idogpicker"
 
-        doc['idogpicker_file'] = string.Template(
-            self.config["filename"]).substitute(base=stackname)
-        self.db.save(doc)
+        # doc['idogpicker_file'] = string.Template(
+        #     self.config["filename"]).substitute(base=stackname)
+        # self.db.save(doc)
 
 class GctfParser(Parser):
     def parse_process(self, stackname):
