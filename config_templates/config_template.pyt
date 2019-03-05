@@ -6,7 +6,7 @@ def configure_project(config):
     collection_dir = "{{ frames_directory }}"
     user = "{{ user_id }}"
     # glob for micrograph scanning
-    glob = "*/*.tif"
+    glob = "*.tif"
     # The path to the .dm4 gain reference file.
     gain_ref = "{{ gain_ref }}"
 
