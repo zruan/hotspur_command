@@ -698,12 +698,24 @@ class ParserProcess(Process):
     def __init__(self, config, work_dir=None):
         Process.__init__(self)
         self.config = config
+        self.process_id = "parser_process"
         if work_dir is None:
             self.work_dir = config["scratch_dir"]
         else:
             self.work_dir = work_dir
 
+    def initialize_logging(self):
+        processing_path = self.config["scratch_dir"]
+        out_path = os.path.join(processing_path, "hotspur_{}.out".format(self.process_id))
+        err_path = os.path.join(processing_path, "hotspur_{}.err".format(self.process_id))
+        sys.stdout = open(out_path, "w", buffering=1)
+        sys.stderr = open(err_path, "w", buffering=1)
+
+        print('Hotspur {} stdout redirected to {}'.format(self.process_id, out_path))
+        print('Hotspur {} stderr redirected to {}'.format(self.process_id, err_path))
+
     def run(self):
+        self.initialize_logging()
         seconds = 0
         if "work_dir" in self.config["parser"]:
             os.chdir(self.config["parser"]["work_dir"])
@@ -731,7 +743,6 @@ class ParserProcess(Process):
         #     db = couch.create(user+"_"+dataset)
         # except couchdb.http.PreconditionFailed:
         #     db = couch[user+"_"+dataset]
-
         parsers = []
         for (key, value) in config.items():
             if type(value) is dict:
