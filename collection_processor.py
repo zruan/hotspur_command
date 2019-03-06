@@ -59,7 +59,7 @@ config = {
            "moviestack" : {
                "type": StackParser,
                "depends" : "motioncor2",
-               "moviestack" : "${collection_dir}${base}.mrc"
+               "moviestack" : "${collection_dir}${base}.tif"
                },
            "navigator" : {
                "type": NavigatorParser,
