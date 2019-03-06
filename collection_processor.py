@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/hotspur/storage/sw/hotspur_env/bin/python
 from multiprocessing import Process
 import sys
 import glob

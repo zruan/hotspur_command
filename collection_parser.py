@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/hotspur/storage/sw/hotspur_env/bin/python
 from __future__ import print_function
 import sys
 import glob
@@ -22,10 +22,7 @@ import gzip
 import pystar2
 import traceback
 import math
-try:
-	import couchdb
-except ModuleNotFoundError:
-	print('ERROR: You are missing couchdb.\nTo install, try:\ncky-python -m pip install --user couchdb\n')
+import couchdb
 
 
 class FloatEncoder(json.JSONEncoder):
