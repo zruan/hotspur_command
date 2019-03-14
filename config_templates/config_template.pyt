@@ -78,7 +78,7 @@ EOF"""
     })
 
     if '.tif' in glob:
-        config['moviestack'].update({
+        config['parser']['moviestack'].update({
             "moviestack" : "${collection_dir}${base}.tif"
         })
 
