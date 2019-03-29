@@ -12,6 +12,7 @@ def configure_project(config):
     archive_dir = "/tmp/JE_test_archive/"
     # Directory that holds lock files for processing
     lock_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/lock/"
+    gain_ref = "{{ gainref }}"
 
     # edit values here to change them in all processes
     voltage = {{ voltage }}
@@ -74,11 +75,12 @@ EOF"""
         'dose_rate': dose_rate,
         'ac': ac,
         'mc_para': mc_para,
-        'gctf_para': gctf_para
+        'gctf_para': gctf_para,
+	'gain_ref': gain_ref
     })
 
     if '.tif' in glob:
-        config['moviestack'].update({
+        config['parser']['moviestack'].update({
             "moviestack" : "${collection_dir}${base}.tif"
         })
 
@@ -87,9 +89,9 @@ EOF"""
     for mc_process in motioncor_gpus:
         gpu = ' '.join(map(str, mc_process))
         if '.tif' in glob:
-            processes.append(CommandProcessor("motioncor2", "motioncor2 -InTiff ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv ${voltage} -gain ref.mrc -PixSize ${pixel_size_mc} -FmDose ${dose_rate} ${mc_para} -Iter 10 -Tol 0.5 -Gpu " + str(gpu) + " > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
+            processes.append(CommandProcessor("motioncor2", "motioncor2 -InTiff ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv ${voltage} -gain ${gain_ref} -PixSize ${pixel_size_mc} -FmDose ${dose_rate} ${mc_para} -Iter 10 -Tol 0.5 -Gpu " + str(gpu) + " > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
         elif '.mrc' in glob:
-            processes.append(CommandProcessor("motioncor2", "motioncor2 -InMrc ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv ${voltage} -gain ref.mrc -PixSize ${pixel_size_mc} -FmDose ${dose_rate} ${mc_para} -Iter 10 -Tol 0.5 -Gpu " + str(gpu) + " > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
+            processes.append(CommandProcessor("motioncor2", "motioncor2 -InMrc ${filename} -OutMrc ${scratch_dir}${filename_noex}_mc.mrc -Kv ${voltage} -gain ${gain_ref} -PixSize ${pixel_size_mc} -FmDose ${dose_rate} ${mc_para} -Iter 10 -Tol 0.5 -Gpu " + str(gpu) + " > ${scratch_dir}${filename_noex}_mc.log; rm ${scratch_dir}${filename_noex}_mc.mrc", config, watch_glob=config["glob"], min_age=60, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
 
     processes.append(PreviewProcessor("motioncor2_prev", config, "${stackname}_mc_DW.mrc", depends="motioncor2", min_age=0, sleep=2, work_dir=config["scratch_dir"]))
     for gpu in gctf_gpus:
@@ -97,7 +99,7 @@ EOF"""
     processes.append(PreviewProcessor("gctf_prev", config, "${stackname}_mc_DW.ctf", depends="gctf", min_age=0, sleep=2, work_dir=config["scratch_dir"],suffix="_ctf",zoom=1.0))
     for i in range(ctffind_processes):
         processes.append(CommandProcessor('ctffind', ctffind_hereDoc, config, depends="motioncor2", min_age=0, sleep=2, work_dir=config["scratch_dir"]))
-    processes.append(PreviewProcessor('ctffind', config, "${stackname}_mc_DW_ctffind.ctf", depends = "ctffind", min_age = 0, sleep = 2, work_dir = config["scratch_dir"],suffix = '_ctffind', zoom=1.0))
+    processes.append(PreviewProcessor('ctffind_prev', config, "${stackname}_mc_DW_ctffind.ctf", depends = "ctffind", min_age = 0, sleep = 2, work_dir = config["scratch_dir"],suffix = '_ctf', zoom=1.0))
     processes.append(CommandProcessor("montage", "( edmont -imin ${filename} -plout ${scratch_dir}${filename_noex}.plist.tmp -imout ${scratch_dir}${filename_noex}.mont.mrc.tmp && blendmont -imin ${scratch_dir}${filename_noex}.mont.mrc.tmp -imout ${scratch_dir}${filename_noex}.blend.mrc.tmp -plin ${scratch_dir}${filename_noex}.plist.tmp -roo tmp -bin 8 && mrc2tif -p ${scratch_dir}${filename_noex}.blend.mrc.tmp ${scratch_dir}${filename_noex}_preview.png && rm ${scratch_dir}${filename_noex}.*.tmp ) > ${scratch_dir}${filename_noex}.montage.log", config, watch_glob="grid*mm*.mrc", min_age=1800, sleep=2, work_dir=config["collection_dir"], ensure_dirs=["${scratch_dir}${filename_directory}","${lock_dir}${filename_directory}"]))
     processes.append(IdogpickerProcessor("idogpicker", config, "${stackname}_mc_DW.mrc", depends="motioncor2",min_age=0, sleep=2, work_dir=config["scratch_dir"]))
 
