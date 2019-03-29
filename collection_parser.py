@@ -315,7 +315,9 @@ class CtffindParser(Parser):
         value["EPA"]["Resolution"] = list(np.nan_to_num(data[0]))
         value["EPA"]["Sim. CTF"] = list(np.nan_to_num(data[3]))
         value["EPA"]["Meas. CTF"] = list(np.nan_to_num(data[2]))
-        value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data[5]))
+        value["EPA"]["Meas. CTF - BG"] = list(np.nan_to_num(data[2]))
+        value["EPA"]["Ctffind_CC"] = list(np.nan_to_num(data[4]))
+        value["EPA"]["Ctffind_CCnoise"] = list(np.nan_to_num(data[5]))
 
     def parse_ctffind_log(self, filename, value):
         # ctffind output is diagnostic_output.txt
@@ -332,7 +334,7 @@ class CtffindParser(Parser):
         value["Astig angle"] = ctf_params[3]
         value["Phase shift"] = ctf_params[4]
         value["CCC"] = ctf_params[5]
-        value["Estimated resolution"] = ctf_params[6]
+        value["Estimated resolution"] = ctf_params[6].rstrip();
         value["Estimated b-factor"] = 0
 
 class Negstainparser(Parser):
