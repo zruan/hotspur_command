@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/hotspur/storage/sw/hotspur_env/bin/python
 import sys, argparse, logging
 import imaging
 import os
