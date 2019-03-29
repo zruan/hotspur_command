@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/hotspur/storage/sw/hotspur_env/bin/python
 import sys, argparse, logging
 import imaging
 import os
@@ -64,7 +64,7 @@ def main(args, loglevel):
           "gctf_para" : "",
           "mode" : "counting",
           "phaseplate" : False,
-          "gainref" : ""
+          "gainref" : "ref.mrc"
           }
     if (args.micrograph):
         parse_micrograph(args.micrograph, default_config)

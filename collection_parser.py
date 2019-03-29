@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/hotspur/storage/sw/hotspur_env/bin/python
 from __future__ import print_function
 import sys
 import glob
@@ -21,8 +21,8 @@ import signal
 import gzip
 import pystar2
 import traceback
-import couchdb
 import math
+import couchdb
 
 
 class FloatEncoder(json.JSONEncoder):

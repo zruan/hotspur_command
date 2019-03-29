@@ -29,7 +29,7 @@ MRCHeader = np.dtype([
     ("max", "f4"),
     ("mean", "f4"),
     ("spacegroup", "f4"),
-    ("symmetry", "f4"),
+    ("symmetry", "i4"),
     ("extra", "25i4"),
     ("origin", "3f4"),
     ("type", "i4"),
@@ -52,8 +52,10 @@ def load(path, supress=False, norm=False):
             print('swapping MRC endian')
             endian = '>'
             header = header.newbyteorder(endian)
+        print("Extra: " + str(header["symmetry"]))
+        print(MRCHeader.itemsize + header["symmetry"])
         data = np.memmap(fd, mode="c",
-                           offset=MRCHeader.itemsize,
+                           offset=MRCHeader.itemsize + header["symmetry"],
                             dtype=MRCModes[header["mode"]],
                             shape=tuple(header["dims"][::-1]))
         data = data.newbyteorder(endian)
