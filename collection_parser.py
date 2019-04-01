@@ -243,9 +243,12 @@ class GctfParser(Parser):
                 value["Estimated resolution"] = line.split()[-1]
             if "B_FACTOR" in line:
                 value["Estimated b-factor"] = line.split()[-1]
-        value["Validation scores"] = [
-            lines[a].split()[-1] for a in [-2, -3, -4, -5]
-        ]
+        try:
+            value["Validation scores"] = [
+                lines[a].split()[-1] for a in [-2, -3, -4, -5]
+            ]
+        except:
+            value["Validation scores"] = []
 
 class CtffindParser(Parser):
     def parse_process(self, stackname):
@@ -349,12 +352,16 @@ class Negstainparser(Parser):
             "log"]).substitute(base=stackname)
         value[self.parser_id]["preview_filename"] = string.Template(
             self.config["preview"]).substitute(base=stackname)
+        self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
+
 
         doc = {}
         doc['_id'] = stackname+"_motioncorrection_datajsonimport"
         doc['micrograph'] = stackname
         doc['type'] = "motioncorrection"
         doc['program'] = "Its just negativestain,come on"
+        doc['dimensions'] = value[self.parser_id]['dimensions']
+        doc['pixel_size'] = value[self.parser_id]['pixel_size']
 
         doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
         doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
