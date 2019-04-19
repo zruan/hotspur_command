@@ -3,16 +3,12 @@ def configure_project(config):
     ##### Make your changes here #####
     ##################################
     # where to look for micrographs
-    collection_dir = "{{ curr_dir }}/"
+    collection_dir = "{{ frames_directory }}"
+    user = "{{ user_id }}"
     # glob for micrograph scanning
-    glob = "*/*.tif"
-    # Scratch directory where data processing will be done. Should be an SSD
-    scratch_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/"
-    # Archive dir. If configured files will be moved there fore permanent storage
-    archive_dir = "/tmp/JE_test_archive/"
-    # Directory that holds lock files for processing
-    lock_dir = "/hotspur/scratch/{{ user }}/{{ curr_dir_base }}/lock/"
-    gain_ref = "{{ gainref }}"
+    glob = "*.tif"
+    # The path to the .dm4 gain reference file.
+    gain_ref = "{{ gain_ref }}"
 
     # edit values here to change them in all processes
     voltage = {{ voltage }}
@@ -20,7 +16,9 @@ def configure_project(config):
     pixel_size_gctf = {{ pixel_size_gctf }}
     dose_rate = {{ dose_rate }}
     ac = {{ ac }}
+    # Additional motioncor2 arguements
     mc_para = '{{ mc_para }}'
+    # Additional gctf arguements
     gctf_para = '{{ gctf_para }}'
     # number of ctffind processes to spawn
     ctffind_processes = 2
@@ -37,6 +35,13 @@ def configure_project(config):
     # gctf can only handle one GPU per process, so this is a simple list of processes
     # (i.e., two processes, one on 0 and one on 1, would be [0, 1])
     gctf_gpus = [0]
+
+    # Scratch directory where data processing will be done. Should be an SSD
+    scratch_dir = "{{ scratch_dir }}"
+    # Directory that holds lock files for processing
+    lock_dir = "{{ lock_dir }}"
+    # Archive dir. If configured files will be moved there fore permanent storage
+    archive_dir = "/tmp/JE_test_archive/"
 
     ###############################################################
     ###### Don't edit below unless you know what you're doing #####
@@ -76,7 +81,8 @@ EOF"""
         'ac': ac,
         'mc_para': mc_para,
         'gctf_para': gctf_para,
-	'gain_ref': gain_ref
+        'user_id': user,
+        'gain_ref': gain_ref
     })
 
     if '.tif' in glob:
