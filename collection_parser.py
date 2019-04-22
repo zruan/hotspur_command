@@ -1,4 +1,4 @@
-#!/eppec/storage/sw/cky-tools/site/bin/python
+#!/eppec/storage/sw/hotspur_dev/venv/bin/python
 from __future__ import print_function
 import sys
 import glob
