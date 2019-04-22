@@ -23,6 +23,7 @@ import pystar2
 import traceback
 import math
 import couchdb
+import hotspur_setup
 
 
 class FloatEncoder(json.JSONEncoder):
@@ -735,21 +736,21 @@ class ParserProcess(Process):
         except FileNotFoundError:
             database = OrderedDict()
 
-        # couch = couchdb.Server('http://elferich:particles@localhost:5984/')
+        couch = couchdb.Server(hotspur_setup.couchdb_address)
 
-        # user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
-        # dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
+        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
+        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
 
-        # dataset_disallowed_chars = re.compile('[A-Z]')
-        # if re.search(dataset_disallowed_chars, dataset):
-        #     os.symlink(dataset, dataset.lower())
-        #     dataset = dataset.lower()
+        dataset_disallowed_chars = re.compile('[A-Z]')
+        if re.search(dataset_disallowed_chars, dataset):
+            os.symlink(dataset, dataset.lower())
+            dataset = dataset.lower()
 
+        try:
+            db = couch.create(user+"_"+dataset)
+        except couchdb.http.PreconditionFailed:
+            db = couch[user+"_"+dataset]
 
-        # try:
-        #     db = couch.create(user+"_"+dataset)
-        # except couchdb.http.PreconditionFailed:
-        #     db = couch[user+"_"+dataset]
         parsers = []
         for (key, value) in config.items():
             if type(value) is dict:
