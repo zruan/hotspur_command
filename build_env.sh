@@ -1,6 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/bash 
 
-virtualenv -p $(which python3) venv
+control_c(){
+	deactivate
+	exit
+}
+
+trap control_c SIGINT
+
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 deactivate
