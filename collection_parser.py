@@ -153,15 +153,15 @@ class IdogpickerParser(Parser):
         value[self.parser_id] = {}
         value[self.parser_id]["idogpicker_filename"] = string.Template(
             self.config["filename"]).substitute(base=stackname)
-        # doc = {}
-        # doc['_id'] = stackname+"_particles_hotspurdefault"
-        # doc['micrograph'] = stackname
-        # doc['type'] = "particles"
-        # doc['program'] = "idogpicker"
+        doc = {}
+        doc['_id'] = stackname+"_particles_hotspurdefault"
+        doc['micrograph'] = stackname
+        doc['type'] = "particles"
+        doc['program'] = "idogpicker"
 
-        # doc['idogpicker_file'] = string.Template(
-        #     self.config["filename"]).substitute(base=stackname)
-        # self.db.save(doc)
+        doc['idogpicker_file'] = string.Template(
+            self.config["filename"]).substitute(base=stackname)
+        self.db.save(doc)
 
 class GctfParser(Parser):
     def parse_process(self, stackname):
@@ -181,38 +181,38 @@ class GctfParser(Parser):
                            value[self.parser_id])
         self.parse_gctf_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
-        # doc = {}
-        # doc['_id'] = stackname+"_ctf_hotspurdefault"
-        # doc['micrograph'] = stackname
-        # doc['type'] = "ctf"
-        # doc['program'] = "Gctf 1.06"
+        doc = {}
+        doc['_id'] = stackname+"_ctf_hotspurdefault"
+        doc['micrograph'] = stackname
+        doc['type'] = "ctf"
+        doc['program'] = "Gctf 1.06"
 
-        # doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
-        # doc['defocus_u'] = value[self.parser_id]['Defocus U']
-        # doc['defocus_v'] = value[self.parser_id]['Defocus V']
-        # #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
-        # #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
-        # #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
-        # #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
-        # doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
-        # doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
-        # doc['cross_correlation'] = value[self.parser_id]['Phase shift']
-        # doc['gctf_validation_scores'] = value[self.parser_id]['Validation scores']
-        # doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
-        # doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
-        # doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
-        # doc['file_ctf_star'] = value[self.parser_id]['ctf_star_filename']
-        # doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
-        # doc['file_ctf_curve'] = stackname + "_ctfcurve.json"
-        # with open(doc['file_ctf_curve'], 'w') as outfile:
-        #     json.dump({
-        #         'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
-        #         'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
-        #         'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
-        #         'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
-        #     }, outfile, allow_nan=False)
+        doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
+        doc['defocus_u'] = value[self.parser_id]['Defocus U']
+        doc['defocus_v'] = value[self.parser_id]['Defocus V']
+        #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
+        #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
+        #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
+        #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
+        doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
+        doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
+        doc['cross_correlation'] = value[self.parser_id]['Phase shift']
+        doc['gctf_validation_scores'] = value[self.parser_id]['Validation scores']
+        doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
+        doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
+        doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
+        doc['file_ctf_star'] = value[self.parser_id]['ctf_star_filename']
+        doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
+        doc['file_ctf_curve'] = stackname + "_ctfcurve.json"
+        with open(doc['file_ctf_curve'], 'w') as outfile:
+            json.dump({
+                'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
+                'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
+                'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
+                'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
+            }, outfile, allow_nan=False)
 
-        # self.db.save(doc)
+        self.db.save(doc)
 
 
     def parse_EPA_log(self, filename, value):
@@ -268,36 +268,36 @@ class CtffindParser(Parser):
                            value[self.parser_id])
         self.parse_ctffind_log(value[self.parser_id]["ctf_log_filename"],
                             value[self.parser_id])
-        # doc = {}
-        # doc['_id'] = stackname+"_ctf_ctffind"
-        # doc['micrograph'] = stackname
-        # doc['type'] = "ctf"
-        # doc['program'] = "Ctffind 4"
+        doc = {}
+        doc['_id'] = stackname+"_ctf_ctffind"
+        doc['micrograph'] = stackname
+        doc['type'] = "ctf"
+        doc['program'] = "Ctffind 4"
 
-        # doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
-        # doc['defocus_u'] = value[self.parser_id]['Defocus U']
-        # doc['defocus_v'] = value[self.parser_id]['Defocus V']
-        # #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
-        # #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
-        # #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
-        # #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
-        # doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
-        # doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
-        # doc['cross_correlation'] = value[self.parser_id]["CCC"]
-        # doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
-        # doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
-        # doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
-        # doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
-        # doc['file_ctf_curve'] = stackname + "_ctfcurve_ctffind.json"
-        # with open(doc['file_ctf_curve'], 'w') as outfile:
-        #     json.dump({
-        #         'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
-        #         'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
-        #         'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
-        #         'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
-        #     }, outfile, allow_nan=False)
+        doc['astigmatism_angle'] = value[self.parser_id]['Astig angle']
+        doc['defocus_u'] = value[self.parser_id]['Defocus U']
+        doc['defocus_v'] = value[self.parser_id]['Defocus V']
+        #doc['ctf_measured'] = value[self.parser_id]['EPA']['Meas. CTF']
+        #doc['ctf_measured_nobg'] = value[self.parser_id]['EPA']['Meas. CTF - BG']
+        #doc['ctf_resolution_a'] = value[self.parser_id]['EPA']['Resolution']
+        #doc['ctf_theory'] = value[self.parser_id]['EPA']['Sim. CTF']
+        doc['estimated_b_factor'] = value[self.parser_id]['Estimated b-factor']
+        doc['estimated_resolution'] = value[self.parser_id]['Estimated resolution']
+        doc['cross_correlation'] = value[self.parser_id]["CCC"]
+        doc['gctf_file_epa_log']  = value[self.parser_id]['ctf_epa_log_filename']
+        doc['file_ctf_image'] = value[self.parser_id]['ctf_image_filename']
+        doc['file_ctf_image_preview'] = value[self.parser_id]['ctf_preview_image_filename']
+        doc['file_ctf_log'] = value[self.parser_id]['ctf_log_filename']
+        doc['file_ctf_curve'] = stackname + "_ctfcurve_ctffind.json"
+        with open(doc['file_ctf_curve'], 'w') as outfile:
+            json.dump({
+                'ctf_measured': value[self.parser_id]["EPA"]["Meas. CTF"],
+                'ctf_measured_nobg': value[self.parser_id]["EPA"]["Meas. CTF - BG"],
+                'ctf_resolution_a': value[self.parser_id]["EPA"]["Resolution"],
+                'ctf_theory': value[self.parser_id]["EPA"]["Sim. CTF"]
+            }, outfile, allow_nan=False)
 
-        # self.db.save(doc)
+        self.db.save(doc)
 
     def parse_EPA_log(self, filename, value):
         # ctffind4 log output filename: diagnostic_output_avrot.txt
@@ -356,18 +356,18 @@ class Negstainparser(Parser):
         self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
 
 
-        # doc = {}
-        # doc['_id'] = stackname+"_motioncorrection_datajsonimport"
-        # doc['micrograph'] = stackname
-        # doc['type'] = "motioncorrection"
-        # doc['program'] = "Its just negativestain,come on"
+        doc = {}
+        doc['_id'] = stackname+"_motioncorrection_datajsonimport"
+        doc['micrograph'] = stackname
+        doc['type'] = "motioncorrection"
+        doc['program'] = "Its just negativestain,come on"
 
-        # doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
-        # doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
-        # doc['file_log'] = value[self.parser_id]['log_filename']
-        # doc['file_preview'] = value[self.parser_id]['preview_filename']
-        # #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
-        # self.db.save(doc)
+        doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
+        doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
+        doc['file_log'] = value[self.parser_id]['log_filename']
+        doc['file_preview'] = value[self.parser_id]['preview_filename']
+        #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
+        self.db.save(doc)
 
     def parse_log(self, base, filename):
         try:
@@ -422,32 +422,28 @@ class MotionCor2Parser(Parser):
         self.parse_log(stackname, value[self.parser_id]["log_filename"])
         self.parse_mrc(stackname, value[self.parser_id]["dw_micrograph_filename"])
 
-        # doc = {}
-        # doc['_id'] = stackname+"_motioncorrection_datajsonimport"
-        # doc['micrograph'] = stackname
-        # doc['type'] = "motioncorrection"
-        # doc['program'] = "motioncor2 1.10"
+        doc = {}
+        doc['_id'] = stackname+"_motioncorrection_datajsonimport"
+        doc['micrograph'] = stackname
+        doc['type'] = "motioncorrection"
+        doc['program'] = "motioncor2 1.10"
 
-        # doc['dimensions'] = value[self.parser_id]['dimensions']
-        # doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
-        # doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
-        # doc['file_log'] = value[self.parser_id]['log_filename']
-        # doc['pixel_size'] = value[self.parser_id]['pixel_size']
-        # doc['file_preview'] = value[self.parser_id]['preview_filename']
-        # #doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
-        # doc['initial_shift'] = math.sqrt(value[self.parser_id]['x_shifts'][1]**2 + value[self.parser_id]['y_shifts'][1]**2)
-        # total = 0
-        # for i,a in enumerate(value[self.parser_id]['x_shifts']):
-        #     total += math.sqrt(a**2 + value[self.parser_id]['y_shifts'][i]**2)
-        # doc['total_shift'] = total
-        # doc['file_shifts'] = stackname + "_motioncor_shifts.json"
-        # with open(doc['file_shifts'], 'w') as outfile:
-        #     json.dump([value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']],outfile)
-
-
-
-
-        # self.db.save(doc)
+        doc['dimensions'] = value[self.parser_id]['dimensions']
+        doc['file_dw'] = value[self.parser_id]['dw_micrograph_filename']
+        doc['file_sum'] = value[self.parser_id]['sum_micrograph_filename']
+        doc['file_log'] = value[self.parser_id]['log_filename']
+        doc['pixel_size'] = value[self.parser_id]['pixel_size']
+        doc['file_preview'] = value[self.parser_id]['preview_filename']
+        # doc['frame_shifts'] = [value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']]
+        doc['initial_shift'] = math.sqrt(value[self.parser_id]['x_shifts'][1]**2 + value[self.parser_id]['y_shifts'][1]**2)
+        total = 0
+        for i,a in enumerate(value[self.parser_id]['x_shifts']):
+            total += math.sqrt(a**2 + value[self.parser_id]['y_shifts'][i]**2)
+        doc['total_shift'] = total
+        doc['file_shifts'] = stackname + "_motioncor_shifts.json"
+        with open(doc['file_shifts'], 'w') as outfile:
+            json.dump([value[self.parser_id]['x_shifts'],value[self.parser_id]['y_shifts']],outfile)
+        self.db.save(doc)
 
     def parse_log(self, base, filename):
         try:
@@ -660,18 +656,18 @@ class StackParser(Parser):
                 "dimensions": dimensions,
                 "dose_per_pix_frame": dose_per_frame
             }
-            # doc = {}
-            # doc['_id'] = base+"_movie"
-            # doc['micrograph'] = base
-            # doc['type'] = "movie"
+            doc = {}
+            doc['_id'] = base+"_movie"
+            doc['micrograph'] = base
+            doc['type'] = "movie"
 
-            # doc['acquisition_time'] = self.database[base][self.parser_id]['acquisition_time']
-            # doc['dimensions'] = self.database[base][self.parser_id]['dimensions']
-            # doc['number_frames'] = self.database[base][self.parser_id]['numframes']
-            # doc['pixel_size'] = 0
-            # doc['dose_pixel_frame'] = self.database[base][self.parser_id]['dose_per_pix_frame']
-            # doc['file'] = self.database[base][self.parser_id]['filename']
-            # self.db.save(doc)
+            doc['acquisition_time'] = self.database[base][self.parser_id]['acquisition_time']
+            doc['dimensions'] = self.database[base][self.parser_id]['dimensions']
+            doc['number_frames'] = self.database[base][self.parser_id]['numframes']
+            doc['pixel_size'] = 0
+            doc['dose_pixel_frame'] = self.database[base][self.parser_id]['dose_per_pix_frame']
+            doc['file'] = self.database[base][self.parser_id]['filename']
+            self.db.save(doc)
         except AttributeError as e:
             print(e)
             raise
