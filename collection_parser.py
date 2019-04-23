@@ -750,8 +750,10 @@ class ParserProcess(Process):
         parsers = []
         for (key, value) in config.items():
             if type(value) is dict:
-                parsers.append(value["type"](key, database, value,
-                                             self.config, None))#,db))
+                parsers.append(value["type"](
+                    key, database, value,
+                    self.config, None, db
+                ))
 
         while True:
             try:
