@@ -12,14 +12,16 @@ import getpass
 import pyfs
 import stat
 import imaging
-from collection_processor_base import CollectionProcessor
-from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
-from parsers.stack_parser import StackParser
-from idogpicker_processor import IdogpickerProcessor
 from random import randint
 from time import sleep
 import hashlib
+
+from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
+from parsers.stack_parser import StackParser
+from idogpicker_processor import IdogpickerProcessor
 import hotspur_setup
+from processors import CommandProcessor, PreviewProcessor
+
 
 config = {
         # Directory that will be scanned for micrographs
@@ -91,46 +93,7 @@ processes = []
 
 
 
-class PreviewProcessor(CollectionProcessor):
 
-    def __init__(self,
-                 process_id,
-                 config,
-                 filename,
-                 suffix="",
-                 zoom=0.25,
-                 **kwargs):
-        CollectionProcessor.__init__(self, process_id, config, **kwargs)
-        self.suffix = suffix
-        self.zoom = zoom
-        self.filename = filename
-
-    def create_preview(self, filename):
-        image_data = imaging.load(filename)
-        for i, image in enumerate(image_data):
-            if len(image_data) == 1:
-                num = ""
-            else:
-                num = str(i)
-            image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-            image = imaging.filters.zoom(image, self.zoom)
-            picks_path = pyfs.rext(filename) + self.suffix + num + '.preview.png'
-            imaging.save(image, picks_path)
-
-    def run_loop(self, config, replace_dict):
-        self.create_preview(
-            string.Template(self.filename).substitute(replace_dict))
-
-
-class CommandProcessor(CollectionProcessor):
-
-    def __init__(self, process_id, process_command, config, **kwargs):
-        CollectionProcessor.__init__(self, process_id, config, **kwargs)
-        self.process_command = process_command
-
-    def run_loop(self, config, replace_dict):
-        command = Template(self.process_command).substitute(replace_dict)
-        res = subprocess.run(command, shell=True)
 
 
 def get_user_id_hash(user_id):
@@ -159,6 +122,10 @@ def prepare_directory_structure(config):
 def arguments():
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data'
+    )
+    parser.add_argument(
+        'target-dir',
+        help='The directory containing your data.'
     )
     parser.add_argument(
         'config',
