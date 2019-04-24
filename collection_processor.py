@@ -18,7 +18,6 @@ import hashlib
 
 from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
 from parsers.stack_parser import StackParser
-from idogpicker_processor import IdogpickerProcessor
 import hotspur_setup
 from processors import CommandProcessor, PreviewProcessor
 
@@ -94,7 +93,6 @@ processes = []
 
 def prepare_processes(config):
     print("Not yet implemented.")
-
 
 
 def get_user_id_hash(user_id):
