@@ -24,6 +24,7 @@ import traceback
 import math
 import couchdb
 import hotspur_setup
+from data_objects.acquisition_data import AcquisitionData
 
 
 class FloatEncoder(json.JSONEncoder):
@@ -616,66 +617,10 @@ class StackParser(Parser):
             raise
 
     def analyze_file(self, base, filename):
-
-        try:
-            if not os.path.isfile(filename):
-                print(filename + ".bz2")
-                acquisition_time = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(filename + ".bz2"))
-                self.database[base][self.parser_id] = {
-                    "filename": filename,
-                    "acquisition_time":
-                    acquisition_time.replace(tzinfo=tzlocal()).isoformat()
-                }
-                return
-            numframes = 1
-            dimensions =[1,1]
-            dose_per_frame = 1
-            try:
-                header = imaging.formats.FORMATS["mrc"].load_header(filename)
-                acquisition_time = dateutil.parser.parse(header['labels'][
-                    0].decode().split()[-2] + " " + header['labels'][0].decode(
-                    ).split()[-1])
-                numframes = int(header['dims'][2])
-                dimensions = (int(header['dims'][0]), int(header['dims'][1]))
-                dose_per_frame = float(header['mean'])
-            except (ValueError, IndexError) as e:
-                print("No date in header ... ", end="", flush=True)
-                try:
-                    acquisition_time = datetime.datetime.strptime("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[-3:-1]),"%b%d_%H.%M.%S")
-                except ValueError:
-                    print("Filename has no date")
-                    print("_".join(pyfs.rext(filename.split('/')[-1]).split('_')[-3:-1]))
-                    acquisition_time = datetime.datetime.fromtimestamp(
-                      os.path.getmtime(filename))
-            self.database[base][self.parser_id] = {
-                "filename": filename,
-                "numframes": numframes,
-                "acquisition_time":
-                acquisition_time.replace(tzinfo=tzlocal()).isoformat(),
-                "dimensions": dimensions,
-                "dose_per_pix_frame": dose_per_frame
-            }
-            doc = {}
-            doc['_id'] = base+"_movie"
-            doc['micrograph'] = base
-            doc['type'] = "movie"
-
-            doc['acquisition_time'] = self.database[base][self.parser_id]['acquisition_time']
-            doc['dimensions'] = self.database[base][self.parser_id]['dimensions']
-            doc['number_frames'] = self.database[base][self.parser_id]['numframes']
-            doc['pixel_size'] = 0
-            doc['dose_pixel_frame'] = self.database[base][self.parser_id]['dose_per_pix_frame']
-            doc['file'] = self.database[base][self.parser_id]['filename']
-            self.db.save(doc)
-        except AttributeError as e:
-            print(e)
-            raise
-        except IOError:
-            print("Error loading mrc!", sys.exc_info()[0])
-
-            raise
-
+        mdoc_path = filename + '.mdoc'
+        if os.path.isfile(mdoc_path):
+            acquisition_data = AcquisitionData.read_from_mdoc(mdoc_path)
+            acquisition_data.save_to_couchdb(self.db)
 
 def arguments():
     def floatlist(string):
