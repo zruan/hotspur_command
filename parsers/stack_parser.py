@@ -20,7 +20,7 @@ class StackParser(Parser):
         mdoc_file_path = filename + '.mdoc'
         if os.path.isfile(mdoc_file_path):
             data_model = AcquisitionDataModel()
-            data_model._id = base + '_movie'
+            data_model._id = AcquisitionDataModel.generate_id(base)
             with open(mdoc_file_path, 'r') as mdoc:
                 for line in mdoc.readlines():
                     # key-value pairs are separated by ' = ' in mdoc files

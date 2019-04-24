@@ -25,7 +25,16 @@ class AcquisitionDataModel():
 		db.save(self.__dict__)
 
 	@classmethod
-	def read_from_couchdb(self, db, doc_id):
+	def read_from_couchdb_by_id(self, db, doc_id):
 		params = AcquisitionDataModel()
 		params.__dict__ = db.load(doc_id)
 		return params
+
+	@classmethod
+	def read_from_couchdb_by_name(self, db, base_name):
+		id = generate_id(base_name)
+		return read_from_couchdb_by_id(id)
+
+	@classmethod
+	def generate_id(base_name):
+		return base_name + '_movie'
