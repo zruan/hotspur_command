@@ -16,10 +16,12 @@ from random import randint
 from time import sleep
 import hashlib
 
+from processors import CommandProcessor, PreviewProcessor, IdogpickerProcessor
 from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
 from parsers.stack_parser import StackParser
 import hotspur_setup
-from processors import CommandProcessor, PreviewProcessor
+# from processors import motioncor2_processor_factory, gctf_processor_factory, ctffind_processor_factory
+# from processors import motioncor2_preview_processor_factory, gctf_preview_processor_factory, ctffind_preview_processor_factory
 
 
 config = {

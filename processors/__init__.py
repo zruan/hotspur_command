@@ -10,3 +10,5 @@ from .ctffind_processor_factory import get_ctffind_processor
 from .motioncor2_preview_processor_factory import get_motioncor2_prev_processor
 from .gctf_preview_processor_factory import get_gctf_prev_processor
 from .ctffind_preview_processor_factory import get_gctf_prev_processor
+
+from .idogpicker_processor import IdogpickerProcessor
