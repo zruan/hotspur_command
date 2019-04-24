@@ -1,6 +1,7 @@
 import string
 import os
 import sys
+
 from parsers import Parser
 from data_models import AcquisitionDataModel
 
