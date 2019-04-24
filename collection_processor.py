@@ -92,7 +92,8 @@ processes = []
 
 
 
-
+def prepare_processes(config):
+    print("Not yet implemented.")
 
 
 
@@ -123,10 +124,10 @@ def arguments():
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data'
     )
-    parser.add_argument(
-        'target-dir',
-        help='The directory containing your data.'
-    )
+    # parser.add_argument(
+    #     'target-dir',
+    #     help='The directory containing your data.'
+    # )
     parser.add_argument(
         'config',
         help='Configuration file to use'

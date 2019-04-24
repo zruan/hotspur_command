@@ -2,7 +2,7 @@
 import imaging
 import numpy as np
 import pyfs
-from collection_processor_base import CollectionProcessor
+from processors import CollectionProcessor
 import string
 import json
 
