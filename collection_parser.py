@@ -24,8 +24,7 @@ import traceback
 import math
 import couchdb
 import hotspur_setup
-from data_objects.acquisition_data import AcquisitionData
-
+from parsers.parser import Parser
 
 class FloatEncoder(json.JSONEncoder):
     def __init__(self, nan_str="null", **kwargs):
@@ -98,55 +97,6 @@ class DelayedKeyboardInterrupt(object):
         signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received:
             self.old_handler(*self.signal_received)
-
-
-class Parser:
-    def __init__(self, parser_id, database, config, global_config, db):
-        self.parser_id = parser_id
-        self.database = database
-        self.config = config
-        self.global_config = global_config
-        self.db = db
-        if "glob" in config:
-            self.glob = string.Template(config["glob"]).substitute(global_config)
-        elif "depends" in config:
-            self.glob = (
-                global_config["lock_dir"] + pyfs.rext(global_config["glob"]) +
-                "." + config["depends"] + ".done")
-        else:
-            raise ValueError(
-                self.parserid +
-                ": Need to specify either watch_glob or dependency")
-
-    def parse(self):
-        num_files = 0
-        files = glob.glob(self.glob)
-        for filename in files:
-            if "depends" in self.config:
-                filename = filename[len(self.global_config["lock_dir"]):-len(".done")]
-            if "stackname_lambda" in self.config:
-                stackname = self.config["stackname_lambda"](filename,self.global_config)
-            else:
-                stackname = pyfs.rext(filename, full=False)
-            if  ("run_once" not in self.config or self.config["run_once"]) and stackname in self.database and self.parser_id in self.database[
-                    stackname]:
-                continue
-            if stackname not in self.database:
-                self.database[stackname] = {}
-            print("%s: Parsing %s ..." % (self.parser_id, stackname))
-            try:
-                self.parse_process(stackname)
-            except KeyboardInterrupt:
-                raise KeyboardInterrupt
-            except:
-                with open("parse_error.log", 'a') as fp:
-                    traceback.print_exc(file=fp)
-            num_files += 1
-            print("Done!")
-            if ("num_files_max" in self.config and num_files >=
-                    self.config["num_files_max"]) or num_files > 500:
-                break
-        return num_files
 
 class IdogpickerParser(Parser):
     def parse_process(self, stackname):
@@ -600,28 +550,6 @@ class PickParser(Parser):
                 self.database[base]["picks"][self.parser_id] = []
             self.database[base][self.parser_id] = []
 
-
-
-
-
-class StackParser(Parser):
-    def parse_process(self, stackname):
-        try:
-            filename = string.Template(self.config["moviestack"]).substitute(
-                base=stackname,collection_dir=self.global_config["collection_dir"])
-            self.analyze_file(stackname, filename)
-            print(" Done!")
-        except IOError:
-            self.database[stackname][self.parser_id] = {}
-            print(" Unsuccesful!", sys.exc_info())
-            raise
-
-    def analyze_file(self, base, filename):
-        mdoc_path = filename + '.mdoc'
-        if os.path.isfile(mdoc_path):
-            acquisition_data = AcquisitionData.read_from_mdoc(mdoc_path)
-            acquisition_data.save_to_couchdb(self.db)
-
 def arguments():
     def floatlist(string):
         return list(map(float, string.split(',')))
@@ -684,8 +612,9 @@ class ParserProcess(Process):
 
         dataset_disallowed_chars = re.compile('[A-Z]')
         if re.search(dataset_disallowed_chars, dataset):
-            os.symlink(dataset, dataset.lower())
-            dataset = dataset.lower()
+            if not os.path.exists(dataset.lower()):
+                os.symlink(dataset, dataset.lower())
+                dataset = dataset.lower()
 
         try:
             db = couch.create(user+"_"+dataset)

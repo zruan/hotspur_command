@@ -13,7 +13,8 @@ import pyfs
 import stat
 import imaging
 from collection_processor_base import CollectionProcessor
-from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, StackParser, MontageParser, PickParser, NavigatorParser
+from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
+from parsers.stack_parser import StackParser
 from idogpicker_processor import IdogpickerProcessor
 from random import randint
 from time import sleep
@@ -31,56 +32,57 @@ config = {
         "archive_dir" : "/tmp/JE_test_archive/",
         # Directory that holds lock files for processing
         "lock_dir"    : "/hotspur/scratch/posert/hotspur_default/scratch/lock/",
-        "parser" :{ "MotionCor2" : {
-		"type" : MotionCor2Parser,
-		"depends" : "motioncor2",
-                "sum_micrograph" : "${base}_mc.mrc",
-                "dw_micrograph" : "${base}_mc_DW.mrc",
-                "log" : "${base}_mc.log",
-                "preview" : "${base}_mc_DW.preview.png"
+        "parser" : {
+            # "MotionCor2" : {
+		    #     "type" : MotionCor2Parser,
+		    #     "depends" : "motioncor2",
+            #     "sum_micrograph" : "${base}_mc.mrc",
+            #     "dw_micrograph" : "${base}_mc_DW.mrc",
+            #     "log" : "${base}_mc.log",
+            #     "preview" : "${base}_mc_DW.preview.png"
+            #     },
+            # "Gctf" : {
+		    #     "type" : GctfParser,
+		    #     "depends" : "gctf",
+            #     "ctf_image" : "${base}_mc_DW.ctf",
+            #     "ctf_image_preview" : "${base}_mc_DW_ctf.preview.png",
+            #     "ctf_star" : "${base}_mc_DW_gctf.star",
+            #     "ctf_epa_log" : "${base}_mc_DW_EPA.log",
+            #     "ctf_log" : "${base}_mc_DW_gctf.log"
+            #     },
+            # "ctffind4" : {
+            #     "type" : CtffindParser,
+            #     "depends" : "ctffind",
+            #     "ctf_image" : "${base}_mc_DW_ctffind.ctf",
+            #     "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
+            #     "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
+            #     "ctf_log" : "${base}_mc_DW_ctffind.txt"
+            #     },
+            "moviestack" : {
+                "type": StackParser,
+                "depends" : "motioncor2",
+                "moviestack" : "${collection_dir}${base}.tif"
                 },
-           "Gctf" : {
-		"type" : GctfParser,
-		"depends" : "gctf",
-                "ctf_image" : "${base}_mc_DW.ctf",
-                "ctf_image_preview" : "${base}_mc_DW_ctf.preview.png",
-                "ctf_star" : "${base}_mc_DW_gctf.star",
-                "ctf_epa_log" : "${base}_mc_DW_EPA.log",
-                "ctf_log" : "${base}_mc_DW_gctf.log"
-                },
-           "ctffind4" : {
-                "type" : CtffindParser,
-                "depends" : "ctffind",
-                "ctf_image" : "${base}_mc_DW_ctffind.ctf",
-                "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
-                "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
-                "ctf_log" : "${base}_mc_DW_ctffind.txt"
-           },
-           "moviestack" : {
-               "type": StackParser,
-               "depends" : "motioncor2",
-               "moviestack" : "${collection_dir}${base}.tif"
-               },
-           "navigator" : {
-               "type": NavigatorParser,
-               "glob" : "${collection_dir}*.nav",
-               "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["collection_dir"]):],full=True),
-               "navigatorfile" : "${collection_dir}${base}.nav",
-	       "run_once" : True
-               },
-           "idogpicker" : {
-               "type": IdogpickerParser,
-               "depends" : "idogpicker",
-               "filename" : "${base}_mc_DW.idogpicker.json"
-               },
-           "montage" : {
-               "type": MontageParser,
-               "glob" : "${lock_dir}/*.montage.done",
-               "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["lock_dir"]):],full=True),
-               "montage" : "${collection_dir}${base}.mrc"
-               },
-      "Database" : "data.json"
-         }
+            # "navigator" : {
+            #     "type": NavigatorParser,
+            #     "glob" : "${collection_dir}*.nav",
+            #     "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["collection_dir"]):],full=True),
+            #     "navigatorfile" : "${collection_dir}${base}.nav",
+	        #     "run_once" : True
+            #     },
+            # "idogpicker" : {
+            #     "type": IdogpickerParser,
+            #     "depends" : "idogpicker",
+            #     "filename" : "${base}_mc_DW.idogpicker.json"
+            #     },
+            # "montage" : {
+            #     "type": MontageParser,
+            #     "glob" : "${lock_dir}/*.montage.done",
+            #     "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["lock_dir"]):],full=True),
+            #     "montage" : "${collection_dir}${base}.mrc"
+            #     },
+            "Database" : "data.json"
+            }
         }
 
 processes = []
