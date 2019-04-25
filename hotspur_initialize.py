@@ -3,6 +3,8 @@ from glob import glob
 
 import hotspur_setup
 from data_models import AcquisitionDataModel
+from processors import motioncor2_processor_factory, gctf_processor_factory, ctffind_processor_factory
+from processors import motioncor2_preview_processor_factory, gctf_preview_processor_factory, ctffind_preview_processor_factory
 
 
 def _get_default_config():
@@ -41,6 +43,8 @@ def _read_sample_mdoc(directory_path):
 
     if results.count == 0:
         print("Couldn't find any files matching '")
+        print('Exiting...')
+        exit()
 
     mdoc_file_path = results[0]
     if os.path.isfile(mdoc_file_path):
@@ -53,15 +57,17 @@ def _read_sample_mdoc(directory_path):
                 key, value = [item.strip() for item in line.split(' = ')]
                 # DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
                 if key == 'Voltage':
-                    data_model.voltage = value
+                    data_model.voltage = int(value)
                 elif key == 'ExposureDose':
-                    data_model.dose_rate = value
+                    data_model.total_dose = float(value)
+                elif key == "ExposureTime":
+                    data_model.exposure_time = float(value)
                 elif key == 'PixelSpacing':
-                    data_model.pixel_size = value
+                    data_model.pixel_size = float(value)
                 elif key == 'Binning':
-                    data_model.binning = value
-                elif key == 'FrameDosesAndNumber':
-                    data_model.frame_count = value.split()[-1]
+                    data_model.binning = float(value)
+                elif key == 'NumSubFrames':
+                    data_model.frame_count = int(value)
                 elif key == 'GainReference':
                     data_model.gain_reference_name = value
     return data_model
@@ -80,11 +86,28 @@ def generate_config(frames_directory):
 
     scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
 
+    tif_glob = "*.tif*"
+    globn = os.path.join(frames_directory, tif_glob)
+    tif_files = glob(globn)
+
+    mrc_glob = "*.mrc"
+    globn = os.path.join(frames_directory, mrc_glob)
+    mrc_files = glob(globn)
+
+    if len(tif_files) > len(mrc_files):
+        filetype = 'tif'
+    else:
+        filetype = 'mrc'
+    
+    config['filetype'] = filetype
+
     config['user'] = user_id
     config['sample'] = sample_id
     config['session'] = session_id
 
     config['frames_directory'] = frames_directory
+    # for backwards compatability
+    config['collection_dir'] = frames_directory
     config['scratch_dir'] = scratch_dir
     config['lock_dir'] = os.path.join(scratch_dir, "lock") + '/' 
 
@@ -95,7 +118,27 @@ def generate_config(frames_directory):
     config['voltage'] = mdoc_data.voltage
     config['pixel_size'] = mdoc_data.pixel_size
     config['binning'] = mdoc_data.binning
-    config['total_dose'] = mdoc_data.dose_rate
+    config['total_dose'] = mdoc_data.total_dose
+    config['exposure_time'] = mdoc_data.exposure_time
     config['frame_count'] = mdoc_data.frame_count
+    config['frame_dose'] = mdoc_data.total_dose / mdoc_data.exposure_time / mdoc_data.frame_count
 
     return config
+
+def initialize_processes(config):
+    processes = []
+
+    processes.append(motioncor2_processor_factory.get_motioncor2_processor(config))
+    # processes.append(gctf_processor_factory.get_gctf_processor(config))
+    # processes.append(ctffind_processor_factory.get_ctffind_processor(config))
+
+    # processes.append(motioncor2_preview_processor_factory.get_motioncor2_prev_processor(config))
+    # processes.append(gctf_preview_processor_factory.get_gctf_prev_processor(config))
+    # processes.append(ctffind_preview_processor_factory.get_gctf_prev_processor(config))
+
+    return processes
+
+def initialize(frames_directory):
+    config = generate_config(frames_directory)
+    processes = initialize_processes(config)
+    return config, processes

@@ -32,7 +32,9 @@ class StackParser(Parser):
                     if key == 'Voltage':
                         data_model.voltage = value
                     elif key == 'ExposureDose':
-                        data_model.dose_rate = value
+                        data_model.total_dose = value
+                    elif key == "ExposureTime":
+                        data_model.exposure_time = value
                     elif key == 'PixelSpacing':
                         data_model.pixel_size = value
                     elif key == 'Binning':

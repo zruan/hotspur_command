@@ -610,11 +610,12 @@ class ParserProcess(Process):
         user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
         dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
 
-        dataset_disallowed_chars = re.compile('[A-Z]')
-        if re.search(dataset_disallowed_chars, dataset):
-            if not os.path.exists(dataset.lower()):
-                os.symlink(dataset, dataset.lower())
-                dataset = dataset.lower()
+        dataset = dataset.lower()
+        # dataset_disallowed_chars = re.compile('[A-Z]')
+        # if re.search(dataset_disallowed_chars, dataset):
+        #     if not os.path.exists(dataset.lower()):
+        #         os.symlink(dataset, dataset.lower())
+        #         dataset = dataset.lower()
 
         try:
             db = couch.create(user+"_"+dataset)
