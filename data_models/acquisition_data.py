@@ -5,12 +5,9 @@ class AcquisitionData(DataModel):
 	def __init__(self, base_name):
 		super().__init__(base_name)
 
-		self.image_path = None
 		self.base_name = None
 
-		self.session_id = None
-		self.grid_id = None
-		self.proposal_id = None
+		self.image_path = None
 
 		self.instrument = None
 		self.voltage = None

@@ -1,8 +1,10 @@
 import os
 from glob import glob
 
+import couchdb
+
 import hotspur_setup
-from data_models import AcquisitionData
+from data_models import SessionData, AcquisitionData
 from processors import motioncor2_processor_factory, gctf_processor_factory, ctffind_processor_factory
 from processors import motioncor2_preview_processor_factory, gctf_preview_processor_factory, ctffind_preview_processor_factory
 
@@ -35,6 +37,19 @@ def _find_gain_reference(directory_path):
         return gain_refs[0]
     except:
         print("Couldn't find a gain ref file in '{}' using glob '{}'", directory_path, ref_glob)
+
+def _get_couchdb_database(user, grid, session):
+    couch = couchdb.Server(hotspur_setup.couchdb_address)
+
+    database_name = '_'.join([user, grid, session])
+    database_name = database_name.lower()
+
+    try:
+        db = couch.create(database_name)
+    except couchdb.http.PreconditionFailed:
+        db = couch[database_name]
+
+    return db
 
 def _read_sample_mdoc(directory_path):
     search_glob = '*.mdoc'
@@ -85,6 +100,18 @@ def generate_config(frames_directory):
     user_id = os.path.basename(os.path.normpath(user_directory))
 
     scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
+
+    db = _get_couchdb_database(user_id, sample_id, session_id)
+    try:
+        session_data = SessionData.read_from_couchdb_by_name(db)
+    except:
+        session_data = SessionData()
+        session_data.session = session_id
+        session_data.grid = sample_id
+        session_data.user = user_id
+        session_data.frames_directory = frames_directory
+        session_data.processing_directory = scratch_dir
+        session_data.save_to_couchdb(db)
 
     tif_glob = "*.tif*"
     globn = os.path.join(frames_directory, tif_glob)
