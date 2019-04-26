@@ -2,7 +2,7 @@ import os
 from glob import glob
 
 import hotspur_setup
-from data_models import AcquisitionDataModel
+from data_models import AcquisitionData
 from processors import motioncor2_processor_factory, gctf_processor_factory, ctffind_processor_factory
 from processors import motioncor2_preview_processor_factory, gctf_preview_processor_factory, ctffind_preview_processor_factory
 
@@ -48,7 +48,7 @@ def _read_sample_mdoc(directory_path):
 
     mdoc_file_path = results[0]
     if os.path.isfile(mdoc_file_path):
-        data_model = AcquisitionDataModel()
+        data_model = AcquisitionData('sample')
         with open(mdoc_file_path, 'r') as mdoc:
             for line in mdoc.readlines():
                 # key-value pairs are separated by ' = ' in mdoc files

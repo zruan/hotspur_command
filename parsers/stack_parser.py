@@ -3,7 +3,7 @@ import os
 import sys
 
 from parsers import Parser
-from data_models import AcquisitionDataModel
+from data_models import AcquisitionData
 
 class StackParser(Parser):
     def parse_process(self, stackname):
@@ -20,8 +20,7 @@ class StackParser(Parser):
     def analyze_file(self, base, filename):
         mdoc_file_path = filename + '.mdoc'
         if os.path.isfile(mdoc_file_path):
-            data_model = AcquisitionDataModel()
-            data_model._id = AcquisitionDataModel.generate_id(base)
+            data_model = AcquisitionData(base)
             with open(mdoc_file_path, 'r') as mdoc:
                 for line in mdoc.readlines():
                     # key-value pairs are separated by ' = ' in mdoc files
