@@ -5,6 +5,7 @@ import time
 from glob import glob
 
 from data_models import AcquisitionData
+from hotspur_initialize import get_couchdb_database
 
 
 class FramesFileProcessor():
@@ -13,9 +14,13 @@ class FramesFileProcessor():
 	_min_lifetime = 120
 
 	def __init__(self):
-		self.tracked_files = []
+		self.tracked_files_by_db = {}
 
-	def run(self, db, session_data):
+	def run(self, session_data):
+		db = get_couchdb_database(session_data.user, session_data.grid, session_data.session)
+		if session_data not in self.tracked_files_by_db.keys():
+			self.tracked_files_by_db[db.name] = self.load_from_couchdb(db)
+
 		tif_glob = os.path.join(session_data.frames_directory, '*.tif')
 		tif_files = glob(tif_glob)
 		mrc_glob = os.path.join(session_data.frames_directory, '*.mrc')
@@ -24,7 +29,8 @@ class FramesFileProcessor():
 		files = tif_files + mrc_files
 
 		for file in files:
-			if file in self.tracked_files:
+			base_name = os.path.basename(os.path.splitext(file)[0])
+			if base_name in self.tracked_files_by_db[db.name]:
 				continue
 
 			acquisition_time = os.path.getmtime(file)
@@ -35,14 +41,13 @@ class FramesFileProcessor():
 
 			mdoc_file = '{}.mdoc'.format(file)
 			if not os.path.exists(mdoc_file):
-				self.tracked_files.append(file)
+				self.tracked_files_by_db[db.name].append(file)
 				continue
 
-			base_name = Path(file).stem
 			mdoc_file_path = '{}.mdoc'.format(file)
 			data_model = AcquisitionData(base_name)
 			data_model.image_path = file
-			data_model.file_format = os.path.splitext(file)[0]
+			data_model.file_format = os.path.splitext(file)[1]
 			data_model.time = acquisition_time
 
 			with open(mdoc_file_path, 'r') as mdoc:
@@ -68,5 +73,10 @@ class FramesFileProcessor():
 						data_model.gain_reference_file = os.path.join(
 							session_data.frames_directory, value)
 
+			data_model.frame_dose = data_model.total_dose * data_model.exposure_time / data_model.frame_count
+
 			data_model.save_to_couchdb(db)
-			self.tracked_files.append(file)
+			self.tracked_files_by_db[db.name].append(file)
+
+	def load_from_couchdb(self, db):
+		return [item.base_name for item in AcquisitionData.find_docs_by_time(db)]
