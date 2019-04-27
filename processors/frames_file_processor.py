@@ -14,15 +14,16 @@ class FramesFileProcessor():
 
 	def __init__(self):
 		self.tracked_files = []
-		self.finished_files = []
-		self.running_files = []
-		self.ignored_files = []
 
 	def run(self, db, session_data):
 		tif_glob = os.path.join(session_data.frames_directory, '*.tif')
 		tif_files = glob(tif_glob)
+		mrc_glob = os.path.join(session_data.frames_directory, '*.mrc')
+		mrc_files = glob(mrc_glob)
 
-		for file in tif_files:
+		files = tif_files + mrc_files
+
+		for file in files:
 			if file in self.tracked_files:
 				continue
 
@@ -37,33 +38,35 @@ class FramesFileProcessor():
 				self.tracked_files.append(file)
 				continue
 
-			data_model = self.process_frames_file(file)
+			base_name = Path(file).stem
+			mdoc_file_path = '{}.mdoc'.format(file)
+			data_model = AcquisitionData(base_name)
+			data_model.image_path = file
+			data_model.file_format = os.path.splitext(file)[0]
+			data_model.time = acquisition_time
+
+			with open(mdoc_file_path, 'r') as mdoc:
+				for line in mdoc.readlines():
+					# key-value pairs are separated by ' = ' in mdoc files
+					if not ' = ' in line:
+						continue
+					key, value = [item.strip() for item in line.split(' = ')]
+					# DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
+					if key == 'Voltage':
+						data_model.voltage = int(value)
+					elif key == 'ExposureDose':
+						data_model.total_dose = float(value)
+					elif key == "ExposureTime":
+						data_model.exposure_time = float(value)
+					elif key == 'PixelSpacing':
+						data_model.pixel_size = float(value)
+					elif key == 'Binning':
+						data_model.binning = float(value)
+					elif key == 'NumSubFrames':
+						data_model.frame_count = int(value)
+					elif key == 'GainReference':
+						data_model.gain_reference_file = os.path.join(
+							session_data.frames_directory, value)
+
 			data_model.save_to_couchdb(db)
-
-	def process_frames_file(self, frames_file):
-		base_name = Path(frames_file).stem
-		mdoc_file_path = '{}.mdoc'.format(frames_file)
-		data_model = AcquisitionData(base_name)
-
-		with open(mdoc_file_path, 'r') as mdoc:
-			for line in mdoc.readlines():
-				# key-value pairs are separated by ' = ' in mdoc files
-				if not ' = ' in line:
-					continue
-				key, value = [item.strip() for item in line.split(' = ')]
-				# DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
-				if key == 'Voltage':
-					data_model.voltage = value
-				elif key == 'ExposureDose':
-					data_model.total_dose = value
-				elif key == "ExposureTime":
-					data_model.exposure_time = value
-				elif key == 'PixelSpacing':
-					data_model.pixel_size = value
-				elif key == 'Binning':
-					data_model.binning = value
-				elif key == 'FrameDosesAndNumber':
-					data_model.frame_count = value.split()[-1]
-				elif key == 'GainReference':
-					data_model.gain_reference_name = value
-		return data_model
+			self.tracked_files.append(file)

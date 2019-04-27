@@ -5,21 +5,15 @@ class AcquisitionData(DataModel):
 	def __init__(self, base_name):
 		super().__init__(base_name)
 
-		self.base_name = None
-
 		self.image_path = None
+		self.file_format = None
 
 		self.instrument = None
 		self.voltage = None
-		self.acquisition_time = None
-		self.gain_reference_name = None
-		self.gain_reference_path = None
+		self.gain_reference_file = None
 
 		self.total_dose = None
 		self.exposure_time = None
 		self.frame_count = None
 		self.pixel_size = None
 		self.binning = None
-
-		self.motion_correction_doc_id = None
-		self.ctf_estimation_doc_id = None
