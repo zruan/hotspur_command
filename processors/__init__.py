@@ -2,7 +2,6 @@ from .collection_processor import CollectionProcessor
 
 from .command_processor import CommandProcessor
 from .preview_processor import PreviewProcessor
-from .frames_file_processor import FramesFileProcessor
 
 from .motioncor2_processor_factory import get_motioncor2_processor
 from .gctf_processor_factory import get_gctf_processor
@@ -13,3 +12,6 @@ from .gctf_preview_processor_factory import get_gctf_prev_processor
 from .ctffind_preview_processor_factory import get_gctf_prev_processor
 
 from .idogpicker_processor import IdogpickerProcessor
+
+from .frames_file_processor import FramesFileProcessor
+from .motioncor2_processor import Motioncor2Processor
