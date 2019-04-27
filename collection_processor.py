@@ -5,6 +5,8 @@ import argparse
 import pyfs
 import hashlib
 
+import couchdb
+
 from processors import CommandProcessor, PreviewProcessor, IdogpickerProcessor
 from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
 from parsers.stack_parser import StackParser
@@ -97,15 +99,11 @@ def arguments():
         metavar='target-dir',
         help='The directory containing your data.'
     )
-    # parser.add_argument(
-    #     'config',
-    #     help='Configuration file to use'
-    # )
-    # parser.add_argument(
-    #     '--reset',
-    #     help="Remove all '.done' files that track processing progress.",
-    #     action='store_true'
-    # )
+    parser.add_argument(
+        '--reset',
+        help="Remove all '.done' files that track processing progress.",
+        action='store_true'
+    )
     return parser.parse_args()
 
 
@@ -127,13 +125,23 @@ def prepare_gain_reference(gain_ref, scratch_dir):
     return target_path
 
 
-# def reset_processing():
-#     print("Removing '.done' files...")
-#     for file in os.listdir(config['lock_dir']):
-#         if file.endswith('.done'):
-#             file_path = os.path.join(config['lock_dir'], file)
-#             os.remove(file_path)
-#     print("Successfully removed '.done' files.")
+def reset_processing(config):
+    print("Removing '.done' files...")
+    for file in os.listdir(config['lock_dir']):
+        if file.endswith('.done'):
+            file_path = os.path.join(config['lock_dir'], file)
+            os.remove(file_path)
+    print("Successfully removed '.done' files.")
+
+    server = couchdb.Server(hotspur_setup.couchdb_address)
+    db = hotspur_initialize.get_couchdb_database(
+        config['user'],
+        config['sample'],
+        config['session']
+    )
+    print('Deleting database "{}"...'.format(db.name))
+    server.delete(db.name)
+    print('Database deleted.')
 
 
 def start_processing():
@@ -145,9 +153,9 @@ def start_processing():
 
     prepare_directory_structure(config)
 
-    # if args.reset:
-    #     reset_processing()
-    #     sys.exit()
+    if args.reset:
+        reset_processing(config)
+        sys.exit()
 
     ref_path = prepare_gain_reference(
         config['gain_ref'], config['scratch_dir'])
