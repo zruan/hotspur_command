@@ -4,10 +4,12 @@ import os
 import argparse
 import pyfs
 import hashlib
+import time
 
 import couchdb
 
 from processors import CommandProcessor, PreviewProcessor, IdogpickerProcessor
+from processors import FramesFileProcessor, Motioncor2Processor
 from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
 from parsers.stack_parser import StackParser
 import hotspur_setup
@@ -75,20 +77,9 @@ parsers = {
 #     print("User ID hash is: {0}".format(digest))
 #     return digest
 
-
-def prepare_directory_structure(config):
-    if not os.path.exists(config["scratch_dir"]):
-        os.makedirs(config["scratch_dir"])
-    if not os.path.exists(config["lock_dir"]):
-        os.makedirs(config["lock_dir"])
-
-    # # Create symlink to project's processing dir, to be consumed by hotspur web.
-    # user_path = os.path.abspath(os.path.join(config["scratch_dir"], os.pardir))
-    # user_id_hash = get_user_id_hash(config["user_id"])
-    # symlink_path = os.path.join(hotspur_setup.hashlinks_dir, user_id_hash)
-    # if not os.path.exists(symlink_path):
-    #     os.symlink(user_path, symlink_path)
-
+def prepare_directory_structure(session_data):
+    if not os.path.exists(session_data.processing_directory):
+        os.makedirs(session_data.processing_directory)
 
 def arguments():
     parser = argparse.ArgumentParser(
@@ -125,19 +116,19 @@ def prepare_gain_reference(gain_ref, scratch_dir):
     return target_path
 
 
-def reset_processing(config):
+def reset_processing(session_data):
     print("Removing '.done' files...")
-    for file in os.listdir(config['lock_dir']):
+    for file in os.listdir(session_data.processing_directory):
         if file.endswith('.done'):
-            file_path = os.path.join(config['lock_dir'], file)
+            file_path = os.path.join(session_data.processing_directory, file)
             os.remove(file_path)
     print("Successfully removed '.done' files.")
 
     server = couchdb.Server(hotspur_setup.couchdb_address)
     db = hotspur_initialize.get_couchdb_database(
-        config['user'],
-        config['sample'],
-        config['session']
+        session_data.user,
+        session_data.grid,
+        session_data.session
     )
     print('Deleting database "{}"...'.format(db.name))
     server.delete(db.name)
@@ -147,36 +138,48 @@ def reset_processing(config):
 def start_processing():
     args = arguments()
 
-    config, processes = hotspur_initialize.initialize(args.target_dir)
-
-    config['gain_ref'] = prepare_gain_reference(config['gain_ref'], config['scratch_dir'])
-
-    prepare_directory_structure(config)
+    session_data = hotspur_initialize.get_session_data(args.target_dir)
+    prepare_directory_structure(session_data)
 
     if args.reset:
-        reset_processing(config)
-        sys.exit()
+        reset_processing(session_data)
+        exit()
 
-    ref_path = prepare_gain_reference(
-        config['gain_ref'], config['scratch_dir'])
-    config['gainref'] = ref_path
+    frames_file_processor = FramesFileProcessor()
+    motioncor2_processor = Motioncor2Processor()
 
-    config['parser'] = parsers
-    parse_process = ParserProcess(config)
+    while True:
+        frames_file_processor.run(session_data)
+        motioncor2_processor.run(session_data)
+        time.sleep(5)
 
-    for process in processes:
-        process.start()
-    parse_process.start()
+#     config['gain_ref'] = prepare_gain_reference(config['gain_ref'], config['scratch_dir'])
 
-    try:
-        for process in processes:
-            process.join()
-        parse_process.join()
-    except KeyboardInterrupt:
-        print("Waiting for processes to finish")
-        for process in processes:
-            process.join()
-        parse_process.join()
 
-if __name__ == '__main__':
-    start_processing()
+#     if args.reset:
+#         reset_processing(config)
+#         sys.exit()
+
+#     ref_path = prepare_gain_reference(
+#         config['gain_ref'], config['scratch_dir'])
+#     config['gainref'] = ref_path
+
+#     config['parser'] = parsers
+#     parse_process = ParserProcess(config)
+
+#     for process in processes:
+#         process.start()
+#     parse_process.start()
+
+#     try:
+#         for process in processes:
+#             process.join()
+#         parse_process.join()
+#     except KeyboardInterrupt:
+#         print("Waiting for processes to finish")
+#         for process in processes:
+#             process.join()
+#         parse_process.join()
+
+# if __name__ == '__main__':
+#     start_processing()
