@@ -2,6 +2,7 @@ from .collection_processor import CollectionProcessor
 
 from .command_processor import CommandProcessor
 from .preview_processor import PreviewProcessor
+from .frames_file_processor import FramesFileProcessor
 
 from .motioncor2_processor_factory import get_motioncor2_processor
 from .gctf_processor_factory import get_gctf_processor
