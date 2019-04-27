@@ -38,7 +38,7 @@ def _find_gain_reference(directory_path):
     except:
         print("Couldn't find a gain ref file in '{}' using glob '{}'", directory_path, ref_glob)
 
-def _get_couchdb_database(user, grid, session):
+def get_couchdb_database(user, grid, session):
     couch = couchdb.Server(hotspur_setup.couchdb_address)
 
     database_name = '_'.join([user, grid, session])
@@ -101,7 +101,7 @@ def generate_config(frames_directory):
 
     scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
 
-    db = _get_couchdb_database(user_id, sample_id, session_id)
+    db = get_couchdb_database(user_id, sample_id, session_id)
     try:
         session_data = SessionData.read_from_couchdb_by_name(db)
     except:

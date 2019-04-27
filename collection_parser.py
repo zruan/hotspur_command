@@ -24,6 +24,7 @@ import traceback
 import math
 import couchdb
 import hotspur_setup
+from hotspur_initialize import get_couchdb_database
 from parsers.parser import Parser
 
 class FloatEncoder(json.JSONEncoder):
@@ -605,22 +606,7 @@ class ParserProcess(Process):
         except FileNotFoundError:
             database = OrderedDict()
 
-        couch = couchdb.Server(hotspur_setup.couchdb_address)
-
-        user = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-2]
-        dataset = os.path.split(self.config["scratch_dir"])[-2].split(os.sep)[-1]
-
-        dataset = dataset.lower()
-        # dataset_disallowed_chars = re.compile('[A-Z]')
-        # if re.search(dataset_disallowed_chars, dataset):
-        #     if not os.path.exists(dataset.lower()):
-        #         os.symlink(dataset, dataset.lower())
-        #         dataset = dataset.lower()
-
-        try:
-            db = couch.create(user+"_"+dataset)
-        except couchdb.http.PreconditionFailed:
-            db = couch[user+"_"+dataset]
+        db = get_couchdb_database(self.config['user'], self.config['sample'], self.config['session'])
 
         parsers = []
         for (key, value) in config.items():
