@@ -490,27 +490,6 @@ class PickParser(Parser):
                 self.database[base]["picks"][self.parser_id] = []
             self.database[base][self.parser_id] = []
 
-def arguments():
-    def floatlist(string):
-        return list(map(float, string.split(',')))
-
-    parser = argparse.ArgumentParser(
-        description='Parses information within a SerialEM data collection directory to a JSON file'
-    )
-    parser.add_argument('--glob', help='glob pattern for MRC images')
-    parser.add_argument('--json', help='glob pattern for MRC images')
-    parser.add_argument('--config', default="config.py")
-    parser.add_argument('--refresh')
-    parser.add_argument(
-        '--numfiles',
-        default=-1,
-        help='Number of images to process in this run',
-        type=int)
-    parser.add_argument('--skip_stack', default=False, action='store_true')
-
-    return parser.parse_args()
-
-
 class ParserProcess(Process):
     def __init__(self, config, work_dir=None):
         Process.__init__(self)
