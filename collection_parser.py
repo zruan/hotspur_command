@@ -7,7 +7,6 @@ import datetime
 import dateutil
 import re
 import dateutil.parser
-import pyfs
 import imaging
 import json
 from collections import OrderedDict
@@ -22,68 +21,8 @@ import gzip
 import pystar2
 import traceback
 import math
-import couchdb
-import hotspur_setup
 from hotspur_initialize import get_couchdb_database
 from parsers.parser import Parser
-
-class FloatEncoder(json.JSONEncoder):
-    def __init__(self, nan_str="null", **kwargs):
-        super(FloatEncoder, self).__init__(**kwargs)
-        self.nan_str = nan_str
-        self.encoding = 'utf-8'
-
-    def iterencode(self, o, _one_shot=False):
-        """Encode the given object and yield each string
-        representation as available.
-
-        For example::
-
-            for chunk in JSONEncoder().iterencode(bigobject):
-                mysocket.write(chunk)
-        """
-        if self.check_circular:
-            markers = {}
-        else:
-            markers = None
-        if self.ensure_ascii:
-            _encoder = json.encoder.encode_basestring_ascii
-        else:
-            _encoder = json.encoder.encode_basestring
-        if self.encoding != 'utf-8':
-            def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
-                if isinstance(o, str):
-                    o = o.decode(_encoding)
-                return _orig_encoder(o)
-
-        def floatstr(o, allow_nan=self.allow_nan, _repr=json.encoder.FLOAT_REPR,
-                _inf=json.encoder.INFINITY, _neginf=-json.encoder.INFINITY,
-                nan_str=self.nan_str):
-            # Check for specials.  Note that this type of test is processor
-            # and/or platform-specific, so do tests which don't depend on the
-            # internals.
-
-            if o != o:
-                text = nan_str
-            elif o == _inf:
-                text = 'Infinity'
-            elif o == _neginf:
-                text = '-Infinity'
-            else:
-                return _repr(o)
-
-            if not allow_nan:
-                raise ValueError(
-                    "Out of range float values are not JSON compliant: " +
-                    repr(o))
-
-            return text
-
-        _iterencode = json.encoder._make_iterencode(
-                markers, self.default, _encoder, self.indent, floatstr,
-                self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
-        return _iterencode(o, 0)
 
 class DelayedKeyboardInterrupt(object):
     def __enter__(self):
@@ -637,43 +576,3 @@ class ParserProcess(Process):
             except KeyboardInterrupt:
                 print("Parser recieved Ctr-C")
                 break
-
-
-if __name__ == '__main__':
-    from collection_processor import CommandProcessor, PreviewProcessor
-
-    args = arguments()
-    print(args)
-
-    with open(args.config, 'r') as config_file:
-        exec(config_file.read(), globals())
-
-
-
-
-    if args.glob:
-        config["parser"]["StackParser"]["glob"] = args.glob
-    if args.json:
-        config["parser"]["Database"] = args.json
-    if args.refresh:
-        if "work_dir" in config["parser"]:
-            os.chdir(config["parser"]["work_dir"])
-        else:
-            os.chdir(config["scratch_dir"])
-        with open(config["parser"]["Database"]) as database:
-            database = json.load(database, object_pairs_hook=OrderedDict)
-        for key in database.keys():
-            if args.refresh in database[key]:
-                del database[key][args.refresh]
-        with open(config["parser"]["Database"], 'w') as outfile:
-            json.dump(database, outfile)
-        with gzip.open(config["parser"]["Database"]+".gz", 'wt') as outfile:
-            json.dump(database, outfile)
-
-    parse_process = ParserProcess(config)
-    parse_process.start()
-    try:
-        parse_process.join()
-    except KeyboardInterrupt:
-        print("Waiting for processes to finish")
-        parse_process.join()
