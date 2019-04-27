@@ -9,6 +9,7 @@ class AcquisitionData(DataModel):
 		self.file_format = None
 
 		self.instrument = None
+		self.camera = None
 		self.voltage = None
 		self.gain_reference_file = None
 
@@ -18,3 +19,4 @@ class AcquisitionData(DataModel):
 		self.frame_dose = None
 		self.pixel_size = None
 		self.binning = None
+		self.dimensions = None
