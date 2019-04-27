@@ -15,5 +15,6 @@ class AcquisitionData(DataModel):
 		self.total_dose = None
 		self.exposure_time = None
 		self.frame_count = None
+		self.frame_dose = None
 		self.pixel_size = None
 		self.binning = None
