@@ -51,4 +51,13 @@ class DataModel():
 		map_func = "".join(map_func.split())
 		view = ViewDefinition('hotspur', doc_type, map_func)
 		view.sync(db)
-		return view(db)
+		results = view(db)
+		doc_listings = [DocListing(row.value, row.key, row.id) for row in results.rows]
+		return doc_listings
+
+class DocListing():
+
+	def __init__(self, base_name, id, time):
+		self.base_name = base_name
+		self.id = id
+		self.time = time
