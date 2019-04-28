@@ -52,12 +52,24 @@ class DataModel():
 		view = ViewDefinition('hotspur', doc_type, map_func)
 		view.sync(db)
 		results = view(db)
-		doc_listings = [DocListing(row.value, row.key, row.id) for row in results.rows]
+		doc_listings = [DataModelSummary(row.value, row.key, row.id) for row in results.rows]
 		return doc_listings
 
-class DocListing():
+class DataModelSummary():
 
 	def __init__(self, base_name, id, time):
 		self.base_name = base_name
 		self.id = id
 		self.time = time
+
+	def __eq__(self, other):
+		if self.base_name == other.base_name:
+			return True
+		else:
+			return False
+
+	def __ne__(self, other):
+		if self.__eq__(other):
+			return False
+		else:
+			return True

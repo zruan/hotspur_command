@@ -8,6 +8,7 @@ class MotionCorrectionData(DataModel):
 
 		self.aligned_image_file = None
 		self.dose_weighted_image_file = None
+		self.preview_file = None
 
 		self.shift_list = None
 		self.initial_shift = None
