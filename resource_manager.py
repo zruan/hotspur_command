@@ -28,14 +28,16 @@ class ResourceManager():
 
 	@classmethod
 	def request_cpus(cls, number):
-		with cls.cpu_lock.acquire():
-			success = False
-			if cls.available_cpus >= number:
-				cls.available_cpus -= number
-				success = True
-			return success
+		cls.cpu_lock.acquire()
+		success = False
+		if cls.available_cpus >= number:
+			cls.available_cpus -= number
+			success = True
+		cls.cpu_lock.release()
+		return success
 
 	@classmethod
 	def release_cpus(cls, number):
-		with cls.cpu_lock.acquire():
-			cls.available_cpus += number
+		cls.cpu_lock.acquire()
+		cls.available_cpus += number
+		cls.cpu_lock.release()
