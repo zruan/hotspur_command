@@ -13,6 +13,7 @@ from .ctffind_preview_processor_factory import get_gctf_prev_processor
 
 from .idogpicker_processor import IdogpickerProcessor
 
+from .session_processor import SessionProcessor
 from .frames_file_processor import FramesFileProcessor
 from .motioncor2_processor import Motioncor2Processor
 from .ctffind_processor import CtffindProcessor
