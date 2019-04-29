@@ -1,14 +1,12 @@
 import os
-from pathlib import Path
-import sys
 import time
-import imaging
 from glob import glob
 from threading import Lock, Thread
 import subprocess
-import math
+import imaging
+import numpy as np
 
-from data_models import AcquisitionData, MotionCorrectionData 
+from data_models import AcquisitionData, MotionCorrectionData, CtfData 
 from hotspur_initialize import get_couchdb_database
 from resource_manager import ResourceManager
 
@@ -52,15 +50,17 @@ class CtffindProcessor():
 
 	def process_data(self, session, acquisition_data, motion_correction_data):
 		if motion_correction_data.dose_weighted_image_file is not None:
-			image_file = motion_correction_data.dose_weighted_image_file
+			aligned_image_file = motion_correction_data.dose_weighted_image_file
 		else:
-			image_file = motion_correction_data.aligned_image_file
+			aligned_image_file = motion_correction_data.aligned_image_file
+		output_file_base = os.path.join(session.processing_directory, acquisition_data.base_name)
+		output_file = '{}_ctffind.ctf'.format(output_file_base)
 
 		# Ctffind requires a HEREDOC. Yikes.
 		command_list = [
 			'ctffind << EOF',
-			image_file,
-			'{}.ctffind.ctf'.format(image_file),
+			aligned_image_file,
+			output_file,
 			'{}'.format(motion_correction_data.pixel_size), # pixelsize
 			# '{}'.format(acquisition_data.voltage), # acceleration voltage
 			'300',
@@ -84,85 +84,67 @@ class CtffindProcessor():
 		subprocess.call('\n'.join(command_list), shell=True)
 		ResourceManager.release_cpus(self.required_cpus)
 
-	# 	data_model = MotionCorrectionData(acquisition_data.base_name)
-	# 	data_model.aligned_image_file = output_file
+		data_model = CtfData(acquisition_data.base_name)
+		data_model.ctf_image_file = output_file
+		data_model.ctf_image_preview_file = self.create_preview(data_model.ctf_image_file)
+		data_model.ctf_log_file = '{}_ctffind.txt'.format(output_file_base)
+		data_model.ctf_epa_log_file = '{}_ctffind_avrot.txt'.format(output_file_base)
 
-	# 	if os.path.exists(output_file_dose_weighted):
-	# 		data_model.dose_weighted_image_file = output_file_dose_weighted
-	# 		preview_file = self.create_preview(output_file_dose_weighted)
-	# 	else:
-	# 		preview_file = self.create_preview(output_file)
-	# 	data_model.preview_file = preview_file
+		data_model = self.update_model_from_EPA_log(data_model)
+		data_model = self.update_model_from_ctffind_log(data_model)
 
-	# 	shifts, initial_shift, total_shift = self.extract_shifts_from_log(output_log_file)
-	# 	data_model.shift_list = shifts
-	# 	data_model.initial_shift = initial_shift
-	# 	data_model.total_shift = total_shift
+		db = get_couchdb_database(session.user, session.grid, session.session)
+		data_model.save_to_couchdb(db)
 
-	# 	dimensions, pixel_size = self.parse_mrc(output_file)
-	# 	data_model.dimensions = dimensions
-	# 	data_model.pixel_size = pixel_size
+		self.finished_docs.append(data_model.base_name)
 
-	# 	db = get_couchdb_database(session.user, session.grid, session.session)
-	# 	data_model.save_to_couchdb(db)
+	def create_preview(self, file):
+		image = imaging.load(file)[0]
+		image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+		image = imaging.filters.zoom(image, 0.25)
+		preview_file = '{}.preview.png'.format(file)
+		imaging.save(image, preview_file)
+		return preview_file
 
-	# 	self.finished_docs.append(data_model.base_name)
+	def update_model_from_EPA_log(self, data_model):
+		# ctffind4 log output filename: diagnostic_output_avrot.txt
+		# columns:
+		# 0 = spatial frequency (1/Angstroms)
+		# 1 = 1D rotational average of spectrum (assuming no astigmatism)
+		# 2 = 1D rotational average of spectrum
+		# 3 = CTF fit
+		# 4 = cross-correlation between spectrum and CTF fit
+		# 5 = 2sigma of expected cross correlation of noise
+		data = np.genfromtxt(
+			data_model.ctf_epa_log_file,
+			skip_header=5
+		)
+		# the first entry in spatial frequency is 0
+		data[0] = np.reciprocal(data[0], where = data[0]!=0)
+		data[0][0] = None
+		# data_model.estimated_resolution = list(np.nan_to_num(data[0]))
+		data_model.measured_ctf = list(np.nan_to_num(data[2]))
+		data_model.measured_ctf_no_bg = data_model.measured_ctf
+		data_model.theoretical_ctf = list(np.nan_to_num(data[3]))
+		# value["EPA"]["Ctffind_CC"] = list(np.nan_to_num(data[4]))
+		# value["EPA"]["Ctffind_CCnoise"] = list(np.nan_to_num(data[5]))
+		return data_model
 
-	# def create_preview(self, file):
-	# 	image = imaging.load(file)[0]
-	# 	image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-	# 	image = imaging.filters.zoom(image, 0.25)
-	# 	preview_file = '{}.preview.png'.format(file)
-	# 	imaging.save(image, preview_file)
-	# 	return preview_file
-
-	# def extract_shifts_from_log(self, output_log_file):
-	# 	try:
-	# 		with open(output_log_file, "r") as fp:
-	# 			x_shifts = y_shifts = []
-	# 			reading_shifts = False
-	# 			for line in fp:
-	# 				if reading_shifts:
-	# 					if 'shift:' in line:
-	# 						x_shift, y_shift = line.split()[-2:]
-	# 						x_shifts.append(float(x_shift))
-	# 						y_shifts.append(float(y_shift))
-	# 					else:
-	# 						reading_shifts = False
-	# 				elif 'Full-frame alignment shift' in line:
-	# 					reading_shifts = True
-	# 			shifts = list(zip(x_shifts, y_shifts))
-	# 			# use second element because first element is always zero
-	# 			initial_shift = math.sqrt(x_shifts[1]**2 + y_shifts[1]**2)
-	# 			total_shift = math.sqrt(sum(x_shifts)**2 + sum(y_shifts)**2)
-	# 			return shifts, initial_shift, total_shift
-	# 	except IOError:
-	# 		print("No log found")
-	# 		return None
-
-	# def parse_mrc(self, file):
-	# 	try:
-	# 		header = imaging.formats.FORMATS["mrc"].load_header(file)
-	# 		dimensions = (int(header['dims'][0]), int(header['dims'][1]))
-	# 		pixel_size = float(header['lengths'][0]/header['dims'][0])
-	# 		return dimensions, pixel_size
-	# 	except AttributeError as e:
-	# 		print(e)
-	# 	except IOError:
-	# 		print("Error loading mrc!", sys.exc_info()[0])
-
-	# @staticmethod
-	# def prepare_gain_reference(processing_directory, gain_file):
-	# 	target_filename = "gainRef.mrc"
-	# 	ext = os.path.splitext(gain_file)[1]
-	# 	target_path = os.path.join(processing_directory, target_filename)
-
-	# 	if not os.path.exists(target_path):
-	# 		if ext == '.mrc':
-	# 			os.system("cp {} {}".format(gain_file, target_path))
-	# 		elif ext == '.dm4':
-	# 			os.system("dm2mrc {} {}".format(gain_file, target_path))
-	# 		else:
-	# 			raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
-
-	# 	return target_path
+	def update_model_from_ctffind_log(self, data_model):
+		# ctffind output is diagnostic_output.txt
+		# the last line has the non-input data in it, space-delimited
+		# values:
+		# 0: micrograph number; 1: defocus 1 (A); 2: defocus 2 (A); 3: astig azimuth;
+		# 4: additional phase shift (radians); 5: cross correlation;
+		# 6: spacing (in A) up to which CTF fit
+		with open(data_model.ctf_log_file) as f:
+			lines = f.readlines()
+		ctf_params = lines[5].split(' ')
+		data_model.defocus_u = (float(ctf_params[1]))
+		data_model.defocus_v = (float(ctf_params[2]))
+		data_model.astigmatism_angle = ctf_params[3]
+		data_model.phase_shift = ctf_params[4]
+		data_model.cross_correlation = ctf_params[5]
+		data_model.estimated_resolution = ctf_params[6].rstrip()
+		data_model.estimated_b_factor = 0
+		return data_model
