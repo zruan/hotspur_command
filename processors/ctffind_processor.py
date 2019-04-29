@@ -7,7 +7,7 @@ import imaging
 import numpy as np
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData 
-from hotspur_initialize import get_couchdb_database
+from processors import SessionProcessor
 from resource_manager import ResourceManager
 
 
@@ -20,7 +20,7 @@ class CtffindProcessor():
 		self.required_cpus = 1
 
 	def run(self, session_data):
-		db = get_couchdb_database(session_data.user, session_data.grid, session_data.session)
+		db = SessionProcessor.get_couchdb_database(session_data.user, session_data.grid, session_data.session)
 
 		# motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
 		# self.finished_docs = [doc.base_name for doc in motion_correction_data_docs]
@@ -93,7 +93,7 @@ class CtffindProcessor():
 		data_model = self.update_model_from_EPA_log(data_model)
 		data_model = self.update_model_from_ctffind_log(data_model)
 
-		db = get_couchdb_database(session.user, session.grid, session.session)
+		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
 		data_model.save_to_couchdb(db)
 
 		self.finished_docs.append(data_model.base_name)

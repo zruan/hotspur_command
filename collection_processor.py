@@ -8,65 +8,8 @@ import time
 
 import couchdb
 
-from processors import CommandProcessor, PreviewProcessor, IdogpickerProcessor
 from processors import SessionProcessor, FramesFileProcessor, Motioncor2Processor, CtffindProcessor
-from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
-from parsers.stack_parser import StackParser
 import hotspur_setup
-import hotspur_initialize
-
-
-parsers = {
-    # "MotionCor2" : {
-    #     "type" : MotionCor2Parser,
-    #     "depends" : "motioncor2",
-    #     "sum_micrograph" : "${base}_mc.mrc",
-    #     "dw_micrograph" : "${base}_mc_DW.mrc",
-    #     "log" : "${base}_mc.log",
-    #     "preview" : "${base}_mc_DW.preview.png"
-    # },
-    # "Gctf" : {
-    #     "type" : GctfParser,
-    #     "depends" : "gctf",
-    #     "ctf_image" : "${base}_mc_DW.ctf",
-    #     "ctf_image_preview" : "${base}_mc_DW_ctf.preview.png",
-    #     "ctf_star" : "${base}_mc_DW_gctf.star",
-    #     "ctf_epa_log" : "${base}_mc_DW_EPA.log",
-    #     "ctf_log" : "${base}_mc_DW_gctf.log"
-    # },
-    # "ctffind4" : {
-    #     "type" : CtffindParser,
-    #     "depends" : "ctffind",
-    #     "ctf_image" : "${base}_mc_DW_ctffind.ctf",
-    #     "ctf_image_preview" : "${base}_mc_DW_ctffind_ctf.preview.png",
-    #     "ctf_epa_log" : "${base}_mc_DW_ctffind_avrot.txt",
-    #     "ctf_log" : "${base}_mc_DW_ctffind.txt"
-    # },
-    "moviestack" : {
-        "type": StackParser,
-        "depends" : "motioncor2",
-        "moviestack" : "${collection_dir}${base}.tif"
-    },
-    # "navigator" : {
-    #     "type": NavigatorParser,
-    #     "glob" : "${collection_dir}*.nav",
-    #     "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["collection_dir"]):],full=True),
-    #     "navigatorfile" : "${collection_dir}${base}.nav",
-    #     "run_once" : True
-    # },
-    # "idogpicker" : {
-    #     "type": IdogpickerParser,
-    #     "depends" : "idogpicker",
-    #     "filename" : "${base}_mc_DW.idogpicker.json"
-    # },
-    # "montage" : {
-    #     "type": MontageParser,
-    #     "glob" : "${lock_dir}/*.montage.done",
-    #     "stackname_lambda" : lambda x, config : pyfs.rext(x[len(config["lock_dir"]):],full=True),
-    #     "montage" : "${collection_dir}${base}.mrc"
-    # },
-    "Database" : "data.json"
-}
 
 
 # def get_user_id_hash(user_id):
@@ -125,7 +68,7 @@ def reset_processing(session_data):
     print("Successfully removed '.done' files.")
 
     server = couchdb.Server(hotspur_setup.couchdb_address)
-    db = hotspur_initialize.get_couchdb_database(
+    db = SessionProcessor.get_couchdb_database(
         session_data.user,
         session_data.grid,
         session_data.session
@@ -138,7 +81,7 @@ def reset_processing(session_data):
 def start_processing():
     args = arguments()
 
-    session_data = hotspur_initialize.get_session_data(args.target_dir)
+    session_data = SessionProcessor.create_new_session(args.target_dir)
     prepare_directory_structure(session_data)
 
     if args.reset:
@@ -153,38 +96,7 @@ def start_processing():
     while True:
         for session in session_processor.find_sessions(hotspur_setup.search_glob):
             print(session.frames_directory)
-            # frames_file_processor.run(session)
-            # motioncor2_processor.run(session)
-            # ctffind_processor.run(session)
+            frames_file_processor.run(session)
+            motioncor2_processor.run(session)
+            ctffind_processor.run(session)
         time.sleep(5)
-
-#     config['gain_ref'] = prepare_gain_reference(config['gain_ref'], config['scratch_dir'])
-
-
-#     if args.reset:
-#         reset_processing(config)
-#         sys.exit()
-
-#     ref_path = prepare_gain_reference(
-#         config['gain_ref'], config['scratch_dir'])
-#     config['gainref'] = ref_path
-
-#     config['parser'] = parsers
-#     parse_process = ParserProcess(config)
-
-#     for process in processes:
-#         process.start()
-#     parse_process.start()
-
-#     try:
-#         for process in processes:
-#             process.join()
-#         parse_process.join()
-#     except KeyboardInterrupt:
-#         print("Waiting for processes to finish")
-#         for process in processes:
-#             process.join()
-#         parse_process.join()
-
-# if __name__ == '__main__':
-#     start_processing()

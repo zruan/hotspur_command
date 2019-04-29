@@ -5,7 +5,7 @@ import time
 from glob import glob
 
 from data_models import AcquisitionData
-from hotspur_initialize import get_couchdb_database
+from processors import SessionProcessor
 
 
 class FramesFileProcessor():
@@ -17,7 +17,7 @@ class FramesFileProcessor():
 		self.tracked_files_by_db = {}
 
 	def run(self, session_data):
-		db = get_couchdb_database(session_data.user, session_data.grid, session_data.session)
+		db = SessionProcessor.get_couchdb_database(session_data.user, session_data.grid, session_data.session)
 		if session_data not in self.tracked_files_by_db.keys():
 			self.tracked_files_by_db[db.name] = self.load_from_couchdb(db)
 
