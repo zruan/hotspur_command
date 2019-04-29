@@ -15,3 +15,4 @@ from .idogpicker_processor import IdogpickerProcessor
 
 from .frames_file_processor import FramesFileProcessor
 from .motioncor2_processor import Motioncor2Processor
+from .ctffind_processor import CtffindProcessor

@@ -9,7 +9,7 @@ import time
 import couchdb
 
 from processors import CommandProcessor, PreviewProcessor, IdogpickerProcessor
-from processors import FramesFileProcessor, Motioncor2Processor
+from processors import FramesFileProcessor, Motioncor2Processor, CtffindProcessor
 from collection_parser import IdogpickerParser, ParserProcess, MotionCor2Parser, GctfParser, CtffindParser, MontageParser, PickParser, NavigatorParser
 from parsers.stack_parser import StackParser
 import hotspur_setup
@@ -147,10 +147,12 @@ def start_processing():
 
     frames_file_processor = FramesFileProcessor()
     motioncor2_processor = Motioncor2Processor()
+    ctffind_processor = CtffindProcessor()
 
     while True:
         frames_file_processor.run(session_data)
         motioncor2_processor.run(session_data)
+        ctffind_processor.run(session_data)
         time.sleep(5)
 
 #     config['gain_ref'] = prepare_gain_reference(config['gain_ref'], config['scratch_dir'])
