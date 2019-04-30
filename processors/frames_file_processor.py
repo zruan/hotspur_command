@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 import time
 from glob import glob
+import tifffile
+import numpy as np
 
 from data_models import AcquisitionData
 from processors import SessionProcessor
@@ -44,39 +46,57 @@ class FramesFileProcessor():
 				self.tracked_files_by_db[db.name].append(file)
 				continue
 
-			mdoc_file_path = '{}.mdoc'.format(file)
 			data_model = AcquisitionData(base_name)
 			data_model.image_path = file
 			data_model.file_format = os.path.splitext(file)[1]
 			data_model.time = acquisition_time
 
-			with open(mdoc_file_path, 'r') as mdoc:
-				for line in mdoc.readlines():
-					# key-value pairs are separated by ' = ' in mdoc files
-					if not ' = ' in line:
-						continue
-					key, value = [item.strip() for item in line.split(' = ')]
-					# DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
-					if key == 'Voltage':
-						data_model.voltage = int(value)
-					elif key == 'ExposureDose':
-						data_model.total_dose = float(value)
-					elif key == "ExposureTime":
-						data_model.exposure_time = float(value)
-					elif key == 'PixelSpacing':
-						data_model.pixel_size = float(value)
-					elif key == 'Binning':
-						data_model.binning = float(value)
-					elif key == 'NumSubFrames':
-						data_model.frame_count = int(value)
-					elif key == 'GainReference':
-						data_model.gain_reference_file = os.path.join(
-							session_data.frames_directory, value)
-
-			data_model.frame_dose = data_model.total_dose * data_model.exposure_time / data_model.frame_count
+			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session_data)
+			data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
 
 			data_model.save_to_couchdb(db)
 			self.tracked_files_by_db[db.name].append(file)
+
+	@staticmethod
+	def update_model_from_mdoc(mdoc_file_path, data_model, session_data):
+		with open(mdoc_file_path, 'r') as mdoc:
+			for line in mdoc.readlines():
+				# key-value pairs are separated by ' = ' in mdoc files
+				if not ' = ' in line:
+					continue
+				key, value = [item.strip() for item in line.split(' = ')]
+				# DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
+				if key == 'Voltage':
+					data_model.voltage = int(value)
+				elif key == 'ExposureDose':
+					data_model.total_dose = float(value)
+				elif key == "ExposureTime":
+					data_model.exposure_time = float(value)
+				elif key == 'PixelSpacing':
+					data_model.pixel_size = float(value)
+				elif key == 'Binning':
+					data_model.binning = float(value)
+				elif key == 'NumSubFrames':
+					data_model.frame_count = int(value)
+				elif key == 'GainReference':
+					data_model.gain_reference_file = os.path.join(
+						session_data.frames_directory, value)
+		return data_model
+
+	@staticmethod
+	def update_dose_from_image(file, data_model):
+		with tifffile.TiffFile(file) as imfile:
+			array = imfile.asarray()
+			mean = np.mean(array)
+
+		pixel_dose_rate = mean
+		pixel_area = data_model.pixel_size ** 2
+		area_dose_rate = pixel_dose_rate / pixel_area
+
+		data_model.total_dose = area_dose_rate * data_model.exposure_time
+		data_model.frame_dose = data_model.total_dose / data_model.frame_count
+		
+		return data_model
 
 	def load_from_couchdb(self, db):
 		return [item.base_name for item in AcquisitionData.find_docs_by_time(db)]
