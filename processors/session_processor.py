@@ -52,13 +52,20 @@ class SessionProcessor():
 			session_data.processing_directory = scratch_dir
 			session_data.save_to_couchdb(db)
 
-		return session_data
+		SessionProcessor.prepare_directory_structure(session_data)
+
+		return session_data, db
+
+	@staticmethod
+	def prepare_directory_structure(session_data):
+		if not os.path.exists(session_data.processing_directory):
+			os.makedirs(session_data.processing_directory)
 
 	@staticmethod
 	def get_couchdb_database(user, grid, session):
 		couch = couchdb.Server(hotspur_setup.couchdb_address)
 
-		database_name = '_'.join([user, grid, session])
+		database_name = '_'.join(['hotspur', user, grid, session])
 		database_name = database_name.lower()
 
 		try:

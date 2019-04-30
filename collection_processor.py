@@ -29,9 +29,9 @@ def arguments():
         description='Runs data processing live for incoming data'
     )
     parser.add_argument(
-        'target_dir',
+        '--target_dir',
         metavar='target-dir',
-        help='The directory containing your data.'
+        help='A directory you want to process. This is for when you only want to process one session.'
     )
     parser.add_argument(
         '--reset',
@@ -81,12 +81,12 @@ def reset_processing(session_data):
 def start_processing():
     args = arguments()
 
-    session_data = SessionProcessor.create_new_session(args.target_dir)
-    prepare_directory_structure(session_data)
+    # session_data = SessionProcessor.create_new_session(args.target_dir)
+    # prepare_directory_structure(session_data)
 
-    if args.reset:
-        reset_processing(session_data)
-        exit()
+    # if args.reset:
+    #     reset_processing(session_data)
+    #     exit()
 
     session_processor = SessionProcessor()
     frames_file_processor = FramesFileProcessor()
@@ -96,6 +96,7 @@ def start_processing():
     while True:
         for session in session_processor.find_sessions(hotspur_setup.search_glob):
             print(session.frames_directory)
+            exit()
             frames_file_processor.run(session)
             motioncor2_processor.run(session)
             ctffind_processor.run(session)
