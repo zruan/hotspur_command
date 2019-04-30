@@ -3,7 +3,6 @@ import glob
 import os
 import argparse
 import pyfs
-import hashlib
 import time
 
 import couchdb
@@ -11,18 +10,6 @@ import couchdb
 from processors import SessionProcessor, FramesFileProcessor, Motioncor2Processor, CtffindProcessor
 import hotspur_setup
 
-
-# def get_user_id_hash(user_id):
-#     m = hashlib.md5()
-#     m.update(user_id.encode('utf-8'))
-#     m.update(hotspur_setup.hash_salt.encode('utf-8'))
-#     digest = m.hexdigest()
-#     print("User ID hash is: {0}".format(digest))
-#     return digest
-
-def prepare_directory_structure(session_data):
-    if not os.path.exists(session_data.processing_directory):
-        os.makedirs(session_data.processing_directory)
 
 def arguments():
     parser = argparse.ArgumentParser(
@@ -39,25 +26,6 @@ def arguments():
         action='store_true'
     )
     return parser.parse_args()
-
-
-def prepare_gain_reference(gain_ref, scratch_dir):
-    print(gain_ref)
-    # gain_ref =  os.path.normpath()
-    _, ext = os.path.splitext(gain_ref)
-    target_filename = "gainRef.mrc"
-    target_path = os.path.join(scratch_dir, target_filename)
-
-    if not os.path.exists(target_path):
-        if ext == '.mrc':
-            os.system("cp {} {}".format(gain_ref, target_path))
-        elif ext == '.dm4':
-            os.system("dm2mrc {} {}".format(gain_ref, target_path))
-        else:
-            raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
-
-    return target_path
-
 
 def reset_processing(session_data):
     print("Removing '.done' files...")
