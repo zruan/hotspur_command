@@ -1,5 +1,6 @@
 import os
 import couchdb
+import hashlib
 from glob import glob
 from data_models import SessionData
 
@@ -8,7 +9,7 @@ import hotspur_setup
 
 class SessionProcessor():
 
-
+	hash_db_name = 'hashlinks'
 	tracked_directories = {}
 	sessions = []
 	session_databases = {}
@@ -54,12 +55,41 @@ class SessionProcessor():
 
 		SessionProcessor.prepare_directory_structure(session_data)
 
+		SessionProcessor.create_hashlink(session_data, db)
+
 		return session_data, db
 
 	@staticmethod
 	def prepare_directory_structure(session_data):
 		if not os.path.exists(session_data.processing_directory):
 			os.makedirs(session_data.processing_directory)
+
+	@staticmethod
+	def create_hashlink(session, session_db):
+
+		m = hashlib.md5()
+		m.update(session_db.name.encode('utf-8'))
+		m.update(hotspur_setup.hash_salt.encode('utf-8'))
+		digest = m.hexdigest()
+
+		hash_doc_id = 'hotspur_{}'.format(digest)
+		hash_db = SessionProcessor.get_hash_database()
+		hash_doc = hash_db.get(hash_doc_id)
+		if hash_doc is None:
+			hash_doc = {
+				'_id': hash_doc_id,
+				'db_name': session_db.name
+			}
+			hash_db.save(hash_doc)
+
+	@classmethod
+	def get_hash_database(cls):
+		couch = couchdb.Server(hotspur_setup.couchdb_address)
+		try:
+			db = couch.create(cls.hash_db_name)
+		except couchdb.http.PreconditionFailed:
+			db = couch[cls.hash_db_name]
+		return db
 
 	@staticmethod
 	def get_couchdb_database(user, grid, session):
