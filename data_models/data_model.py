@@ -69,7 +69,4 @@ class DataModelSummary():
 			return False
 
 	def __ne__(self, other):
-		if self.__eq__(other):
-			return False
-		else:
-			return True
+		return not self.__eq__(other)
