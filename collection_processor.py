@@ -16,55 +16,58 @@ def arguments():
         description='Runs data processing live for incoming data'
     )
     parser.add_argument(
-        '--target_dir',
-        metavar='target-dir',
+        '--target-dir',
+        dest='target_dir',
         help='A directory you want to process. This is for when you only want to process one session.'
     )
     parser.add_argument(
-        '--reset',
-        help="Remove all '.done' files that track processing progress.",
+        '--reset-all',
+        dest='reset_all',
+        help="Remove all processing for every session.",
         action='store_true'
+    )
+    parser.add_argument(
+        '--reset-dir',
+        dest='reset_dir',
+        help="Reset all processing done on given data directory."
     )
     return parser.parse_args()
 
-def reset_processing(session_data):
-    print("Removing '.done' files...")
-    for file in os.listdir(session_data.processing_directory):
-        if file.endswith('.done'):
-            file_path = os.path.join(session_data.processing_directory, file)
-            os.remove(file_path)
-    print("Successfully removed '.done' files.")
-
+def reset_session(session):
     server = couchdb.Server(hotspur_setup.couchdb_address)
-    db = SessionProcessor.get_couchdb_database(
-        session_data.user,
-        session_data.grid,
-        session_data.session
-    )
+    db = SessionProcessor.session_databases[session]
     print('Deleting database "{}"...'.format(db.name))
     server.delete(db.name)
     print('Database deleted.')
 
+def reset_all():
+    sessions = SessionProcessor.find_sessions(hotspur_setup.search_glob)
+    for session in sessions:
+        reset_session(session)
 
 def start_processing():
     args = arguments()
 
-    # session_data = SessionProcessor.create_new_session(args.target_dir)
-    # prepare_directory_structure(session_data)
+    if args.reset_all:
+        reset_all()
+        exit()
 
-    # if args.reset:
-    #     reset_processing(session_data)
-    #     exit()
+    if args.reset_dir is not None:
+        session = SessionProcessor.create_new_session(args.reset_session)
+        reset_session(session)
+        exit()
+    
+    if args.target_dir is not None:
+        search_glob = args.target_dir
+    else:
+        search_glob = hotspur_setup.search_glob
 
-    session_processor = SessionProcessor()
     frames_file_processor = FramesFileProcessor()
     motioncor2_processor = Motioncor2Processor()
     ctffind_processor = CtffindProcessor()
 
     while True:
-        for session in session_processor.find_sessions(hotspur_setup.search_glob):
-            print(session.frames_directory)
-            exit()
+        for session in SessionProcessor.find_sessions(search_glob):
             frames_file_processor.run(session)
             motioncor2_processor.run(session)
             ctffind_processor.run(session)
