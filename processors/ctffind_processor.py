@@ -14,37 +14,42 @@ from resource_manager import ResourceManager
 class CtffindProcessor():
 
 	def __init__(self):
-		self.tracked_docs = []
-		self.queued_listings = []
-		self.finished_docs = []
+		self.tracked_data = {}
+		self.queued_listings = {}
+		self.finished_docs = {}
 		self.required_cpus = 1
 
-	def run(self, session_data):
-		db = SessionProcessor.get_couchdb_database(session_data.user, session_data.grid, session_data.session)
+	def run(self, session):
+		if session.name not in self.tracked_data.keys():
+			self.tracked_data[session.name] = []
+		if session.name not in self.queued_listings.keys():
+			self.queued_listings[session.name] = []
+		if session.name not in self.finished_docs.keys():
+			self.finished_docs[session.name] = []
 
-		# motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
-		# self.finished_docs = [doc.base_name for doc in motion_correction_data_docs]
+		db = SessionProcessor.session_databases[session]
+
+		ctf_data_summaries = CtfData.find_docs_by_time(db)
+		self.finished_docs[session.name] = [doc.base_name for doc in ctf_data_summaries]
 
 		motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
 		for doc in motion_correction_data_docs:
-			if doc.base_name in self.tracked_docs:
-				continue
-			else:
-				self.tracked_docs.append(doc.base_name)
-				# if doc.base_name not in self.finished_docs:
-				self.queued_listings.append(doc)
-				self.queued_listings.sort(key=lambda doc: doc.time)
+			if doc.base_name not in self.tracked_data[session.name]:
+				self.tracked_data[session.name].append(doc.base_name)
+				if doc.base_name not in self.finished_docs:
+					self.queued_listings[session.name].append(doc)
+					self.queued_listings[session.name].sort(key=lambda doc: doc.time)
 
-		if len(self.queued_listings) == 0:
+		if len(self.queued_listings[session.name]) == 0:
 			return
 
 		if ResourceManager.request_cpus(self.required_cpus):
-			target_base_name = self.queued_listings.pop().base_name
+			target_base_name = self.queued_listings[session.name].pop().base_name
 			acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
 			motion_correction_data = MotionCorrectionData.read_from_couchdb_by_name(db, target_base_name)
 			process_thread = Thread(
 				target=self.process_data,
-				args=(session_data, acquisition_data, motion_correction_data)
+				args=(session, acquisition_data, motion_correction_data)
 			)
 			process_thread.start()
 
@@ -85,6 +90,7 @@ class CtffindProcessor():
 		ResourceManager.release_cpus(self.required_cpus)
 
 		data_model = CtfData(acquisition_data.base_name)
+		data_model.time = time.time()
 		data_model.ctf_image_file = output_file
 		data_model.ctf_image_preview_file = self.create_preview(data_model.ctf_image_file)
 		data_model.ctf_log_file = '{}_ctffind.txt'.format(output_file_base)
@@ -96,7 +102,7 @@ class CtffindProcessor():
 		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
 		data_model.save_to_couchdb(db)
 
-		self.finished_docs.append(data_model.base_name)
+		self.finished_docs[session.name].append(data_model.base_name)
 
 	def create_preview(self, file):
 		image = imaging.load(file)[0]

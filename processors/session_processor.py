@@ -1,6 +1,7 @@
 import os
 import couchdb
 import hashlib
+import time
 from glob import glob
 from data_models import SessionData
 
@@ -10,7 +11,7 @@ import hotspur_setup
 class SessionProcessor():
 
 	hash_db_name = 'hashlinks'
-	tracked_directories = {}
+	tracked_directories = []
 	sessions = []
 	session_databases = {}
 
@@ -21,11 +22,16 @@ class SessionProcessor():
 			directories_to_track.extend(glob(search))
 
 		for directory in directories_to_track:
-			if directory not in cls.tracked_directories.keys():
+			if directory not in cls.tracked_directories:
 				session, session_db = cls.create_new_session(directory)
+
+				SessionProcessor.prepare_directory_structure(session)
+				SessionProcessor.create_hashlink(session, session_db)
+
 				cls.sessions.append(session)
-				cls.tracked_directories[directory] = session
+				cls.tracked_directories.append(directory)
 				cls.session_databases[session] = session_db
+
 		return cls.sessions
 
 	@classmethod
@@ -42,20 +48,18 @@ class SessionProcessor():
 		scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
 
 		db = SessionProcessor.get_couchdb_database(user_id, sample_id, session_id)
-		try:
-			session_data = SessionData.read_from_couchdb_by_name(db)
-		except:
+
+		session_data = SessionData.read_from_couchdb_by_name(db)
+		if session_data is None:
 			session_data = SessionData()
+			session_data.time = time.time()
+			session_data.name = session_data.db_name = db.name
 			session_data.session = session_id
 			session_data.grid = sample_id
 			session_data.user = user_id
 			session_data.frames_directory = frames_directory
 			session_data.processing_directory = scratch_dir
 			session_data.save_to_couchdb(db)
-
-		SessionProcessor.prepare_directory_structure(session_data)
-
-		SessionProcessor.create_hashlink(session_data, db)
 
 		return session_data, db
 
@@ -66,7 +70,6 @@ class SessionProcessor():
 
 	@staticmethod
 	def create_hashlink(session, session_db):
-
 		m = hashlib.md5()
 		m.update(session_db.name.encode('utf-8'))
 		m.update(hotspur_setup.hash_salt.encode('utf-8'))

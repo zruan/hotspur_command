@@ -14,48 +14,56 @@ class FramesFileProcessor():
 
 	# amount of time to wait before acting on a file. Prevents reading a partial file.
 	_min_lifetime = 120
+	_search_globs = ['*.tif', '*.mrc']
 
 	def __init__(self):
-		self.tracked_files_by_db = {}
+		self.tracked_files = []
 
-	def run(self, session_data):
-		db = SessionProcessor.get_couchdb_database(session_data.user, session_data.grid, session_data.session)
-		if session_data not in self.tracked_files_by_db.keys():
-			self.tracked_files_by_db[db.name] = self.load_from_couchdb(db)
+	def update_from_couchdb(self, session):
+		db = SessionProcessor.session_databases[session]
+		summaries = AcquisitionData.find_docs_by_time(db)
+		for summary in summaries:
+			doc = AcquisitionData.read_from_couchdb_by_name(db, summary.base_name)
+			self.tracked_files.append(doc.image_path)
 
-		tif_glob = os.path.join(session_data.frames_directory, '*.tif')
-		tif_files = glob(tif_glob)
-		mrc_glob = os.path.join(session_data.frames_directory, '*.mrc')
-		mrc_files = glob(mrc_glob)
+	def run(self, session):
+		found_files = []
+		for search in FramesFileProcessor._search_globs:
+			search_path = os.path.join(session.frames_directory, search)
+			found_files.extend(glob(search_path))
 
-		files = tif_files + mrc_files
+		for file in found_files:
 
-		for file in files:
-			base_name = os.path.basename(os.path.splitext(file)[0])
-			if base_name in self.tracked_files_by_db[db.name]:
+			# File has already been found
+			if file in self.tracked_files:
 				continue
 
+			# File is not old enough
 			acquisition_time = os.path.getmtime(file)
 			current_time = time.time()
 			file_lifetime = current_time - acquisition_time
 			if file_lifetime < FramesFileProcessor._min_lifetime:
 				continue
 
+			# File doesn't have associated mdoc
 			mdoc_file = '{}.mdoc'.format(file)
 			if not os.path.exists(mdoc_file):
-				self.tracked_files_by_db[db.name].append(file)
+				self.tracked_files.append(file)
 				continue
 
+			# File is new: prepare acquisition model
+			base_name = os.path.basename(os.path.splitext(file)[0])
 			data_model = AcquisitionData(base_name)
 			data_model.image_path = file
 			data_model.file_format = os.path.splitext(file)[1]
 			data_model.time = acquisition_time
 
-			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session_data)
+			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session)
 			# data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
 
+			db = SessionProcessor.session_databases[session]
 			data_model.save_to_couchdb(db)
-			self.tracked_files_by_db[db.name].append(file)
+			self.tracked_files.append(file)
 
 	@staticmethod
 	def update_model_from_mdoc(mdoc_file_path, data_model, session_data):
@@ -64,8 +72,10 @@ class FramesFileProcessor():
 				# key-value pairs are separated by ' = ' in mdoc files
 				if not ' = ' in line:
 					continue
-				key, value = [item.strip() for item in line.split(' = ')]
-				# DEBUG print("Key: '{}'".format(key), "Value: '{}'".format(value))
+				try:
+					key, value = [item.strip() for item in line.split(' = ')]
+				except:
+					continue
 				if key == 'Voltage':
 					data_model.voltage = int(value)
 				elif key == 'ExposureDose':

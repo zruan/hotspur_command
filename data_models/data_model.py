@@ -26,8 +26,11 @@ class DataModel():
 	@classmethod
 	def read_from_couchdb_by_name(cls, db, base_name=None):
 		data_model = cls(base_name)
-		data_model.__dict__ = db.get(data_model._id)
-		return data_model
+		try:
+			data_model.__dict__ = db.get(data_model._id)
+			return data_model
+		except:
+			return None
 
 	@classmethod
 	def _generate_id(cls, base_name):
@@ -57,7 +60,7 @@ class DataModel():
 
 class DataModelSummary():
 
-	def __init__(self, base_name, id, time):
+	def __init__(self, base_name, time, id):
 		self.base_name = base_name
 		self.id = id
 		self.time = time

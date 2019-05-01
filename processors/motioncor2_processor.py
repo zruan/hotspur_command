@@ -16,35 +16,40 @@ from resource_manager import ResourceManager
 class Motioncor2Processor():
 
 	def __init__(self):
-		self.tracked_docs = []
-		self.queued_listings = []
-		self.finished_docs = []
+		self.tracked_data = {}
+		self.queued_listings = {}
+		self.finished_docs = {}
 		self.required_gpus = 1
 
-	def run(self, session_data):
-		db = SessionProcessor.get_couchdb_database(session_data.user, session_data.grid, session_data.session)
+	def run(self, session):
+		if session.name not in self.tracked_data.keys():
+			self.tracked_data[session.name] = []
+		if session.name not in self.queued_listings.keys():
+			self.queued_listings[session.name] = []
+		if session.name not in self.finished_docs.keys():
+			self.finished_docs[session.name] = []
+
+		db = SessionProcessor.session_databases[session]
 
 		motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
-		self.finished_docs = [doc.base_name for doc in motion_correction_data_docs]
+		self.finished_docs[session.name] = [doc.base_name for doc in motion_correction_data_docs]
 
-		acquisition_data_docs = AcquisitionData.find_docs_by_time(db)
-		for doc in acquisition_data_docs:
-			if doc.base_name in self.tracked_docs:
-				continue
-			else:
-				self.tracked_docs.append(doc.base_name)
-				if doc.base_name not in self.finished_docs:
-					self.queued_listings.append(doc)
-					self.queued_listings.sort(key=lambda doc: doc.time)
+		acquisition_data_summaries = AcquisitionData.find_docs_by_time(db)
+		for summary in acquisition_data_summaries:
+			if summary.base_name not in self.tracked_data[session.name]:
+				self.tracked_data[session.name].append(summary.base_name)
+				if summary.base_name not in self.finished_docs[session.name]:
+					self.queued_listings[session.name].append(summary)
+					self.queued_listings[session.name].sort(key=lambda doc: doc.time)
 
-		if len(self.queued_listings) == 0:
+		if len(self.queued_listings[session.name]) == 0:
 			return
 
 		gpu_id_list = ResourceManager.request_gpus(self.required_gpus)
 		if gpu_id_list is not None:
-			target_base_name = self.queued_listings.pop().base_name
+			target_base_name = self.queued_listings[session.name].pop().base_name
 			acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
-			process_thread = Thread(target=self.process_data, args=(session_data, acquisition_data, gpu_id_list))
+			process_thread = Thread(target=self.process_data, args=(session, acquisition_data, gpu_id_list))
 			process_thread.start()
 
 	def process_data(self, session, acquisition_data, gpu_id_list):
@@ -72,6 +77,7 @@ class Motioncor2Processor():
 		ResourceManager.release_gpus(gpu_id_list)
 
 		data_model = MotionCorrectionData(acquisition_data.base_name)
+		data_model.time = time.time()
 		data_model.aligned_image_file = output_file
 
 		if os.path.exists(output_file_dose_weighted):
@@ -93,7 +99,7 @@ class Motioncor2Processor():
 		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
 		data_model.save_to_couchdb(db)
 
-		self.finished_docs.append(data_model.base_name)
+		self.finished_docs[session.name].append(data_model.base_name)
 
 	def create_preview(self, file):
 		image = imaging.load(file)[0]

@@ -37,8 +37,11 @@ def reset_session(session):
     server = couchdb.Server(hotspur_setup.couchdb_address)
     db = SessionProcessor.session_databases[session]
     print('Deleting database "{}"...'.format(db.name))
-    server.delete(db.name)
-    print('Database deleted.')
+    try:
+        server.delete(db.name)
+        print('Database deleted.')
+    except:
+        print('Database could not be deleted. Skipping...')
 
 def reset_all():
     sessions = SessionProcessor.find_sessions(hotspur_setup.search_glob)
@@ -65,6 +68,9 @@ def start_processing():
     frames_file_processor = FramesFileProcessor()
     motioncor2_processor = Motioncor2Processor()
     ctffind_processor = CtffindProcessor()
+
+    for session in SessionProcessor.find_sessions(search_glob):
+        frames_file_processor.update_from_couchdb(session)
 
     while True:
         for session in SessionProcessor.find_sessions(search_glob):
