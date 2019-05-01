@@ -52,7 +52,7 @@ class FramesFileProcessor():
 			data_model.time = acquisition_time
 
 			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session_data)
-			data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
+			# data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
 
 			data_model.save_to_couchdb(db)
 			self.tracked_files_by_db[db.name].append(file)
