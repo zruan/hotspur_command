@@ -2,8 +2,8 @@ base_path = "/pncc/storage/1/processing/hotspur"
 search_glob = [
 	'/pncc/storage/1/rawdata/pncc-testing/hotspur-tests/*/*/*/frames/',
 	'/pncc/storage/1/rawdata/pncc/*/*/*/frames/',
-	'/pncc/storage/1/rawdata/pncc/*/*/*/',
-	'/pncc/storage/1/rawdata/pncc-testing/SEM_scripts/test_data_2/'
+	# '/pncc/storage/1/rawdata/pncc/*/*/*/',
+	# '/pncc/storage/1/rawdata/pncc-testing/SEM_scripts/test_data_2/'
 ]
 
 couchdb_address = "http://pncc:cryoem@localhost:5984/"

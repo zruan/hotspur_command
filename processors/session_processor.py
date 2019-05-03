@@ -23,7 +23,14 @@ class SessionProcessor():
 			directories_to_track.extend(glob(search))
 
 		for directory in directories_to_track:
+			mdoc_files = glob('{}/*.mdoc'.format(directory))
+			if len(mdoc_files) == 0:
+				print('No mdoc files found. Skipping...')
+				continue
+
 			if directory not in cls.tracked_directories:
+				print('Session found at {}'.format(directory))
+
 				session, session_db = cls.create_new_session(directory)
 
 				SessionProcessor.prepare_directory_structure(session)
@@ -52,6 +59,7 @@ class SessionProcessor():
 
 		session_data = SessionData.read_from_couchdb_by_name(db)
 		if session_data is None:
+			print('No previous session data found. Generating...')
 			session_data = SessionData()
 			session_data.time = time.time()
 			session_data.name = session_data.db_name = db.name
@@ -61,7 +69,8 @@ class SessionProcessor():
 			session_data.frames_directory = frames_directory
 			session_data.processing_directory = scratch_dir
 			session_data.save_to_couchdb(db)
-
+		else:
+			print('Session data loaded from couchdb!')
 		return session_data, db
 
 	@staticmethod
