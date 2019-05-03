@@ -2,6 +2,7 @@ import os
 import couchdb
 import hashlib
 import time
+import re
 from glob import glob
 from data_models import SessionData
 
@@ -100,6 +101,8 @@ class SessionProcessor():
 
 		database_name = '_'.join(['hotspur', user, grid, session])
 		database_name = database_name.lower()
+		bad_char_pattern = r'[.]'
+		database_name = re.sub(bad_char_pattern, '_', database_name)
 
 		try:
 			db = couch.create(database_name)
