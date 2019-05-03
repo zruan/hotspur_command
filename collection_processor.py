@@ -44,9 +44,18 @@ def reset_session(session):
         print('Database could not be deleted. Skipping...')
 
 def reset_all():
-    sessions = SessionProcessor.find_sessions(hotspur_setup.search_glob)
-    for session in sessions:
-        reset_session(session)
+    server = couchdb.Server(hotspur_setup.couchdb_address)
+    db = server['hashlinks']
+    for doc_summary in db.view('_all_docs'):
+        doc = db[doc_summary.id]
+        db_name = doc['db_name']
+        print('Deleting database "{}"...'.format(db_name))
+        try:
+            server.delete(doc['db_name'])
+            print('Database deleted.')
+        except:
+            print('Database could not be deleted. Skipping...')
+    server.delete('hashlinks')
 
 def start_processing():
     args = arguments()
@@ -56,7 +65,7 @@ def start_processing():
         exit()
 
     if args.reset_dir is not None:
-        session = SessionProcessor.create_new_session(args.reset_session)
+        session = SessionProcessor.create_new_session(args.reset_dir)
         reset_session(session)
         exit()
     
