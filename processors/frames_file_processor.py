@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 import time
 from glob import glob
+from io import StringIO
+import struct
 import tifffile
 import numpy as np
 
@@ -95,7 +97,8 @@ class FramesFileProcessor():
 
 	@staticmethod
 	def update_dose_from_image(file, data_model):
-		with tifffile.TiffFile(file) as imfile:
+		decompressed_file = FramesFileProcessor.decompress_lzw(file)
+		with tifffile.TiffFile(decompressed_file) as imfile:
 			array = imfile.asarray()
 			mean = np.mean(array)
 
@@ -107,6 +110,46 @@ class FramesFileProcessor():
 		data_model.frame_dose = data_model.total_dose / data_model.frame_count
 		
 		return data_model
+
+	@staticmethod
+	def decompress_lzw(file):
+		compressed = []
+		with open(file, 'rb') as fp:
+			while True:
+				rec = fp.read(2)
+				if len(rec) != 2:
+					break
+				(data, ) = struct.unpack('>H', rec)
+				compressed.append(data)
+		# FROM https://rosettacode.org/wiki/LZW_compression#Python
+
+		# Build the dictionary.
+		dict_size = 256
+		dictionary = {i: chr(i) for i in range(dict_size)}
+	
+		# use StringIO, otherwise this becomes O(N^2)
+		# due to string concatenation in a loop
+		result = StringIO()
+		compressed = list(compressed)
+		w = compressed.pop(0)
+		result.write(w)
+
+
+		for k in compressed:
+			if k in dictionary:
+				entry = dictionary[k]
+			elif k == dict_size:
+				entry = w + w[0]
+			else:
+				raise ValueError('Bad compressed k: %s' % k)
+			result.write(entry)
+	
+			# Add w+entry[0] to the dictionary.
+			dictionary[dict_size] = w + entry[0]
+			dict_size += 1
+	
+			w = entry
+		return result.getvalue()
 
 	def load_from_couchdb(self, db):
 		return [item.base_name for item in AcquisitionData.find_docs_by_time(db)]
