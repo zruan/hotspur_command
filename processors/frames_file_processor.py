@@ -61,7 +61,7 @@ class FramesFileProcessor():
 			data_model.time = acquisition_time
 
 			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session)
-			# data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
+			data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
 
 			db = SessionProcessor.session_databases[session]
 			data_model.save_to_couchdb(db)
@@ -97,59 +97,13 @@ class FramesFileProcessor():
 
 	@staticmethod
 	def update_dose_from_image(file, data_model):
-		decompressed_file = FramesFileProcessor.decompress_lzw(file)
-		with tifffile.TiffFile(decompressed_file) as imfile:
-			array = imfile.asarray()
-			mean = np.mean(array)
+		with tifffile.TiffFile(file) as imfile:
+			frame_dose_per_pixel = imfile.pages[0].asarray().mean()
 
-		pixel_dose_rate = mean
-		pixel_area = data_model.pixel_size ** 2
-		area_dose_rate = pixel_dose_rate / pixel_area
-
-		data_model.total_dose = area_dose_rate * data_model.exposure_time
-		data_model.frame_dose = data_model.total_dose / data_model.frame_count
+		data_model.frame_dose = frame_dose_per_pixel * (data_model.pixel_size ** 2)
+		data_model.total_dose = data_model.frame_dose * data_model.frame_count
 		
 		return data_model
-
-	@staticmethod
-	def decompress_lzw(file):
-		compressed = []
-		with open(file, 'rb') as fp:
-			while True:
-				rec = fp.read(2)
-				if len(rec) != 2:
-					break
-				(data, ) = struct.unpack('>H', rec)
-				compressed.append(data)
-		# FROM https://rosettacode.org/wiki/LZW_compression#Python
-
-		# Build the dictionary.
-		dict_size = 256
-		dictionary = {i: chr(i) for i in range(dict_size)}
-	
-		# use StringIO, otherwise this becomes O(N^2)
-		# due to string concatenation in a loop
-		result = StringIO()
-		compressed = list(compressed)
-		w = compressed.pop(0)
-		result.write(w)
-
-
-		for k in compressed:
-			if k in dictionary:
-				entry = dictionary[k]
-			elif k == dict_size:
-				entry = w + w[0]
-			else:
-				raise ValueError('Bad compressed k: %s' % k)
-			result.write(entry)
-	
-			# Add w+entry[0] to the dictionary.
-			dictionary[dict_size] = w + entry[0]
-			dict_size += 1
-	
-			w = entry
-		return result.getvalue()
 
 	def load_from_couchdb(self, db):
 		return [item.base_name for item in AcquisitionData.find_docs_by_time(db)]
