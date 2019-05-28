@@ -1,6 +1,5 @@
 #!/usr/bin/bash 
 
-
 ENV=~/.conda/envs/hotspur
 
 if !$(conda info --envs | grep $ENV);
