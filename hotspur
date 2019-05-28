@@ -1,4 +1,11 @@
-#!/eppec/storage/sw/hotspur_dev/venv/bin/python
-import collection_processor
+#!/bin/bash
 
-collection_processor.start_processing()
+CONDA_ENV=/home/users/gingerid/.conda/envs/hotspur
+
+function cleanup {
+	conda deactivate
+}
+trap cleanup EXIT
+
+source activate "$CONDA_ENV"
+python3 collection_processor.py

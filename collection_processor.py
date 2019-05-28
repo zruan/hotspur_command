@@ -87,3 +87,6 @@ def start_processing():
             motioncor2_processor.run(session)
             ctffind_processor.run(session)
         time.sleep(5)
+
+if __name__ == '__main__':
+    start_processing()
