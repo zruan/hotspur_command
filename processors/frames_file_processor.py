@@ -100,7 +100,7 @@ class FramesFileProcessor():
 		with tifffile.TiffFile(file) as imfile:
 			frame_dose_per_pixel = imfile.pages[0].asarray().mean()
 
-		data_model.frame_dose = frame_dose_per_pixel * (data_model.pixel_size ** 2)
+		data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
 		data_model.total_dose = data_model.frame_dose * data_model.frame_count
 		
 		return data_model
