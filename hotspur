@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONDA_ENV=/home/users/gingerid/.conda/envs/hotspur
+CONDA_ENV=/home/users/gingerid/.conda/envs/hotspur2
 
 function cleanup {
 	conda deactivate
@@ -8,5 +8,5 @@ function cleanup {
 trap cleanup EXIT
 
 source activate "$CONDA_ENV"
-python3 collection_processor.py $@
-cleanup()
+python3 ./collection_processor.py $@
+cleanup
