@@ -97,7 +97,10 @@ class Motioncor2Processor():
 		data_model.pixel_size = pixel_size
 
 		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
-		data_model.save_to_couchdb(db)
+		_, doc_rev = data_model.save_to_couchdb(db)
+		data_model['_rev'] = doc_rev
+		with open(data_model.preview_file, 'rb') as fp:
+			db.put_attachment(data_model, fp, 'preview.png', 'image/png')
 
 		self.finished_docs[session.name].append(data_model.base_name)
 

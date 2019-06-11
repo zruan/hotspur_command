@@ -85,7 +85,7 @@ def start_processing():
         for session in SessionProcessor.find_sessions(search_glob):
             frames_file_processor.run(session)
             motioncor2_processor.run(session)
-            ctffind_processor.run(session)
+            # ctffind_processor.run(session)
         time.sleep(5)
 
 if __name__ == '__main__':

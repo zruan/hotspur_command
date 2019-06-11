@@ -20,8 +20,15 @@ class DataModel():
 		self.time = None
 		self.base_name = base_name
 
+	def __setitem__(self, key, item):
+		self.__dict__[key] = item
+
+	def __getitem__(self, key):
+		return self.__dict__[key]
+
 	def save_to_couchdb(self, db):
-		db.save(self.__dict__)
+		doc_id, doc_rev = db.save(self.__dict__)
+		return doc_id, doc_rev
 
 	@classmethod
 	def read_from_couchdb_by_name(cls, db, base_name=None):
