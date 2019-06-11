@@ -9,3 +9,4 @@ trap cleanup EXIT
 
 source activate "$CONDA_ENV"
 python3 collection_processor.py $@
+cleanup()
