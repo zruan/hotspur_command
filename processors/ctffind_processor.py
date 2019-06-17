@@ -131,7 +131,7 @@ class CtffindProcessor():
 		# the first entry in spatial frequency is 0
 		data[0] = np.reciprocal(data[0], where = data[0]!=0)
 		data[0][0] = None
-		# data_model.estimated_resolution = list(np.nan_to_num(data[0]))
+		data_model.measured_ctf_fit = list(np.nan_to_num(data[0]))
 		data_model.measured_ctf = list(np.nan_to_num(data[2]))
 		data_model.measured_ctf_no_bg = data_model.measured_ctf
 		data_model.theoretical_ctf = list(np.nan_to_num(data[3]))

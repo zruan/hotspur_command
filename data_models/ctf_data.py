@@ -21,5 +21,5 @@ class CtfData(DataModel):
 		self.measured_ctf = None
 		self.measured_ctf_no_bg = None
 		self.theoretical_ctf = None
-		self.ctf_resolution_a = None
+		self.measured_ctf_fit = None
 
