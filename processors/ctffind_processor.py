@@ -101,9 +101,9 @@ class CtffindProcessor():
 
 		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
 		_, doc_rev = data_model.save_to_couchdb(db)
-		data_model['_rev'] = doc_rev
-		with open(data_model.ctf_image_preview_file, 'rb') as fp:
-			db.put_attachment(data_model, fp, 'preview.png', 'image/png')
+		# data_model['_rev'] = doc_rev
+		# with open(data_model.ctf_image_preview_file, 'rb') as fp:
+		# 	db.put_attachment(data_model, fp, 'preview.png', 'image/png')
 
 		self.finished_docs[session.name].append(data_model.base_name)
 
