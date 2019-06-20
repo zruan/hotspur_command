@@ -115,15 +115,15 @@ class Motioncor2Processor():
 	def extract_shifts_from_log(self, output_log_file):
 		try:
 			with open(output_log_file, "r") as fp:
-				shifts = []
+				x_shifts = []
+				y_shifts = []
 				reading_shifts = False
 				for line in fp:
 					if reading_shifts:
 						if 'shift:' in line:
 							columns = line.split()
-							x_shift = columns[-2]
-							y_shift = columns[-1]
-							shifts.append(float(x_shift), float(y_shift))
+							x_shifts.append(columns[-2])
+							y_shifts.append(columns[-1])
 						else:
 							reading_shifts = False
 					elif 'Full-frame alignment shift' in line:
@@ -131,6 +131,7 @@ class Motioncor2Processor():
 				# use second element because first element is always zero
 				initial_shift = math.sqrt(x_shifts[1]**2 + y_shifts[1]**2)
 				total_shift = math.sqrt(sum(x_shifts)**2 + sum(y_shifts)**2)
+				shifts = zip(x_shifts, y_shifts)
 				return shifts, initial_shift, total_shift
 		except IOError:
 			print("No log found")
