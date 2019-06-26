@@ -122,8 +122,8 @@ class Motioncor2Processor():
 					if reading_shifts:
 						if 'shift:' in line:
 							columns = line.split()
-							x_shifts.append(columns[-2])
-							y_shifts.append(columns[-1])
+							x_shifts.append(float(columns[-2]))
+							y_shifts.append(float(columns[-1]))
 						else:
 							reading_shifts = False
 					elif 'Full-frame alignment shift' in line:
@@ -131,7 +131,7 @@ class Motioncor2Processor():
 				# use second element because first element is always zero
 				initial_shift = math.sqrt(x_shifts[1]**2 + y_shifts[1]**2)
 				total_shift = math.sqrt(sum(x_shifts)**2 + sum(y_shifts)**2)
-				shifts = zip(x_shifts, y_shifts)
+				shifts = list(zip(x_shifts, y_shifts))
 				return shifts, initial_shift, total_shift
 		except IOError:
 			print("No log found")
