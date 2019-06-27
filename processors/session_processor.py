@@ -11,7 +11,9 @@ import hotspur_setup
 
 class SessionProcessor():
 
-	hash_db_name = 'hashlinks'
+	admin_db_name = 'projects_overview'
+	admin_overview_doc_name = 'projects_overview'
+	user_overview_doc_name = 'sessions_overview'
 	tracked_directories = []
 	sessions = []
 	session_databases = {}
@@ -33,9 +35,6 @@ class SessionProcessor():
 
 				session, session_db = cls.create_new_session(directory)
 
-				SessionProcessor.prepare_directory_structure(session)
-				SessionProcessor.create_hashlink(session, session_db)
-
 				cls.sessions.append(session)
 				cls.tracked_directories.append(directory)
 				cls.session_databases[session] = session_db
@@ -55,7 +54,7 @@ class SessionProcessor():
 
 		scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
 
-		db = SessionProcessor.get_couchdb_database(user_id, sample_id, session_id)
+		db, processing_dir = SessionProcessor.prepare_couchdb_database(user_id, sample_id, session_id)
 
 		session_data = SessionData.read_from_couchdb_by_name(db)
 		if session_data is None:
@@ -67,55 +66,71 @@ class SessionProcessor():
 			session_data.grid = sample_id
 			session_data.user = user_id
 			session_data.frames_directory = frames_directory
-			session_data.processing_directory = scratch_dir
+			session_data.processing_directory = processing_dir
 			session_data.save_to_couchdb(db)
 		else:
 			print('Session data loaded from couchdb!')
 		return session_data, db
 
-	@staticmethod
-	def prepare_directory_structure(session_data):
-		if not os.path.exists(session_data.processing_directory):
-			os.makedirs(session_data.processing_directory)
 
 	@staticmethod
-	def create_hashlink(session, session_db):
+	def get_hash(string_to_hash):
+		string_to_hash = string_to_hash.encode('utf-8')
 		m = hashlib.md5()
-		m.update(session_db.name.encode('utf-8'))
+		m.update(string_to_hash)
 		m.update(hotspur_setup.hash_salt.encode('utf-8'))
-		digest = m.hexdigest()
-
-		hash_doc_id = 'hotspur_{}'.format(digest)
-		hash_db = SessionProcessor.get_hash_database()
-		hash_doc = hash_db.get(hash_doc_id)
-		if hash_doc is None:
-			hash_doc = {
-				'_id': hash_doc_id,
-				'db_name': session_db.name
-			}
-			hash_db.save(hash_doc)
-
-	@classmethod
-	def get_hash_database(cls):
-		couch = couchdb.Server(hotspur_setup.couchdb_address)
-		try:
-			db = couch.create(cls.hash_db_name)
-		except couchdb.http.PreconditionFailed:
-			db = couch[cls.hash_db_name]
-		return db
+		return m.hexdigest()
 
 	@staticmethod
-	def get_couchdb_database(user, grid, session):
+	def prepare_couchdb_database(user, grid, session):
 		couch = couchdb.Server(hotspur_setup.couchdb_address)
 
-		database_name = '_'.join(['hotspur', user, grid, session])
-		database_name = database_name.lower()
-		bad_char_pattern = r'[.]'
-		database_name = re.sub(bad_char_pattern, '_', database_name)
-
+		session_hash = SessionProcessor.get_hash(user + grid + session)
+		session_db_name = '_'.join(['hotspur', session_hash])
 		try:
-			db = couch.create(database_name)
+			session_db = couch.create(session_db_name)
 		except couchdb.http.PreconditionFailed:
-			db = couch[database_name]
+			session_db = couch[session_db_name]
 
-		return db
+		user_hash = SessionProcessor.get_hash(user)
+		user_db_name = '_'.join(['hotspur', user_hash])
+		try:
+			user_db = couch.create(user_db_name)
+		except couchdb.http.PreconditionFailed:
+			user_db = couch[user_db_name]
+		try:
+			doc = user_db[SessionProcessor.user_overview_doc_name]
+		except:
+			doc = {'_id': SessionProcessor.user_overview_doc_name}
+		session_name = "{}_{}".format(grid, session)
+		doc[session_name] = session_db_name
+		user_db[SessionProcessor.user_overview_doc_name] = doc
+
+		# Add project db hash to projects db doc
+		try:
+			admin_db = couch.create(SessionProcessor.admin_db_name)
+		except couchdb.http.PreconditionFailed:
+			admin_db = couch[SessionProcessor.admin_db_name]
+
+		# Add user_db_name to doc in projects_db
+		try:
+			doc = admin_db[SessionProcessor.admin_overview_doc_name]
+		except:
+			doc = {'_id': SessionProcessor.admin_overview_doc_name}
+		doc[user] = user_db_name
+		admin_db[SessionProcessor.admin_overview_doc_name] = doc
+
+		# Make necessary directories
+		processing_dir = "{}/{}/{}".format(hotspur_setup.projects_hashes_path, user_hash, session_hash)
+		if not os.path.exists(processing_dir):
+			os.makedirs(processing_dir)
+
+		link_parent_dir = "{}/{}".format(hotspur_setup.projects_links_path, user)
+		if not os.path.exists(link_parent_dir):
+			os.makedirs(link_parent_dir)
+
+		link = "{}/{}_{}".format(link_parent_dir, grid, session)
+		if not os.path.exists(link):
+			os.symlink(processing_dir, link)
+
+		return session_db, processing_dir
