@@ -99,7 +99,7 @@ class CtffindProcessor():
 		data_model = self.update_model_from_EPA_log(data_model)
 		data_model = self.update_model_from_ctffind_log(data_model)
 
-		db = SessionProcessor.session_databases(session)
+		db = SessionProcessor.session_databases[session]
 		_, doc_rev = data_model.save_to_couchdb(db)
 		# data_model['_rev'] = doc_rev
 		# with open(data_model.ctf_image_preview_file, 'rb') as fp:
