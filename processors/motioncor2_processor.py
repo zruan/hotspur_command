@@ -96,7 +96,7 @@ class Motioncor2Processor():
 		data_model.dimensions = dimensions
 		data_model.pixel_size = pixel_size
 
-		db = SessionProcessor.get_couchdb_database(session.user, session.grid, session.session)
+		db = SessionProcessor.session_databases[session]
 		_, doc_rev = data_model.save_to_couchdb(db)
 		# data_model['_rev'] = doc_rev
 		# with open(data_model.preview_file, 'rb') as fp:
