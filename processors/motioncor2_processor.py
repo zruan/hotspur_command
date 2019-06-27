@@ -54,7 +54,7 @@ class Motioncor2Processor():
 
 	def process_data(self, session, acquisition_data, gpu_id_list):
 		gain_file = Motioncor2Processor.prepare_gain_reference(session.processing_directory, acquisition_data.gain_reference_file)
-		output_file_base = '{}{}'.format(session.processing_directory, acquisition_data.base_name)
+		output_file_base = '{}/{}'.format(session.processing_directory, acquisition_data.base_name)
 		output_file = '{}_mc.mrc'.format(output_file_base)
 		output_file_dose_weighted = '{}_mc_DW.mrc'.format(output_file_base)
 		output_log_file = '{}_mc.log'.format(output_file_base)
