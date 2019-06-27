@@ -52,8 +52,6 @@ class SessionProcessor():
 		sample_id = os.path.basename(os.path.normpath(sample_directory))
 		user_id = os.path.basename(os.path.normpath(user_directory))
 
-		scratch_dir = "{}/{}/{}__{}/".format(hotspur_setup.base_path, user_id, sample_id, session_id)
-
 		db, processing_dir = SessionProcessor.prepare_couchdb_database(user_id, sample_id, session_id)
 
 		session_data = SessionData.read_from_couchdb_by_name(db)
