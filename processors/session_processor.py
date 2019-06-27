@@ -74,26 +74,24 @@ class SessionProcessor():
 
 
 	@staticmethod
-	def get_hash(string_to_hash):
+	def get_db_name_hash(string_to_hash):
 		string_to_hash = string_to_hash.encode('utf-8')
 		m = hashlib.md5()
 		m.update(string_to_hash)
 		m.update(hotspur_setup.hash_salt.encode('utf-8'))
-		return m.hexdigest()
+		return 'h' + m.hexdigest()
 
 	@staticmethod
 	def prepare_couchdb_database(user, grid, session):
 		couch = couchdb.Server(hotspur_setup.couchdb_address)
 
-		session_hash = SessionProcessor.get_hash(user + grid + session)
-		session_db_name = '_'.join(['hotspur', session_hash])
+		session_db_name = SessionProcessor.get_db_name_hash(user + grid + session)
 		try:
 			session_db = couch.create(session_db_name)
 		except couchdb.http.PreconditionFailed:
 			session_db = couch[session_db_name]
 
-		user_hash = SessionProcessor.get_hash(user)
-		user_db_name = '_'.join(['hotspur', user_hash])
+		user_db_name = SessionProcessor.get_db_name_hash(user)
 		try:
 			user_db = couch.create(user_db_name)
 		except couchdb.http.PreconditionFailed:
@@ -106,13 +104,10 @@ class SessionProcessor():
 		doc[session_name] = session_db_name
 		user_db[SessionProcessor.user_overview_doc_name] = doc
 
-		# Add project db hash to projects db doc
 		try:
 			admin_db = couch.create(SessionProcessor.admin_db_name)
 		except couchdb.http.PreconditionFailed:
 			admin_db = couch[SessionProcessor.admin_db_name]
-
-		# Add user_db_name to doc in projects_db
 		try:
 			doc = admin_db[SessionProcessor.admin_overview_doc_name]
 		except:
@@ -121,7 +116,7 @@ class SessionProcessor():
 		admin_db[SessionProcessor.admin_overview_doc_name] = doc
 
 		# Make necessary directories
-		processing_dir = "{}/{}/{}".format(hotspur_setup.projects_hashes_path, user_hash, session_hash)
+		processing_dir = "{}/{}/{}".format(hotspur_setup.projects_hashes_path, user_db_name, session_db_name)
 		if not os.path.exists(processing_dir):
 			os.makedirs(processing_dir)
 
