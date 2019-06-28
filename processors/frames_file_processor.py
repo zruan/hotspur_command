@@ -6,6 +6,7 @@ from glob import glob
 from io import StringIO
 import struct
 import tifffile
+import imaging
 import numpy as np
 
 from data_models import AcquisitionData
@@ -97,8 +98,12 @@ class FramesFileProcessor():
 
 	@staticmethod
 	def update_dose_from_image(file, data_model):
-		with tifffile.TiffFile(file) as imfile:
-			frame_dose_per_pixel = imfile.pages[0].asarray().mean()
+		if os.path.splitext(file)[1] == '.tif':
+			with tifffile.TiffFile(file) as imfile:
+				frame_dose_per_pixel = imfile.pages[0].asarray().mean()
+		elif os.path.splitext(file)[1] == '.mrc':
+			imfile = imaging.load(file)
+			frame_dose_per_pixel = imfile.mean()
 
 		data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
 		data_model.total_dose = data_model.frame_dose * data_model.frame_count
