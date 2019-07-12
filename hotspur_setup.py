@@ -1,7 +1,7 @@
 # directory hotspur uses for all its functionality
 base_path = "/pncc/storage/1/processing/hotspur"
 
-search_glob = [
+search_globs = [
 	# '/pncc/storage/1/rawdata/pncc-testing/hotspur-tests/*/*/*/frames/',
 	'/pncc/storage/1/rawdata/pncc-testing/hotspur-tests/50633/20190429-asic-sma/screening-4/frames/',
 	'/goliath/rawdata/MMC/Confometrx/190618/0426-2_2/frames',

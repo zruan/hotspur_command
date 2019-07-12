@@ -33,29 +33,29 @@ def arguments():
     )
     return parser.parse_args()
 
-def reset_session(session):
-    server = couchdb.Server(hotspur_setup.couchdb_address)
-    db = SessionProcessor.session_databases[session]
-    print('Deleting database "{}"...'.format(db.name))
-    try:
-        server.delete(db.name)
-        print('Database deleted.')
-    except:
-        print('Database could not be deleted. Skipping...')
+# def reset_session(session):
+#     server = couchdb.Server(hotspur_setup.couchdb_address)
+#     db = SessionProcessor.session_databases[session]
+#     print('Deleting database "{}"...'.format(db.name))
+#     try:
+#         server.delete(db.name)
+#         print('Database deleted.')
+#     except:
+#         print('Database could not be deleted. Skipping...')
 
-def reset_all():
-    server = couchdb.Server(hotspur_setup.couchdb_address)
-    db = server['hashlinks']
-    for doc_summary in db.view('_all_docs'):
-        doc = db[doc_summary.id]
-        db_name = doc['db_name']
-        print('Deleting database "{}"...'.format(db_name))
-        try:
-            server.delete(doc['db_name'])
-            print('Database deleted.')
-        except:
-            print('Database could not be deleted. Skipping...')
-    server.delete('hashlinks')
+# def reset_all():
+#     server = couchdb.Server(hotspur_setup.couchdb_address)
+#     db = server['hashlinks']
+#     for doc_summary in db.view('_all_docs'):
+#         doc = db[doc_summary.id]
+#         db_name = doc['db_name']
+#         print('Deleting database "{}"...'.format(db_name))
+#         try:
+#             server.delete(doc['db_name'])
+#             print('Database deleted.')
+#         except:
+#             print('Database could not be deleted. Skipping...')
+#     server.delete('hashlinks')
 
 def start_processing():
     args = arguments()
@@ -64,21 +64,24 @@ def start_processing():
         reset_all()
         exit()
 
-    if args.reset_dir is not None:
-        session = SessionProcessor.create_new_session(args.reset_dir)
-        reset_session(session)
-        exit()
+    session_processor = SessionProcessor()
+
+    # if args.reset_dir is not None:
+    #     session = SessionProcessor.create_new_session(args.reset_dir)
+    #     reset_session(session)
+    #     exit()
     
     if args.target_dir is not None:
-        search_glob = args.target_dir
+        search_globs = [args.target_dir]
     else:
-        search_glob = hotspur_setup.search_glob
+        search_globs = hotspur_setup.search_globs
 
     frames_file_processor = FramesFileProcessor()
     motioncor2_processor = Motioncor2Processor()
     ctffind_processor = CtffindProcessor()
 
-    for session in SessionProcessor.find_sessions(search_glob):
+    # What is this?
+    for session in session_processor.find_sessions(search_glob):
         frames_file_processor.update_from_couchdb(session)
 
     while True:
