@@ -13,45 +13,60 @@ from resource_manager import ResourceManager
 
 class CtffindProcessor():
 
-	def __init__(self):
-		self.tracked_data = {}
-		self.queued_listings = {}
-		self.finished_docs = {}
-		self.required_cpus = 1
+	required_cpus = 1
+	processors_by_session = {}
 
-	def run(self, session):
-		if session.name not in self.tracked_data.keys():
-			self.tracked_data[session.name] = []
-		if session.name not in self.queued_listings.keys():
-			self.queued_listings[session.name] = []
-		if session.name not in self.finished_docs.keys():
-			self.finished_docs[session.name] = []
+	@classmethod
+	def for_session(cls, session):
+		try:
+			return cls.processers_by_session[session]
+		except:
+			processor = cls(session)
+			cls.processors_by_session[session] = processor
+			return processor
 
-		db = SessionProcessor.session_databases[session]
 
-		ctf_data_summaries = CtfData.find_docs_by_time(db)
-		self.finished_docs[session.name] = [doc.base_name for doc in ctf_data_summaries]
+	def __init__(self, session):
+		self.session = session
 
-		motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
-		for doc in motion_correction_data_docs:
-			if doc.base_name not in self.tracked_data[session.name]:
-				self.tracked_data[session.name].append(doc.base_name)
-				if doc.base_name not in self.finished_docs:
-					self.queued_listings[session.name].append(doc)
-					self.queued_listings[session.name].sort(key=lambda doc: doc.time)
+		self.tracked = []
+		self.queued = []
+		self.finished = []
 
-		if len(self.queued_listings[session.name]) == 0:
+		self.sync_with_db()
+
+	def sync_with_db(self):
+		ctf_data_listings = CtfData.find_docs_by_time(self.session.db)
+		found_names = [listing.base_name for listing in ctf_data_listings]
+		self.tracked = found_names
+		self.finished = found_names
+
+	def update_tracked_data(self):
+		motion_correction_data_listing = MotionCorrectionData.find_docs_by_time(db)
+		for listing in motion_correction_data_docs:
+			if listing.base_name not in self.tracked:
+				self.tracked.append(listing.base_name)
+				self.queued.append(listing)
+		self.queued.sort(key=lambda listing: listing.time)
+
+	def run(self):
+		self.update_tracked_data()
+
+		if len(self.queued) == 0:
 			return
 
 		if ResourceManager.request_cpus(self.required_cpus):
-			target_base_name = self.queued_listings[session.name].pop().base_name
-			acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
-			motion_correction_data = MotionCorrectionData.read_from_couchdb_by_name(db, target_base_name)
-			process_thread = Thread(
-				target=self.process_data,
-				args=(session, acquisition_data, motion_correction_data)
-			)
-			process_thread.start()
+			try:
+				target_base_name = self.queued.pop().base_name
+				acquisition_data = AcquisitionData.read_from_couchdb_by_name(self.session.db, target_base_name)
+				motion_correction_data = MotionCorrectionData.read_from_couchdb_by_name(db, target_base_name)
+				process_thread = Thread(
+					target=self.process_data,
+					args=(self.session, acquisition_data, motion_correction_data)
+				)
+				process_thread.start()
+			except:
+				ResourceManager.release_cpus(CtffindProcessor.required_cpus)
 
 	def process_data(self, session, acquisition_data, motion_correction_data):
 		if motion_correction_data.dose_weighted_image_file is not None:
@@ -99,13 +114,10 @@ class CtffindProcessor():
 		data_model = self.update_model_from_EPA_log(data_model)
 		data_model = self.update_model_from_ctffind_log(data_model)
 
-		db = SessionProcessor.session_databases[session]
-		_, doc_rev = data_model.save_to_couchdb(db)
-		# data_model['_rev'] = doc_rev
-		# with open(data_model.ctf_image_preview_file, 'rb') as fp:
-		# 	db.put_attachment(data_model, fp, 'preview.png', 'image/png')
+		data_model.save_to_couchdb(session.db)
 
-		self.finished_docs[session.name].append(data_model.base_name)
+		self.tracked.remove(data_model.base_name)
+		self.finished.append(data_model.base_name)
 
 	def create_preview(self, file):
 		image = imaging.load(file)[0]
@@ -131,6 +143,7 @@ class CtffindProcessor():
 		# the first entry in spatial frequency is 0
 		data[0] = np.reciprocal(data[0], where = data[0]!=0)
 		data[0][0] = None
+
 		data_model.measured_ctf_fit = list(np.nan_to_num(data[0]))
 		data_model.measured_ctf = list(np.nan_to_num(data[2]))
 		data_model.measured_ctf_no_bg = data_model.measured_ctf
@@ -149,6 +162,7 @@ class CtffindProcessor():
 		with open(data_model.ctf_log_file) as f:
 			lines = f.readlines()
 		ctf_params = lines[5].split(' ')
+
 		data_model.defocus_u = (float(ctf_params[1]))
 		data_model.defocus_v = (float(ctf_params[2]))
 		data_model.astigmatism_angle = ctf_params[3]
