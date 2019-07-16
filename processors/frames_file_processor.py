@@ -15,70 +15,94 @@ from processors import SessionProcessor
 
 class FramesFileProcessor():
 
-	# amount of time to wait before acting on a file. Prevents reading a partial file.
-	_min_lifetime = 120
-	_search_globs = ['*.tif', '*.mrc']
+	processors_by_session = {}
 
-	def __init__(self):
-		self.tracked_files = []
+	@classmethod
+	def for_session(cls, session):
+		try:
+			return cls.processers_by_session[session]
+		except:
+			processor = cls(session)
+			cls.processors_by_session[session] = processor
+			return processor
 
-	def update_from_couchdb(self, session):
-		db = SessionProcessor.session_databases[session]
-		summaries = AcquisitionData.find_docs_by_time(db)
-		for summary in summaries:
-			doc = AcquisitionData.read_from_couchdb_by_name(db, summary.base_name)
-			self.tracked_files.append(doc.image_path)
+	def __init__(self, session):
+		self.session = session
 
-	def run(self, session):
+		# amount of time to wait before acting on a file. Prevents reading a partial file.
+		self.min_lifetime = 120
+		self.search_globs = ['*.tif', '*.mrc']
+
+		self.tracked = []
+		self.queued = []
+		self.finished = []
+
+		self.sync_with_db()]
+
+	def sync_with_db(self):
+		acquisition_data_listings = AcquisitionData.find_docs_by_time(self.session.db)
+		found_names = [doc.base_name for doc in acquisition_data_listings]
+		self.tracked = found_names
+		self.finished = found_names
+
+	def update_tracked_data(self):
+
 		found_files = []
-		for search in FramesFileProcessor._search_globs:
+		for search in self.search_globs:
 			search_path = os.path.join(session.frames_directory, search)
 			found_files.extend(glob(search_path))
 
 		for file in found_files:
 
 			# File has already been found
-			if file in self.tracked_files:
+			if file in self.tracked:
 				continue
 
 			# File is not old enough
 			acquisition_time = os.path.getmtime(file)
 			current_time = time.time()
 			file_lifetime = current_time - acquisition_time
-			if file_lifetime < FramesFileProcessor._min_lifetime:
+			if file_lifetime < self.min_lifetime:
 				continue
 
+			self.tracked.append(file)
+			self.queued.append(file)
+
+	def run(self):
+		self.update_tracked_data()
+
+		for file in queued:
 			# File doesn't have associated mdoc
-			mdoc_file = '{}.mdoc'.format(file)
+			mdoc_file = '{}.mdoc'.format(data_model.image_path)
 			if not os.path.exists(mdoc_file):
-				self.tracked_files.append(file)
+				self.queued.remove(file)
+				self.finished.add(file)
 				continue
 
-			# File is new: prepare acquisition model
 			base_name = os.path.basename(os.path.splitext(file)[0])
 			data_model = AcquisitionData(base_name)
 			data_model.image_path = file
 			data_model.file_format = os.path.splitext(file)[1]
-			data_model.time = acquisition_time
+			data_model.time = os.path.getmtime(file)
+			data_model = self.update_model_from_mdoc(mdoc_file, data_model)
+			data_model = self.update_dose_from_image(data_model)
+			data_model.save_to_couchdb(self.session.db)
 
-			data_model = FramesFileProcessor.update_model_from_mdoc(mdoc_file, data_model, session)
-			data_model = FramesFileProcessor.update_dose_from_image(data_model.image_path, data_model)
+			self.queued.remove(file)
+			self.finished.add(file)
 
-			db = SessionProcessor.session_databases[session]
-			data_model.save_to_couchdb(db)
-			self.tracked_files.append(file)
-
-	@staticmethod
-	def update_model_from_mdoc(mdoc_file_path, data_model, session_data):
+	def update_model_from_mdoc(self, mdoc_file_path, data_model):
 		with open(mdoc_file_path, 'r') as mdoc:
 			for line in mdoc.readlines():
 				# key-value pairs are separated by ' = ' in mdoc files
 				if not ' = ' in line:
 					continue
+
 				try:
 					key, value = [item.strip() for item in line.split(' = ')]
 				except:
 					continue
+
 				if key == 'Voltage':
 					data_model.voltage = int(value)
 				elif key == 'ExposureDose':
@@ -93,22 +117,27 @@ class FramesFileProcessor():
 					data_model.frame_count = int(value)
 				elif key == 'GainReference':
 					data_model.gain_reference_file = os.path.join(
-						session_data.frames_directory, value)
+						self.session.data.frames_directory, value
+					)
+
 		return data_model
 
-	@staticmethod
-	def update_dose_from_image(file, data_model):
-		if os.path.splitext(file)[1] == '.tif':
-			with tifffile.TiffFile(file) as imfile:
-				frame_dose_per_pixel = imfile.pages[0].asarray().mean()
-		elif os.path.splitext(file)[1] == '.mrc':
-			imfile = imaging.load(file)
-			frame_dose_per_pixel = imfile.mean()
+	def update_dose_from_image(self, data_model):
+		if data_model.file_format == '.tif':
+			try:
+				with tifffile.TiffFile(data_model.image_path) as imfile:
+					frame_dose_per_pixel = imfile.pages[0].asarray().mean()
+			except:
+				print("Couldn't extract dose rate from {}".format(file))
+				return data_model
+		elif data_model.file_format == '.mrc':
+			try:
+				imfile = imaging.load(data_model.image_path)
+				frame_dose_per_pixel = imfile.mean()
+			except:
+				print("Couldn't extract dose rate from {}".format(file))
+				return data_model
 
 		data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
 		data_model.total_dose = data_model.frame_dose * data_model.frame_count
-		
 		return data_model
-
-	def load_from_couchdb(self, db):
-		return [item.base_name for item in AcquisitionData.find_docs_by_time(db)]
