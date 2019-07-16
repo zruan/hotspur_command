@@ -75,13 +75,3 @@ class SessionProcessor():
         session.data = session_data
 
         return session
-
-    @staticmethod
-    def prepare_couchdb_database(project_name, sample_name, session_name):
-
-        user_db_name = SessionProcessor.get_db_name_hash(user)
-        session_name = "{}_{}".format(grid, session)
-
-        couchdb_manager.ensure_project_in_admin_db(p)
-
-        return session_db, processing_dir
