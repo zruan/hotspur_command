@@ -15,46 +15,66 @@ from resource_manager import ResourceManager
 
 class Motioncor2Processor():
 
-	def __init__(self):
-		self.tracked_data = {}
-		self.queued_listings = {}
-		self.finished_docs = {}
-		self.required_gpus = 1
+	required_gpus = 1
+	processors_by_session = {}
 
-	def run(self, session):
-		if session.name not in self.tracked_data.keys():
-			self.tracked_data[session.name] = []
-		if session.name not in self.queued_listings.keys():
-			self.queued_listings[session.name] = []
-		if session.name not in self.finished_docs.keys():
-			self.finished_docs[session.name] = []
+	@classmethod
+	def for_session(cls, session):
+		try:
+			return cls.processers_by_session[session]
+		except:
+			processor = cls(session)
+			cls.processors_by_session[session] = processor
+			return processor
 
-		db = SessionProcessor.session_databases[session]
+	def __init__(self, session):
+		self.session = session
 
-		motion_correction_data_docs = MotionCorrectionData.find_docs_by_time(db)
-		self.finished_docs[session.name] = [doc.base_name for doc in motion_correction_data_docs]
+		self.tracked = []
+		self.queued = []
+		self.finished = []
 
-		acquisition_data_summaries = AcquisitionData.find_docs_by_time(db)
-		for summary in acquisition_data_summaries:
-			if summary.base_name not in self.tracked_data[session.name]:
-				self.tracked_data[session.name].append(summary.base_name)
-				if summary.base_name not in self.finished_docs[session.name]:
-					self.queued_listings[session.name].append(summary)
-					self.queued_listings[session.name].sort(key=lambda doc: doc.time)
+		self.sync_with_db()
+	
+	def sync_with_db(self):
+		motion_correction_data_listings = MotionCorrectionData.find_docs_by_time(db)
+		found_names = [listing.base_name for listing in motion_correction_data_listings]
+		self.tracked = found_names
+		self.finished = found_names
 
-		if len(self.queued_listings[session.name]) == 0:
+	def update_tracked_data(self):
+		acquisition_data_listings = AcquisitionData.find_docs_by_time(db)
+		for listing in acquisition_data_listings:
+			if listing.base_name not in self.tracked[session.name]:
+				self.tracked.append(listing.base_name)
+				self.queued.append(listing)
+		self.queued.sort(key=lambda listing: listing.time)
+
+	def run(self):
+		self.update_tracked_data()
+
+		if len(self.queued[session.name]) == 0:
 			return
 
-		gpu_id_list = ResourceManager.request_gpus(self.required_gpus)
+		gpu_id_list = ResourceManager.request_gpus(Motioncor2Processor.required_gpus)
 		if gpu_id_list is not None:
-			target_base_name = self.queued_listings[session.name].pop().base_name
-			acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
-			process_thread = Thread(target=self.process_data, args=(session, acquisition_data, gpu_id_list))
-			process_thread.start()
+			try:
+				target_base_name = self.queued[session.name].pop().base_name
+				acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
+				process_thread = Thread(
+					target=self.process_data,
+					args=(self.session, acquisition_data, gpu_id_list)
+				)
+				process_thread.start()
+			except:
+				ResourceManager.release_gpus(gpu_id_list)
 
 	def process_data(self, session, acquisition_data, gpu_id_list):
-		gain_file = Motioncor2Processor.prepare_gain_reference(session.processing_directory, acquisition_data.gain_reference_file)
-		output_file_base = '{}/{}'.format(session.processing_directory, acquisition_data.base_name)
+		gain_file = self.prepare_gain_reference(
+			session.data.processing_directory, acquisition_data.gain_reference_file
+		)
+
+		output_file_base = '{}/{}'.format(session.data.processing_directory, acquisition_data.base_name)
 		output_file = '{}_mc.mrc'.format(output_file_base)
 		output_file_dose_weighted = '{}_mc_DW.mrc'.format(output_file_base)
 		output_log_file = '{}_mc.log'.format(output_file_base)
@@ -96,13 +116,10 @@ class Motioncor2Processor():
 		data_model.dimensions = dimensions
 		data_model.pixel_size = pixel_size
 
-		db = SessionProcessor.session_databases[session]
-		_, doc_rev = data_model.save_to_couchdb(db)
-		# data_model['_rev'] = doc_rev
-		# with open(data_model.preview_file, 'rb') as fp:
-		# 	db.put_attachment(data_model, fp, 'preview.png', 'image/png')
+		data_model.save_to_couchdb(self.session.db)
 
-		self.finished_docs[session.name].append(data_model.base_name)
+		self.tracked.remove(data_model.base_name)
+		self.finished.append(data_model.base_name)
 
 	def create_preview(self, file):
 		image = imaging.load(file)[0]
@@ -148,8 +165,7 @@ class Motioncor2Processor():
 		except IOError:
 			print("Error loading mrc!", sys.exc_info()[0])
 
-	@staticmethod
-	def prepare_gain_reference(processing_directory, gain_file):
+	def prepare_gain_reference(self, processing_directory, gain_file):
 		target_filename = "gainRef.mrc"
 		ext = os.path.splitext(gain_file)[1]
 		target_path = os.path.join(processing_directory, target_filename)
