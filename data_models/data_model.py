@@ -1,22 +1,23 @@
 import re
+import copy
 from string import Template
 from couchdb.design import ViewDefinition
 
 map_func_template = Template(
 '''function(doc) {
-	if (doc.type === "${doc_type}") {
-		emit(doc.time, doc.base_name)
+	if (doc.type && doc.type === "${doc_type}") {
+		emit(doc.time, doc)
 	}
 }'''
 )
 
 class DataModel():
 
-	query = None
-
 	def __init__(self, base_name):
-		self._id = type(self)._generate_id(base_name)
-		self.type = type(self)._generate_type()
+		self._id = type(self)._get_id(base_name)
+		self.type = type(self)._get_type()
+		self.ignored_keys = []
+
 		self.time = None
 		self.base_name = base_name
 
@@ -26,21 +27,35 @@ class DataModel():
 	def __getitem__(self, key):
 		return self.__dict__[key]
 
-	def save_to_couchdb(self, db):
-		doc_id, doc_rev = db.save(self.__dict__)
-		return doc_id, doc_rev
+	def push(self, db):
+		doc = copy.deepcopy(self.__dict__)
+		for key in keys_to_ignore:
+			del doc[key]
+		db[doc._id] = doc
 
-	@classmethod
-	def read_from_couchdb_by_name(cls, db, base_name=None):
-		data_model = cls(base_name)
+	def fetch(self, db):
 		try:
-			data_model.__dict__ = db.get(data_model._id)
-			return data_model
+			remote_doc = db.get(self._id)
+			local_doc = self.__dict__
+			local_doc.update(doc)
+			self.__dict__ = local_doc
+			return True
 		except:
-			return None
+			return False
 
 	@classmethod
-	def _generate_id(cls, base_name):
+	def fetch_all(cls, db):
+		doc_type = cls._generate_type()
+		map_func = map_func_template.substitute(doc_type=doc_type)
+		map_func = "".join(map_func.split())
+		view = ViewDefinition('hotspur', doc_type, map_func)
+		view.sync(db)
+		results = view(db)
+		docs = [row.value for row in results.rows]
+		return docs
+
+	@classmethod
+	def _get_id(cls, base_name):
 		class_tag = re.findall('[A-Z][^A-Z]*', cls.__name__)
 		class_tag = '_'.join(class_tag)
 		class_tag = class_tag.lower()
@@ -51,32 +66,5 @@ class DataModel():
 		return id
 	
 	@classmethod
-	def _generate_type(cls):
+	def _get_type(cls):
 		return cls._generate_id(None)
-	
-	@classmethod
-	def find_docs_by_time(cls, db):
-		doc_type = cls._generate_type()
-		map_func = map_func_template.substitute(doc_type=doc_type)
-		map_func = "".join(map_func.split())
-		view = ViewDefinition('hotspur', doc_type, map_func)
-		view.sync(db)
-		results = view(db)
-		doc_listings = [DataModelSummary(row.value, row.key, row.id) for row in results.rows]
-		return doc_listings
-
-class DataModelSummary():
-
-	def __init__(self, base_name, time, id):
-		self.base_name = base_name
-		self.id = id
-		self.time = time
-
-	def __eq__(self, other):
-		if self.base_name == other.base_name:
-			return True
-		else:
-			return False
-
-	def __ne__(self, other):
-		return not self.__eq__(other)
