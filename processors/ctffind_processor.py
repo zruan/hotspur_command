@@ -36,18 +36,18 @@ class CtffindProcessor():
 		self.sync_with_db()
 
 	def sync_with_db(self):
-		ctf_data_listings = CtfData.find_docs_by_time(self.session.db)
-		found_names = [listing.base_name for listing in ctf_data_listings]
-		self.tracked = found_names
-		self.finished = found_names
+		output_data_docs = CtfData.fetch_all(self.session.db)
+		doc_base_names = [doc.base_name for doc in output_data_docs]
+		self.tracked = doc_base_names
+		self.finished = doc_base_names
 
 	def update_tracked_data(self):
-		motion_correction_data_listing = MotionCorrectionData.find_docs_by_time(db)
-		for listing in motion_correction_data_docs:
-			if listing.base_name not in self.tracked:
-				self.tracked.append(listing.base_name)
-				self.queued.append(listing)
-		self.queued.sort(key=lambda listing: listing.time)
+		input_data_docs = MotionCorrectionData.fetch_all(self.session.db)
+		for doc in input_data_docs:
+			if doc.base_name not in self.tracked:
+				self.tracked.append(doc.base_name)
+				self.queued.append(doc)
+		self.queued.sort(key=lambda doc: doc.time)
 
 	def run(self):
 		self.update_tracked_data()
@@ -57,23 +57,23 @@ class CtffindProcessor():
 
 		if ResourceManager.request_cpus(self.required_cpus):
 			try:
-				target_base_name = self.queued.pop().base_name
-				acquisition_data = AcquisitionData.read_from_couchdb_by_name(self.session.db, target_base_name)
-				motion_correction_data = MotionCorrectionData.read_from_couchdb_by_name(db, target_base_name)
+				motion_correction_data = self.queued.pop()
+				acquisition_data = AcquisitionData(motion_correction_data.base_name)
+				acquisition_data.fetch(self.session.db)
 				process_thread = Thread(
 					target=self.process_data,
-					args=(self.session, acquisition_data, motion_correction_data)
+					args=(acquisition_data, motion_correction_data)
 				)
 				process_thread.start()
 			except:
 				ResourceManager.release_cpus(CtffindProcessor.required_cpus)
 
-	def process_data(self, session, acquisition_data, motion_correction_data):
+	def process_data(self, acquisition_data, motion_correction_data):
 		if motion_correction_data.dose_weighted_image_file is not None:
 			aligned_image_file = motion_correction_data.dose_weighted_image_file
 		else:
 			aligned_image_file = motion_correction_data.aligned_image_file
-		output_file_base = os.path.join(session.processing_directory, acquisition_data.base_name)
+		output_file_base = os.path.join(self.session.processing_directory, acquisition_data.base_name)
 		output_file = '{}_ctffind.ctf'.format(output_file_base)
 
 		# Ctffind requires a HEREDOC. Yikes.
@@ -102,7 +102,6 @@ class CtffindProcessor():
 		]
 
 		subprocess.call('\n'.join(command_list), shell=True)
-		ResourceManager.release_cpus(self.required_cpus)
 
 		data_model = CtfData(acquisition_data.base_name)
 		data_model.time = time.time()
@@ -116,8 +115,9 @@ class CtffindProcessor():
 
 		data_model.save_to_couchdb(session.db)
 
-		self.tracked.remove(data_model.base_name)
 		self.finished.append(data_model.base_name)
+
+		ResourceManager.release_cpus(self.required_cpus)
 
 	def create_preview(self, file):
 		image = imaging.load(file)[0]

@@ -76,19 +76,11 @@ def start_processing():
     else:
         search_globs = hotspur_setup.search_globs
 
-    frames_file_processor = FramesFileProcessor()
-    motioncor2_processor = Motioncor2Processor()
-    ctffind_processor = CtffindProcessor()
-
-    # What is this?
-    for session in session_processor.find_sessions(search_glob):
-        frames_file_processor.update_from_couchdb(session)
-
     while True:
-        for session in SessionProcessor.find_sessions(search_glob):
-            frames_file_processor.run(session)
-            motioncor2_processor.run(session)
-            ctffind_processor.run(session)
+        for session in session_processor.find_sessions(search_globs):
+            FramesFileProcessor.for_session(session).run()
+            # Motioncor2Processor.for_session(session).run()
+            # CtffindProcessor.for_session(session).run()
         time.sleep(5)
 
 if __name__ == '__main__':

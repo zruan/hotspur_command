@@ -37,19 +37,20 @@ class FramesFileProcessor():
 		self.queued = []
 		self.finished = []
 
-		self.sync_with_db()]
+		self.sync_with_db()
 
 	def sync_with_db(self):
-		acquisition_data_listings = AcquisitionData.find_docs_by_time(self.session.db)
-		found_names = [doc.base_name for doc in acquisition_data_listings]
-		self.tracked = found_names
-		self.finished = found_names
+		docs = AcquisitionData.fetch_all(self.session.db)
+		image_paths = [doc.image_path for doc in docs]
+
+		self.tracked = image_path
+		self.finished = image_path
 
 	def update_tracked_data(self):
 
 		found_files = []
-		for search in self.search_globs:
-			search_path = os.path.join(session.frames_directory, search)
+		for glob in self.search_globs:
+			search_path = os.path.join(session.frames_directory, glob)
 			found_files.extend(glob(search_path))
 
 		for file in found_files:
@@ -86,7 +87,7 @@ class FramesFileProcessor():
 			data_model.time = os.path.getmtime(file)
 			data_model = self.update_model_from_mdoc(mdoc_file, data_model)
 			data_model = self.update_dose_from_image(data_model)
-			data_model.save_to_couchdb(self.session.db)
+			data_model.push(self.session.db)
 
 			self.queued.remove(file)
 			self.finished.add(file)

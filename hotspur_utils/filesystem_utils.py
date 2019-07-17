@@ -1,5 +1,10 @@
+import os
+import time
+
 import hotspur_setup
-import hotspur_utils.hash_util
+import hotspur_utils.hash_utils
+
+from data_models import SessionData
 
 # path for projects and their sessions, using hashed names for anonymity
 hash_path = hotspur_setup.base_path + "/projects/hashed"
@@ -7,7 +12,7 @@ hash_path = hotspur_setup.base_path + "/projects/hashed"
 link_path = hotspur_setup.base_path + "/projects/links"
 
 
-def extract_session_from_path(path):
+def extract_session_from_path(frames_directory):
     frames_directory = os.path.abspath(frames_directory) + '/'
     session_directory = os.path.join(frames_directory, os.pardir)
     sample_directory = os.path.join(session_directory, os.pardir)
@@ -17,18 +22,18 @@ def extract_session_from_path(path):
     sample_name = os.path.basename(os.path.normpath(sample_directory))
     project_name = os.path.basename(os.path.normpath(project_directory))
 
-    session = {
-        name = session_name,
-        hash = hash_util.get_hash(project_name, sample_name, session_name),
-        sample_name = sample_name,
-        project_name = project_name,
-        project_hash = hash_util.get_hash(project_name)
-    }
+    session = SessionData()
+    session.time = time.time()
+    session.name = session_name
+    session.hash = hash_utils.get_hash(project_name, sample_name, session_name)
+    session.sample_name = sample_name
+    session.project_name = project_name
+    session.project_hash = hash_utils.get_hash(project_name)
 
-    ensure_session_dirs(session)
+    session.frames_directory = frames_directory
+    session.processing_directory = ensure_session_dirs(session)
 
     return session
-
 
 def ensure_session_dirs(session):
     processing_dir = "{}/{}/{}".format(hash_path, session.project_hash, session.hash)

@@ -37,18 +37,18 @@ class Motioncor2Processor():
 		self.sync_with_db()
 	
 	def sync_with_db(self):
-		motion_correction_data_listings = MotionCorrectionData.find_docs_by_time(db)
-		found_names = [listing.base_name for listing in motion_correction_data_listings]
-		self.tracked = found_names
-		self.finished = found_names
+		motion_correction_data_docs = MotionCorrectionData.fetch_all(self.session.db)
+		doc_base_names = [doc._id for doc in motion_correction_data_docs]
+		self.tracked = doc_base_names
+		self.finished = doc_base_names
 
 	def update_tracked_data(self):
-		acquisition_data_listings = AcquisitionData.find_docs_by_time(db)
-		for listing in acquisition_data_listings:
-			if listing.base_name not in self.tracked[session.name]:
-				self.tracked.append(listing.base_name)
-				self.queued.append(listing)
-		self.queued.sort(key=lambda listing: listing.time)
+		acquisition_data_docs = AcquisitionData.fetch_all(self.session.db)
+		for doc in acquisition_data_docs:
+			if doc.base_name not in self.tracked:
+				self.tracked.append(doc.base_name)
+				self.queued.append(doc)
+		self.queued.sort(key=lambda doc: doc.time)
 
 	def run(self):
 		self.update_tracked_data()
@@ -59,44 +59,42 @@ class Motioncor2Processor():
 		gpu_id_list = ResourceManager.request_gpus(Motioncor2Processor.required_gpus)
 		if gpu_id_list is not None:
 			try:
-				target_base_name = self.queued[session.name].pop().base_name
-				acquisition_data = AcquisitionData.read_from_couchdb_by_name(db, target_base_name)
+				acquisition_data_doc = self.queued.pop()
 				process_thread = Thread(
 					target=self.process_data,
-					args=(self.session, acquisition_data, gpu_id_list)
+					args=(acquisition_data_doc, gpu_id_list)
 				)
 				process_thread.start()
 			except:
 				ResourceManager.release_gpus(gpu_id_list)
 
-	def process_data(self, session, acquisition_data, gpu_id_list):
+	def process_data(self, acquisition_data_doc, gpu_id_list):
 		gain_file = self.prepare_gain_reference(
-			session.data.processing_directory, acquisition_data.gain_reference_file
+			self.session.processing_directory, acquisition_data_doc.gain_reference_file
 		)
 
-		output_file_base = '{}/{}'.format(session.data.processing_directory, acquisition_data.base_name)
+		output_file_base = '{}/{}'.format(self.session.processing_directory, acquisition_data_doc.base_name)
 		output_file = '{}_mc.mrc'.format(output_file_base)
 		output_file_dose_weighted = '{}_mc_DW.mrc'.format(output_file_base)
 		output_log_file = '{}_mc.log'.format(output_file_base)
 
 		command_list = [
 			'motioncor2',
-			'{} {}'.format('-InTiff' if acquisition_data.file_format == '.tif' else '-InMrc', acquisition_data.image_path),
+			'{} {}'.format('-InTiff' if acquisition_data_doc.file_format == '.tif' else '-InMrc', acquisition_data_doc.image_path),
 			'-OutMrc {}'.format(output_file),
-			'-Kv {}'.format(acquisition_data.voltage),
+			'-Kv {}'.format(acquisition_data_doc.voltage),
 			'-gain {}'.format(gain_file),
-			'-PixSize {}'.format(acquisition_data.pixel_size),
-			'-FmDose {}'.format(acquisition_data.frame_dose),
-			'-FtBin 2' if acquisition_data.binning == 0.5 else '',
+			'-PixSize {}'.format(acquisition_data_doc.pixel_size),
+			'-FmDose {}'.format(acquisition_data_doc.frame_dose),
+			'-FtBin 2' if acquisition_data_doc.binning == 0.5 else '',
 			'-Iter 10',
 			'-Tol 0.5',
 			'-Gpu {}'.format(','.join([str(gpu_id) for gpu_id in gpu_id_list])),
 			'> {}'.format(output_log_file)
 		]
 		subprocess.call(' '.join(command_list), shell=True)
-		ResourceManager.release_gpus(gpu_id_list)
 
-		data_model = MotionCorrectionData(acquisition_data.base_name)
+		data_model = MotionCorrectionData(acquisition_data_doc.base_name)
 		data_model.time = time.time()
 		data_model.aligned_image_file = output_file
 
@@ -116,18 +114,23 @@ class Motioncor2Processor():
 		data_model.dimensions = dimensions
 		data_model.pixel_size = pixel_size
 
-		data_model.save_to_couchdb(self.session.db)
+		data_model.push(self.session.db)
 
-		self.tracked.remove(data_model.base_name)
 		self.finished.append(data_model.base_name)
 
+		ResourceManager.release_gpus(gpu_id_list)
+
 	def create_preview(self, file):
-		image = imaging.load(file)[0]
-		image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-		image = imaging.filters.zoom(image, 0.25)
-		preview_file = '{}.preview.png'.format(file)
-		imaging.save(image, preview_file)
-		return preview_file
+		try:
+			image = imaging.load(file)[0]
+			image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+			image = imaging.filters.zoom(image, 0.25)
+			preview_file = '{}.preview.png'.format(file)
+			imaging.save(image, preview_file)
+			return preview_file
+		except Exception as e:
+			print(e)
+			return None
 
 	def extract_shifts_from_log(self, output_log_file):
 		try:
@@ -170,12 +173,15 @@ class Motioncor2Processor():
 		ext = os.path.splitext(gain_file)[1]
 		target_path = os.path.join(processing_directory, target_filename)
 
-		if not os.path.exists(target_path):
-			if ext == '.mrc':
-				os.system("cp {} {}".format(gain_file, target_path))
-			elif ext == '.dm4':
-				os.system("dm2mrc {} {}".format(gain_file, target_path))
-			else:
-				raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
-
-		return target_path
+		try:
+			if not os.path.exists(target_path):
+				if ext == '.mrc':
+					os.system("cp {} {}".format(gain_file, target_path))
+				elif ext == '.dm4':
+					os.system("dm2mrc {} {}".format(gain_file, target_path))
+				else:
+					raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
+			return target_path
+		except Exception as e:
+			print(e)
+			return None
