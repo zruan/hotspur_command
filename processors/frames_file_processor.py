@@ -49,7 +49,7 @@ class FramesFileProcessor():
 
 		found_files = []
 		for glob in self.search_globs:
-			search_path = os.path.join(session.frames_directory, glob)
+			search_path = os.path.join(self.session.frames_directory, glob)
 			found_files.extend(glob(search_path))
 
 		for file in found_files:
