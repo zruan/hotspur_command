@@ -68,7 +68,7 @@ class FramesFileProcessor():
 
 		for file in self.queued:
 			# File doesn't have associated mdoc
-			mdoc_file = '{}.mdoc'.format(data_model.image_path)
+			mdoc_file = '{}.mdoc'.format(file)
 			if not os.path.exists(mdoc_file):
 				self.queued.remove(file)
 				self.finished.add(file)
@@ -84,7 +84,7 @@ class FramesFileProcessor():
 			data_model.push(self.session.db)
 
 			self.queued.remove(file)
-			self.finished.add(file)
+			self.finished.append(file)
 
 	def update_model_from_mdoc(self, mdoc_file_path, data_model):
 		with open(mdoc_file_path, 'r') as mdoc:
@@ -112,7 +112,7 @@ class FramesFileProcessor():
 					data_model.frame_count = int(value)
 				elif key == 'GainReference':
 					data_model.gain_reference_file = os.path.join(
-						self.session.data.frames_directory, value
+						self.session.frames_directory, value
 					)
 
 		return data_model
