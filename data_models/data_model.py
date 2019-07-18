@@ -29,13 +29,18 @@ class DataModel():
 
 	def push(self, db):
 		doc = copy.deepcopy(self.__dict__)
-		for key in keys_to_ignore:
+		for key in self.ignored_keys:
 			del doc[key]
-		db[doc._id] = doc
+		try:
+			db[self._id] = doc
+		except:
+			remote = db[doc._id]
+			remote.update(doc)
+			db[doc._id] = remote
 
 	def fetch(self, db):
 		try:
-			remote_doc = db.get(self._id)
+			remote_doc = db[self._id]
 			local_doc = self.__dict__
 			local_doc.update(doc)
 			self.__dict__ = local_doc
@@ -67,4 +72,4 @@ class DataModel():
 	
 	@classmethod
 	def _get_type(cls):
-		return cls._generate_id(None)
+		return cls._get_id(None)
