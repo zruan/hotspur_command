@@ -1,6 +1,6 @@
 import os
 import time
-from glob import glob
+import glob
 import tifffile
 import imaging
 
@@ -26,7 +26,7 @@ class FramesFileProcessor():
 
 		# amount of time to wait before acting on a file. Prevents reading a partial file.
 		self.min_lifetime = 120
-		self.search_globs = ['*.tif', '*.mrc']
+		self.file_patterns = ['*.tif', '*.mrc']
 
 		self.tracked = []
 		self.queued = []
@@ -43,9 +43,9 @@ class FramesFileProcessor():
 	def update_tracked_data(self):
 
 		found_files = []
-		for glob in self.search_globs:
-			search_path = os.path.join(self.session.frames_directory, glob)
-			found_files.extend(glob(search_path))
+		for pattern in self.file_patterns:
+			search_pattern = os.path.join(self.session.frames_directory, pattern)
+			found_files.extend(glob.glob(search_pattern))
 
 		for file in found_files:
 
@@ -66,7 +66,7 @@ class FramesFileProcessor():
 	def run(self):
 		self.update_tracked_data()
 
-		for file in queued:
+		for file in self.queued:
 			# File doesn't have associated mdoc
 			mdoc_file = '{}.mdoc'.format(data_model.image_path)
 			if not os.path.exists(mdoc_file):
