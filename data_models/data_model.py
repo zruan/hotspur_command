@@ -1,6 +1,5 @@
 import re
 import copy
-from string import Template
 from hotspur_utils import couchdb_utils
 
 class DataModel():
@@ -35,7 +34,7 @@ class DataModel():
 
 	@classmethod
 	def fetch_all(cls, db):
-		doc_type = cls._generate_type()
+		doc_type = cls._get_type()
 		return couchdb_utils.fetch_docs_of_type(doc_type, db)
 
 	@classmethod

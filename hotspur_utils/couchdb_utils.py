@@ -1,5 +1,6 @@
 import couchdb
 from couchdb.design import ViewDefinition
+from string import Template
 
 import hotspur_setup
 
