@@ -23,7 +23,7 @@ def update_session_list(session):
 		db = fetch_db(session.project_hash)
 		doc = fetch_doc(session_list_doc_name, db)
 		doc[session.name] = session.hash
-		push_doc(session_list_doc_name, db)
+		push_doc(doc, db)
 
 	except Exception as e:
 		print(e)
