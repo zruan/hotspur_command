@@ -1,10 +1,5 @@
-import os
-import couchdb
-import hashlib
-import time
-import re
+import sys
 from glob import glob
-from data_models import SessionData
 
 import hotspur_setup
 from hotspur_utils import couchdb_utils, filesystem_utils
@@ -49,7 +44,7 @@ class SessionProcessor():
     def create_new_session(self, frames_directory):
         try:
             session = filesystem_utils.extract_session_from_path(frames_directory)
-            print("Successfully derived session from path {}".format(path))
+            print("Successfully derived session from path {}".format(frames_directory))
         except Exception as e:
             print("Failed to create session from path {}".format(frames_directory))
             print(e)
