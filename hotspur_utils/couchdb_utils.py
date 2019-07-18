@@ -1,6 +1,15 @@
 import couchdb
+from couchdb.design import ViewDefinition
 
 import hotspur_setup
+
+docs_of_type_view_template = Template(
+'''function(doc) {
+	if (doc.type && doc.type === "${doc_type}") {
+		emit(doc.time, doc)
+	}
+}'''
+)
 
 def update_session_list(session):
 	try:
@@ -26,20 +35,34 @@ def update_project_list(session):
 		print(e)
 		raise e
 
-def get_db(db_name):
+def fetch_db(db_name):
 	try:
 		db = couchdb_server.create(db_name)
 	except couchdb.http.PreconditionFailed:
 		db = couchdb_server[db_name]
 	return db
 
-def get_doc(db, doc_name):
+def fetch_doc(doc_id, db):
 	try:
-		doc = db[doc_name]
+		return db[doc_id]
 	except:
-		doc = {'_id': doc_name}
-		db[doc_name] = doc
-	return doc
+		return None
+
+def push_doc(doc, db):
+	try:
+		db[doc._id] = doc
+	except:
+		remote = db[doc._id]
+		remote.update(doc)
+		db[doc._id] = remote
+
+def fetch_docs_of_type(doc_type, db):
+		map_func = docs_of_type_view_template.substitute(doc_type=doc_type)
+		map_func = "".join(map_func.split())
+		view = ViewDefinition('hotspur', doc_type, map_func)
+		view.sync(db)
+		results = view(db)
+		return [row.value for row in results.rows]
 
 couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
 

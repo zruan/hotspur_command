@@ -1,15 +1,7 @@
 import re
 import copy
 from string import Template
-from couchdb.design import ViewDefinition
-
-map_func_template = Template(
-'''function(doc) {
-	if (doc.type && doc.type === "${doc_type}") {
-		emit(doc.time, doc)
-	}
-}'''
-)
+from hotspur_utils import couchdb_utils
 
 class DataModel():
 
@@ -31,33 +23,20 @@ class DataModel():
 		doc = copy.deepcopy(self.__dict__)
 		for key in self.ignored_keys:
 			del doc[key]
-		try:
-			db[self._id] = doc
-		except:
-			remote = db[doc._id]
-			remote.update(doc)
-			db[doc._id] = remote
+		couchdb_utils.push_doc(doc, db)
 
 	def fetch(self, db):
-		try:
-			remote_doc = db[self._id]
-			local_doc = self.__dict__
-			local_doc.update(doc)
-			self.__dict__ = local_doc
+		remote = couchdb_utils.fetch_doc(self._id, db)
+		if remote is not None:
+			self.__dict__.update(remote)
 			return True
-		except:
+		else:
 			return False
 
 	@classmethod
 	def fetch_all(cls, db):
 		doc_type = cls._generate_type()
-		map_func = map_func_template.substitute(doc_type=doc_type)
-		map_func = "".join(map_func.split())
-		view = ViewDefinition('hotspur', doc_type, map_func)
-		view.sync(db)
-		results = view(db)
-		docs = [row.value for row in results.rows]
-		return docs
+		return couchdb_utils.fetch_docs_of_type(doc_type, db)
 
 	@classmethod
 	def _get_id(cls, base_name):
