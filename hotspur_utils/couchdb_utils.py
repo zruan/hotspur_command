@@ -3,6 +3,12 @@ from couchdb.design import ViewDefinition
 
 import hotspur_setup
 
+couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
+
+admin_db_name = 'projects_overview'
+project_list_doc_name = 'projects_overview'
+session_list_doc_name = 'sessions_overview'
+
 docs_of_type_view_template = Template(
 '''function(doc) {
 	if (doc.type && doc.type === "${doc_type}") {
@@ -13,22 +19,22 @@ docs_of_type_view_template = Template(
 
 def update_session_list(session):
 	try:
-		project_db = get_db(session.project_hash)
-		session_list_doc = get_doc(session_list_doc_name)
-		session_list_doc[session_name] = session.hash
-		project_db[session_list_doc_name] = doc
+		db = fetch_db(session.project_hash)
+		doc = fetch_doc(session_list_doc_name, db)
+		doc[session_name] = session.hash
+		push_doc(session_list_doc_name, db)
 		print('Added {} to session list.'.format(session.name))
 		return True
 	except Exception as e:
 		print(e)
 		raise e
 
-
 def update_project_list(session):
 	try:
-		doc = get_doc(admin_db, project_list_doc_name)
+		db = fetch_db(admin_db_name)
+		doc = fetch_doc(project_list_doc_name, db)
 		doc[project_name] = session.project_hash
-		admin_db[project_list_doc_name] = doc
+		push_doc(doc, db)
 		print('Added {} to project list.'.format(session.project_name))
 		return True
 	except Exception as e:
@@ -63,11 +69,3 @@ def fetch_docs_of_type(doc_type, db):
 		view.sync(db)
 		results = view(db)
 		return [row.value for row in results.rows]
-
-couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
-
-admin_db_name = 'projects_overview'
-project_list_doc_name = 'projects_overview'
-session_list_doc_name = 'sessions_overview'
-
-admin_db = get_db(admin_db_name)
