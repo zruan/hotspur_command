@@ -22,10 +22,9 @@ def update_session_list(session):
 	try:
 		db = fetch_db(session.project_hash)
 		doc = fetch_doc(session_list_doc_name, db)
-		doc[session_name] = session.hash
+		doc[session.name] = session.hash
 		push_doc(session_list_doc_name, db)
-		print('Added {} to session list.'.format(session.name))
-		return True
+
 	except Exception as e:
 		print(e)
 		raise e
@@ -34,10 +33,9 @@ def update_project_list(session):
 	try:
 		db = fetch_db(admin_db_name)
 		doc = fetch_doc(project_list_doc_name, db)
-		doc[project_name] = session.project_hash
+		doc[session.project_name] = session.project_hash
 		push_doc(doc, db)
-		print('Added {} to project list.'.format(session.project_name))
-		return True
+
 	except Exception as e:
 		print(e)
 		raise e
@@ -56,12 +54,13 @@ def fetch_doc(doc_id, db):
 		return None
 
 def push_doc(doc, db):
+	doc_id = doc['_id']
 	try:
-		db[doc._id] = doc
+		db[doc_id] = doc
 	except:
-		remote = db[doc._id]
+		remote = db[doc_id]
 		remote.update(doc)
-		db[doc._id] = remote
+		db[doc_id] = remote
 
 def fetch_docs_of_type(doc_type, db):
 		map_func = docs_of_type_view_template.substitute(doc_type=doc_type)
