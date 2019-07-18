@@ -19,7 +19,8 @@ class DataModel():
 		return self.__dict__[key]
 
 	def push(self, db):
-		doc = copy.deepcopy(self.__dict__)
+		# deepcopy fails as couchdb database doesn't like to be copied
+		doc = copy.copy(self.__dict__)
 		for key in self.ignored_keys:
 			del doc[key]
 		couchdb_utils.push_doc(doc, db)
