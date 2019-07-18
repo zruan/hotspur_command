@@ -21,7 +21,7 @@ class Motioncor2Processor():
 	@classmethod
 	def for_session(cls, session):
 		try:
-			return cls.processers_by_session[session]
+			return cls.processors_by_session[session]
 		except:
 			processor = cls(session)
 			cls.processors_by_session[session] = processor

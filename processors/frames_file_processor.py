@@ -20,7 +20,7 @@ class FramesFileProcessor():
 	@classmethod
 	def for_session(cls, session):
 		try:
-			return cls.processers_by_session[session]
+			return cls.processors_by_session[session]
 		except:
 			processor = cls(session)
 			cls.processors_by_session[session] = processor
@@ -43,8 +43,8 @@ class FramesFileProcessor():
 		docs = AcquisitionData.fetch_all(self.session.db)
 		image_paths = [doc.image_path for doc in docs]
 
-		self.tracked = image_path
-		self.finished = image_path
+		self.tracked = image_paths
+		self.finished = image_paths
 
 	def update_tracked_data(self):
 
