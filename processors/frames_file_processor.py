@@ -41,8 +41,7 @@ class FramesFileProcessor():
 
 	def sync_with_db(self):
 		docs = AcquisitionData.fetch_all(self.session.db)
-		image_paths = [doc.image_path for doc in docs]
-
+		image_paths = [doc['image_path'] for doc in docs]
 		self.tracked = image_paths
 		self.finished = image_paths
 
