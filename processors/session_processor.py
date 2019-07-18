@@ -19,7 +19,6 @@ class SessionProcessor():
 
         new_matches = [
             match for match in search_matches if match not in self.tracked]
-        print (new_matches)
         self.tracked.extend(new_matches)
         self.queued.extend(new_matches)
 
