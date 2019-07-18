@@ -1,13 +1,8 @@
 import os
-from pathlib import Path
-import sys
 import time
 from glob import glob
-from io import StringIO
-import struct
 import tifffile
 import imaging
-import numpy as np
 
 from data_models import AcquisitionData
 from processors import SessionProcessor
