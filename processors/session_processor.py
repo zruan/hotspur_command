@@ -24,26 +24,27 @@ class SessionProcessor():
 
         for directory in self.queued:
             print('Found potential session at {}'.format(directory))
-            if self.validate_session(directory):
-                print("Session is valid")
-                try:
-                    session = self.create_new_session(directory)
-                    self.sessions.append(session)
-                    self.queued.remove(directory)
-                except:
-                    continue
-            else:
-                print("Session is not valid, skipping")
+            try:
+                session = self.create_new_session(directory)
+                self.sessions.append(session)
+                self.queued.remove(directory)
+            except:
+                continue
 
         return self.sessions
 
     def validate_session(self, directory):
         mdoc_files = glob('{}/*.mdoc'.format(directory))
         if len(mdoc_files) == 0:
+            print("Session is not valid")
             return False
+        print("Session is valid")
         return True
 
     def create_new_session(self, frames_directory):
+        if not self.validate_session(frames_directory):
+            raise Exception()
+
         try:
             session = filesystem_utils.extract_session_from_path(frames_directory)
             print("Created session metadata")

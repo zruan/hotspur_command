@@ -5,7 +5,7 @@ import argparse
 import pyfs
 import time
 
-import couchdb
+from hotspur_utils import couchdb_utils
 
 from processors import SessionProcessor, FramesFileProcessor, Motioncor2Processor, CtffindProcessor
 import hotspur_setup
@@ -23,13 +23,18 @@ def arguments():
     parser.add_argument(
         '--reset-all',
         dest='reset_all',
-        help="Remove all processing for every session.",
+        help="Reset all projects",
         action='store_true'
     )
     parser.add_argument(
-        '--reset-dir',
-        dest='reset_dir',
-        help="Reset all processing done on given data directory."
+        '--reset-project',
+        dest='reset_project',
+        help="Reset all sessions for project with given name"
+    )
+    parser.add_argument(
+        '--reset-session',
+        dest='reset_session',
+        help="Reset all processing done for given frames directory."
     )
     return parser.parse_args()
 
@@ -60,17 +65,22 @@ def arguments():
 def start_processing():
     args = arguments()
 
+
     if args.reset_all:
-        reset_all()
+        couchdb_utils.reset_all()
+        exit()
+    
+    if args.reset_project is not None:
+        couchdb_utils.reset_project(args.reset_project)
         exit()
 
     session_processor = SessionProcessor()
 
-    # if args.reset_dir is not None:
-    #     session = SessionProcessor.create_new_session(args.reset_dir)
-    #     reset_session(session)
-    #     exit()
-    
+    if args.reset_session is not None:
+        session = session_processor.create_new_session(args.reset_session)
+        couchdb_utils.reset_session(session)
+        exit()
+
     if args.target_dir is not None:
         search_globs = [args.target_dir]
     else:

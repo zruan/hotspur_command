@@ -3,6 +3,9 @@ from couchdb.design import ViewDefinition
 from string import Template
 
 import hotspur_setup
+from hotspur_utils import hash_utils
+from processors import SessionProcessor
+from data_models import SessionData
 
 couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
 
@@ -69,3 +72,74 @@ def fetch_docs_of_type(doc_type, db):
 		view.sync(db)
 		results = view(db)
 		return [row.value for row in results.rows]
+
+def reset_all():
+	try:
+		db = fetch_db(admin_db_name)
+		doc = fetch_doc(project_list_doc_name, db)
+	except:
+		print('Failed to retrieve list of projects')
+		return
+
+	for key in doc.keys():
+		if key in ['_id', '_rev']:
+			continue
+		project_name = key
+		reset_project(project_name)
+
+def reset_project(project_name):
+	project_hash = hash_utils.get_hash(project_name)
+	try:
+		db = fetch_db(project_hash)
+		doc = fetch_doc(session_list_doc_name, db)
+	except:
+		print('Failed to retrieve list of sessions')
+		return
+
+	for key, val in doc:
+		if key in ['_id', '_rev']:
+			continue
+		session_hash = val
+		session = SessionData()
+		try:
+			session.fetch(session_hash)
+			print("Fetched session data")
+		except:
+			print("Failed to fetch session data")
+			return
+		reset_session(session)
+
+	try:
+		couchdb_server.delete(project_hash)
+		print("Deleted project database {}".format(project_hash))
+	except:
+		print("Failed to delete project database {}".format(project_hash))
+		return
+
+	try:
+		db = fetch_db(admin_db_name)
+		doc = fetch_doc(project_list_doc_name, db)
+		del doc[project_name]
+		push_doc(doc, db)
+		print('Removed {} from project list'.format(project_name))
+	except:
+		print('Failed to remove {} from project list'.format(project_name))
+		return
+
+def reset_session(session):
+	try:
+		couchdb_server.delete(key)
+		print('Deleted session database {}'.format(key))
+	except:
+		print('Failed to delete session database {}'.format(key))
+		return
+
+	try:
+		db = fetch_db(session.project_hash)
+		doc = fetch_doc(session_list_doc_name, db)
+		del doc[session.name]
+		push_doc(doc, db)
+		print('Removed {} from session list for project {}'.format(session.project_name))
+	except:
+		print('Failed to remove {} from session list for project {}'.format(session.project_name))
+		return
