@@ -47,18 +47,15 @@ class SessionProcessor():
 
         try:
             session = filesystem_utils.extract_session_from_path(frames_directory)
-            print("Created session metadata")
+            print("Parsed session metadata")
         except Exception as e:
-            print("Failed to create session metadata")
+            print("Failed to parse session metadata")
             print(e)
             raise e
 
         session.db = couchdb_utils.fetch_db(session.hash)
         if not session.fetch(session.db):
             try:
-                couchdb_utils.update_project_list(session)
-                couchdb_utils.update_session_list(session)
-                print('Added session to admin lists')
                 session.push(session.db)
                 print('Session added to database')
             except Exception as e:
@@ -67,5 +64,21 @@ class SessionProcessor():
                 raise e
         else:
             print('Updated session metadata from database')
+
+        try:
+            couchdb_utils.update_session_list(session)
+            print('Added session {} to session list for project {}'.format(session.name, session.project_name))
+        except:
+            print('Failed to add session {} to session list for project {}'.format(session.name, session.project_name))
+            print(e)
+            raise(e)
+
+        try:
+            couchdb_utils.update_project_list(session)
+            print('Added project {} to project list'.format(session.project_name))
+        except:
+            print('Falied add project {} to project list'.format(session.project_name))
+            print(e)
+            raise(e)
 
         return session

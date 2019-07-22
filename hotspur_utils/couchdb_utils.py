@@ -27,7 +27,6 @@ def update_session_list(session):
 		doc = fetch_doc(session_list_doc_name, db)
 		doc[session.name] = session.hash
 		push_doc(doc, db)
-
 	except Exception as e:
 		print(e)
 		raise e
@@ -54,7 +53,9 @@ def fetch_doc(doc_id, db):
 	try:
 		return db[doc_id]
 	except:
-		return None
+		doc = {'_id': doc_id}
+		db[doc_id] = doc
+		return doc
 
 def push_doc(doc, db):
 	doc_id = doc['_id']
@@ -96,18 +97,29 @@ def reset_project(project_name):
 		print('Failed to retrieve list of sessions')
 		return
 
-	for key, val in doc:
+	all_sessions_reset = True
+	for key, val in doc.items():
 		if key in ['_id', '_rev']:
 			continue
-		session_hash = val
 		session = SessionData()
+		session.hash = val
+		session.db = fetch_db(session.hash)
 		try:
-			session.fetch(session_hash)
+			session.fetch(session.db)
 			print("Fetched session data")
+		except Exception as e:
+			print("Failed to fetch session data for session (hash) {}".format(session_hash))
+			print(e)
+			all_sessions_reset = False
+			continue
+
+		try:
+			reset_session(session)
 		except:
-			print("Failed to fetch session data")
-			return
-		reset_session(session)
+			all_sessions_reset = False
+
+	if not all_sessions_reset:
+		return
 
 	try:
 		couchdb_server.delete(project_hash)
@@ -126,13 +138,16 @@ def reset_project(project_name):
 		print('Failed to remove {} from project list'.format(project_name))
 		return
 
+	return
+
 def reset_session(session):
 	try:
-		couchdb_server.delete(key)
-		print('Deleted session database {}'.format(key))
-	except:
-		print('Failed to delete session database {}'.format(key))
-		return
+		couchdb_server.delete(session.hash)
+		print('Deleted session database {}'.format(session.hash))
+	except Exception as e:
+		print('Failed to delete session database {}'.format(session.hash))
+		print(e)
+		raise e
 
 	try:
 		db = fetch_db(session.project_hash)
@@ -140,6 +155,7 @@ def reset_session(session):
 		del doc[session.name]
 		push_doc(doc, db)
 		print('Removed {} from session list for project {}'.format(session.project_name))
-	except:
+	except Exception as e:
 		print('Failed to remove {} from session list for project {}'.format(session.project_name))
-		return
+		print(e)
+		raise e

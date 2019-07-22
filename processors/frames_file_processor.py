@@ -71,7 +71,7 @@ class FramesFileProcessor():
 			mdoc_file = '{}.mdoc'.format(file)
 			if not os.path.exists(mdoc_file):
 				self.queued.remove(file)
-				self.finished.add(file)
+				self.finished.append(file)
 				continue
 
 			base_name = os.path.basename(os.path.splitext(file)[0])
@@ -122,6 +122,7 @@ class FramesFileProcessor():
 			try:
 				with tifffile.TiffFile(data_model.image_path) as imfile:
 					frame_dose_per_pixel = imfile.pages[0].asarray().mean()
+				print("Extracted dose rate from {}".format(file))
 			except:
 				print("Couldn't extract dose rate from {}".format(file))
 				return data_model
@@ -129,10 +130,17 @@ class FramesFileProcessor():
 			try:
 				imfile = imaging.load(data_model.image_path)
 				frame_dose_per_pixel = imfile.mean()
+				print("Extracted dose rate from {}".format(file))
 			except:
 				print("Couldn't extract dose rate from {}".format(file))
 				return data_model
 
-		data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
-		data_model.total_dose = data_model.frame_dose * data_model.frame_count
+		try:
+			data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
+			data_model.total_dose = data_model.frame_dose * data_model.frame_count
+			print("Populated dose rate fields in acquisition data")
+		except Exception as e:
+			print("Failed to populate dose rate fields in acquisition data")
+			print(e)
+
 		return data_model

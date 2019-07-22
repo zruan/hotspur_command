@@ -15,11 +15,11 @@ def arguments():
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data'
     )
-    # parser.add_argument(
-    #     '--target-dir',
-    #     dest='target_dir',
-    #     help='A directory you want to process. This is for when you only want to process one session.'
-    # )
+    parser.add_argument(
+        '--target-dir',
+        dest='target_dir',
+        help='A directory you want to process. This is for when you only want to process one session.'
+    )
     parser.add_argument(
         '--reset-all',
         dest='reset_all',
@@ -57,10 +57,10 @@ def start_processing():
         couchdb_utils.reset_session(session)
         exit()
 
-    # if args.target_dir is not None:
-    #     search_globs = [args.target_dir]
-    # else:
-    #     search_globs = hotspur_setup.search_globs
+    if args.target_dir is not None:
+        search_globs = [args.target_dir]
+    else:
+        search_globs = hotspur_setup.search_globs
 
     while True:
         for session in session_processor.find_sessions(search_globs):
