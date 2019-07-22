@@ -23,6 +23,7 @@ class DataModel():
 		doc = copy.copy(self.__dict__)
 		for key in self.ignored_keys:
 			del doc[key]
+		del doc['ignored_keys']
 		couchdb_utils.push_doc(doc, db)
 
 	def fetch(self, db):
