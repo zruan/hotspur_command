@@ -149,9 +149,9 @@ def reset_project(project_name):
 			doc = fetch_doc(session_list_doc_name, db)
 			del doc[session_name]
 			push_doc(doc, db)
-			print('Removed {} from session list for project {}'.format(project_name))
+			print('Removed {} from session list for project {}'.format(session_name, project_name))
 		except Exception as e:
-			print('Failed to remove {} from session list for project {}'.format(project_name))
+			print('Failed to remove {} from session list for project {}'.format(session_name, project_name))
 			print(e)
 			raise e
 
