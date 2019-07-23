@@ -24,8 +24,8 @@ def extract_session_from_path(frames_directory):
 
     session = SessionData()
     session.time = time.time()
-    session.name = session_name
-    session.hash = hash_utils.get_hash(project_name + sample_name + session_name)
+    session.name = '{}--{}--{}'.format(project_name, sample_name, session_name)
+    session.hash = hash_utils.get_hash(session.name)
     session.sample_name = sample_name
     session.project_name = project_name
     session.project_hash = hash_utils.get_hash(project_name)
