@@ -68,7 +68,7 @@ def start_processing():
 
     while True:
         for session in session_processor.find_sessions(search_globs):
-            # FramesFileProcessor.for_session(session).run()
+            FramesFileProcessor.for_session(session).run()
             # Motioncor2Processor.for_session(session).run()
             # CtffindProcessor.for_session(session).run()
             continue

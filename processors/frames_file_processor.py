@@ -39,9 +39,9 @@ class FramesFileProcessor():
 		image_paths = [doc['image_path'] for doc in docs]
 		self.tracked = image_paths
 		self.finished = image_paths
+		print("Fetched aquisition data models for session {}".format(self.session.name))
 
 	def update_tracked_data(self):
-
 		found_files = []
 		for pattern in self.file_patterns:
 			search_pattern = os.path.join(self.session.frames_directory, pattern)
@@ -58,6 +58,7 @@ class FramesFileProcessor():
 			current_time = time.time()
 			file_lifetime = current_time - acquisition_time
 			if file_lifetime < self.min_lifetime:
+				print("Skipping file {} because it's too new: {} sec old".format(file, file_lifetime))
 				continue
 
 			self.tracked.append(file)
@@ -67,27 +68,35 @@ class FramesFileProcessor():
 		self.update_tracked_data()
 
 		for file in self.queued:
-			# File doesn't have associated mdoc
-			mdoc_file = '{}.mdoc'.format(file)
-			if not os.path.exists(mdoc_file):
-				self.queued.remove(file)
-				self.finished.append(file)
-				continue
-
 			base_name = os.path.basename(os.path.splitext(file)[0])
 			data_model = AcquisitionData(base_name)
 			data_model.image_path = file
 			data_model.file_format = os.path.splitext(file)[1]
+			data_model.data_file_path = '{}.mdoc'.format(file)
+			data_model.data_file_format = '.mdoc'
 			data_model.time = os.path.getmtime(file)
-			data_model = self.update_model_from_mdoc(mdoc_file, data_model)
-			data_model = self.update_dose_from_image(data_model)
+			
+			try:
+				data_model = self.update_model_from_mdoc(data_model)
+				print('Extracted metadata from mdoc file')
+			except:
+				self.queued.remove(file)
+				self.finished.append(file)
+				print('Failed to extract metadata from mdoc file')
+				continue
+
+			try:
+				data_model = self.update_dose_from_image(data_model)
+			except:
+				pass
+
 			data_model.push(self.session.db)
 
 			self.queued.remove(file)
 			self.finished.append(file)
 
-	def update_model_from_mdoc(self, mdoc_file_path, data_model):
-		with open(mdoc_file_path, 'r') as mdoc:
+	def update_model_from_mdoc(self, data_model):
+		with open(data_model.data_file_path, 'r') as mdoc:
 			for line in mdoc.readlines():
 				# key-value pairs are separated by ' = ' in mdoc files
 				if not ' = ' in line:
@@ -123,17 +132,19 @@ class FramesFileProcessor():
 				with tifffile.TiffFile(data_model.image_path) as imfile:
 					frame_dose_per_pixel = imfile.pages[0].asarray().mean()
 				print("Extracted dose rate from {}".format(data_model.image_path))
-			except:
+			except Exception as e:
 				print("Couldn't extract dose rate from {}".format(data_model.image_path))
-				return data_model
+				print(e)
+				raise e
 		elif data_model.file_format == '.mrc':
 			try:
 				imfile = imaging.load(data_model.image_path)
 				frame_dose_per_pixel = imfile.mean()
 				print("Extracted dose rate from {}".format(file))
-			except:
+			except Exception as e:
 				print("Couldn't extract dose rate from {}".format(file))
-				return data_model
+				print(e)
+				raise e
 
 		try:
 			data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
@@ -142,5 +153,6 @@ class FramesFileProcessor():
 		except Exception as e:
 			print("Failed to populate dose rate fields in acquisition data")
 			print(e)
+			raise e
 
 		return data_model
