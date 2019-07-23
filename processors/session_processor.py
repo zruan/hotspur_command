@@ -26,6 +26,8 @@ class SessionProcessor():
             print('Found potential session at {}'.format(directory))
             try:
                 session = self.create_new_session(directory)
+                couchdb_utils.update_session_list(session)
+                couchdb_utils.update_project_list(session)
                 self.sessions.append(session)
                 self.queued.remove(directory)
             except:
@@ -53,7 +55,12 @@ class SessionProcessor():
             print(e)
             raise e
 
-        session.db = couchdb_utils.fetch_db(session.hash)
+        try:
+            session.db = couchdb_utils.fetch_db(session.hash)
+        except Exception as e:
+            print(e)
+            raise e
+            
         if not session.fetch(session.db):
             try:
                 session.push(session.db)
@@ -64,21 +71,5 @@ class SessionProcessor():
                 raise e
         else:
             print('Updated session metadata from database')
-
-        try:
-            couchdb_utils.update_session_list(session)
-            print('Added session {} to session list for project {}'.format(session.name, session.project_name))
-        except:
-            print('Failed to add session {} to session list for project {}'.format(session.name, session.project_name))
-            print(e)
-            raise(e)
-
-        try:
-            couchdb_utils.update_project_list(session)
-            print('Added project {} to project list'.format(session.project_name))
-        except:
-            print('Falied add project {} to project list'.format(session.project_name))
-            print(e)
-            raise(e)
 
         return session

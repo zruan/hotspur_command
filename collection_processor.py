@@ -16,9 +16,10 @@ def arguments():
         description='Runs data processing live for incoming data'
     )
     parser.add_argument(
-        '--target-dir',
-        dest='target_dir',
-        help='A directory you want to process. This is for when you only want to process one session.'
+        '--target-dirs',
+        dest='target_dirs',
+        help='Process all directories matching given directories',
+        nargs='+'
     )
     parser.add_argument(
         '--reset-all',
@@ -28,45 +29,49 @@ def arguments():
     )
     parser.add_argument(
         '--reset-project',
-        dest='reset_project',
+        dest='project_to_reset',
         help="Reset all sessions for project with given name"
     )
     parser.add_argument(
-        '--reset-session',
-        dest='reset_session',
-        help="Reset all processing done for given frames directory."
+        '--reset-dirs',
+        dest='dirs_to_reset',
+        help="Reset all processing done for given directories",
+        nargs='+'
     )
     return parser.parse_args()
 
 def start_processing():
     args = arguments()
 
-
     if args.reset_all:
         couchdb_utils.reset_all()
         exit()
     
-    if args.reset_project is not None:
-        couchdb_utils.reset_project(args.reset_project)
+    if args.project_to_reset is not None:
+        couchdb_utils.reset_project(args.project_to_reset)
         exit()
 
     session_processor = SessionProcessor()
 
-    if args.reset_session is not None:
-        session = session_processor.create_new_session(args.reset_session)
-        couchdb_utils.reset_session(session)
+    if args.dirs_to_reset is not None:
+        for session in session_processor.find_sessions(args.dirs_to_reset):
+            try:
+                couchdb_utils.reset_session(session)
+            except:
+                continue
         exit()
 
-    if args.target_dir is not None:
-        search_globs = [args.target_dir]
+    if args.target_dirs is not None:
+        search_globs = args.target_dirs
     else:
         search_globs = hotspur_setup.search_globs
 
     while True:
         for session in session_processor.find_sessions(search_globs):
-            FramesFileProcessor.for_session(session).run()
+            # FramesFileProcessor.for_session(session).run()
             # Motioncor2Processor.for_session(session).run()
             # CtffindProcessor.for_session(session).run()
+            continue
         time.sleep(5)
 
 if __name__ == '__main__':

@@ -122,9 +122,9 @@ class FramesFileProcessor():
 			try:
 				with tifffile.TiffFile(data_model.image_path) as imfile:
 					frame_dose_per_pixel = imfile.pages[0].asarray().mean()
-				print("Extracted dose rate from {}".format(file))
+				print("Extracted dose rate from {}".format(data_model.image_path))
 			except:
-				print("Couldn't extract dose rate from {}".format(file))
+				print("Couldn't extract dose rate from {}".format(data_model.image_path))
 				return data_model
 		elif data_model.file_format == '.mrc':
 			try:
