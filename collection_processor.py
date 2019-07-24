@@ -38,6 +38,12 @@ def arguments():
         help="Reset all processing done for given directories",
         nargs='+'
     )
+    parser.add_argument(
+        '--reset-found-sessions',
+        dest='reset_found_sessions',
+        help="Reset all processing done for sessions found by hotspur",
+        action='store_true'
+    )
     return parser.parse_args()
 
 def start_processing():
@@ -60,6 +66,15 @@ def start_processing():
             except:
                 continue
         exit()
+    
+    if args.reset_found_sessions:
+        for session in session_processor.find_sessions(hotspur_setup.search_globs):
+            try:
+                couchdb_utils.reset_session(session)
+            except:
+                continue
+        exit()
+    
 
     if args.target_dirs is not None:
         search_globs = args.target_dirs
@@ -70,7 +85,7 @@ def start_processing():
         for session in session_processor.find_sessions(search_globs):
             FramesFileProcessor.for_session(session).run()
             Motioncor2Processor.for_session(session).run()
-            # CtffindProcessor.for_session(session).run()
+            CtffindProcessor.for_session(session).run()
             continue
         time.sleep(5)
 
