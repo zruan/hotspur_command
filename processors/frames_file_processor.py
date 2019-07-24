@@ -35,8 +35,8 @@ class FramesFileProcessor():
 		self.sync_with_db()
 
 	def sync_with_db(self):
-		docs = AcquisitionData.fetch_all(self.session.db)
-		image_paths = [doc['image_path'] for doc in docs]
+		current_models = AcquisitionData.fetch_all(self.session.db)
+		image_paths = [model.image_path for model in current_models]
 		self.tracked = image_paths
 		self.finished = image_paths
 		print("Fetched aquisition data models for session {}".format(self.session.name))
