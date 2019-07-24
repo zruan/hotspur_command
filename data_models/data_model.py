@@ -37,7 +37,13 @@ class DataModel():
 	@classmethod
 	def fetch_all(cls, db):
 		doc_type = cls._get_type()
-		return couchdb_utils.fetch_docs_of_type(doc_type, db)
+		all_docs = couchdb_utils.fetch_docs_of_type(doc_type, db)
+		models = []
+		for doc in all_docs:
+			model = cls(None)
+			model.__dict__.update(doc)
+			models.append(model)
+		return models
 
 	@classmethod
 	def _get_id(cls, base_name):
