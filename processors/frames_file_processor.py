@@ -24,7 +24,7 @@ class FramesFileProcessor():
 	def __init__(self, session):
 		self.session = session
 
-		# amount of time to wait before acting on a file. Prevents reading a partial file.
+		# Time (sec) to wait before acting on a file. Prevents reading a partial file.
 		self.min_lifetime = 120
 		self.file_patterns = ['*.tif', '*.mrc']
 
