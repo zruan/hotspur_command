@@ -42,8 +42,8 @@ class CtffindProcessor():
 		self.finished = base_names.copy()
 
 	def update_tracked_data(self):
-		input_data_docs = MotionCorrectionData.fetch_all(self.session.db)
-		for model in input_data_docs:
+		motion_data_model = MotionCorrectionData.fetch_all(self.session.db)
+		for model in motion_data_model:
 			if model.base_name not in self.tracked:
 				self.tracked.append(model.base_name)
 				self.queued.append(model)
@@ -110,10 +110,20 @@ class CtffindProcessor():
 		data_model.ctf_log_file = '{}_ctffind.txt'.format(output_file_base)
 		data_model.ctf_epa_log_file = '{}_ctffind_avrot.txt'.format(output_file_base)
 
-		data_model = self.update_model_from_EPA_log(data_model)
-		data_model = self.update_model_from_ctffind_log(data_model)
+		try:
+			data_model = self.update_model_from_EPA_log(data_model)
+		except Exception as e:
+			print("Failed to update ctf data from EPA log {}".format(data_model.ctf_epa_log_file))
+			print(e)
+			pass
+		try:
+			data_model = self.update_model_from_ctffind_log(data_model)
+		except Exception as e:
+			print("Failed to update ctf data from ctffind log {}".format(data_model.ctf_log_file))
+			print(e)
+			pass
 
-		data_model.save_to_couchdb(session.db)
+		data_model.push(self.session.db)
 
 		self.finished.append(data_model.base_name)
 
