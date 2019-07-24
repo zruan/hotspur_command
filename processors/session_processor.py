@@ -1,4 +1,6 @@
 import sys
+import os
+import time
 from glob import glob
 
 import hotspur_setup
@@ -36,9 +38,17 @@ class SessionProcessor():
         return self.sessions
 
     def validate_session(self, directory):
+        mod_time = os.path.getmtime(directory)
+        current_time = time.time()
+        time_diff = current_time - mod_time
+        time_diff_days = time_diff / (60 * 60 * 24)
+        if time_diff_days > hotspur_setup.session_max_age:
+            print("Session is not valid: age {} is too old".format(time_diff_days))
+            return False
+
         mdoc_files = glob('{}/*.mdoc'.format(directory))
         if len(mdoc_files) == 0:
-            print("Session is not valid")
+            print("Session is not valid: no mdoc file found")
             return False
         print("Session is valid")
         return True
