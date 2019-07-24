@@ -36,18 +36,18 @@ class CtffindProcessor():
 		self.sync_with_db()
 
 	def sync_with_db(self):
-		output_data_docs = CtfData.fetch_all(self.session.db)
-		doc_base_names = [doc.base_name for doc in output_data_docs]
-		self.tracked = doc_base_names
-		self.finished = doc_base_names
+		ctf_data_models = CtfData.fetch_all(self.session.db)
+		base_names = [model.base_name for model in ctf_data_models]
+		self.tracked = base_names.copy()
+		self.finished = base_names.copy()
 
 	def update_tracked_data(self):
 		input_data_docs = MotionCorrectionData.fetch_all(self.session.db)
-		for doc in input_data_docs:
-			if doc.base_name not in self.tracked:
-				self.tracked.append(doc.base_name)
-				self.queued.append(doc)
-		self.queued.sort(key=lambda doc: doc.time)
+		for model in input_data_docs:
+			if model.base_name not in self.tracked:
+				self.tracked.append(model.base_name)
+				self.queued.append(model)
+		self.queued.sort(key=lambda model: model.time)
 
 	def run(self):
 		self.update_tracked_data()
