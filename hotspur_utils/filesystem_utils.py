@@ -44,7 +44,7 @@ def ensure_session_dirs(session):
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
 
-    link = "{}/{}_{}".format(parent_dir, session.sample_name, session.name)
+    link = "{}/{}".format(parent_dir, session.name)
     if not os.path.exists(link):
         os.symlink(processing_dir, link)
 
