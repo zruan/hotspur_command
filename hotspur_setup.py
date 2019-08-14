@@ -29,23 +29,21 @@ session_max_age = 7
 def setup_from_environment():
     if "HOTSPUR_PATH" in os.environ:
         base_path = os.environ["HOTSPUR_PATH"]
+        print("Hotspur base path set to {}".format(base_path))
     else:
         print("No value for HOTSPUR_PATH in environment")
         sys.exit()
-    print("Hotspur base path set to {}".format(base_path))
 
-    if "HOTSPUR_ADMIN_NAME" in os.environ and "HOTSPUR_ADMIN_PASS" in os.environ:
-        couchdb_address = "http://{}:{}@localhost/couchdb/".format(
+    if "HOTSPUR_ADMIN_NAME" in os.environ and "HOTSPUR_ADMIN_PASS" in os.environ and ["HOTSPUR_COUCHDB_URL"]:
+        couchdb_address = "http://{}:{}@{}".format(
             os.environ["HOTSPUR_ADMIN_NAME"],
-            os.environ["HOTSPUR_ADMIN_PASS"]
+            os.environ["HOTSPUR_ADMIN_PASS"],
+            os.environ["HOTSPUR_COUCHDB_URL"]
         )
-    elif "HOTSPUR_ADMIN_NAME" in os.environ or "HOTSPUR_ADMIN_PASS" in os.environ:
-        print("Must give both HOTSPUR_ADMIN_NAME and HOTSPUR_ADMIN_PASS")
-        sys.exit()
+        print("Received couchdb url")
     else:
         print("Must give both HOTSPUR_ADMIN_NAME and HOTSPUR_ADMIN_PASS")
         sys.exit()
-    print("Received couchdb admin name and pass")
 
     if "HOTSPUR_SEARCH_GLOBS" in os.environ:
         search_globs = os.environ["HOTSPUR_SEARCH_GLOBS"].split(":")
