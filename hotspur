@@ -1,7 +1,4 @@
 #!/bin/bash
-
-CONDA_ENV=/home/users/gingerid/.conda/envs/hotspur2
-
 function cleanup {
 	conda deactivate
 }
@@ -10,6 +7,6 @@ trap cleanup EXIT
 SCRIPT_DIR=$(dirname $(realpath $0))
 source "${SCRIPT_DIR}/hotspur_env.sh"
 
-source activate "$CONDA_ENV"
+source activate "$HOTSPUR_CONDA_ENV"
 python3 "${SCRIPT_DIR}/collection_processor.py" $@
 cleanup

@@ -1,3 +1,4 @@
+export HOTSPUR_CONDA_ENV="/home/users/gingerid/.conda/envs/hotspur2"
 export HOTSPUR_PATH="/pncc/storage/1/processing/hotspur"
 export HOTSPUR_SEARCH_GLOBS="/pncc/storage/1/rawdata/pncc/*/*/*/frames/"
 export HOTSPUR_COUCHDB_URL="localhost/couchdb/"
