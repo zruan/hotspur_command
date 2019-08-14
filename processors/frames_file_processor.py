@@ -92,9 +92,13 @@ class FramesFileProcessor():
 
             data_model.push(self.session.db)
 
-            if data_model.time > self.session.end_time:
-                session.end_time = data_model.time
-                session.push(session.db)
+            if self.session.time is None or data_model.time < self.session.time:
+                self.session.time = data_model.time
+                self.session.push(self.session.db)
+
+            if self.session.end_time is None or data_model.time > self.session.end_time:
+                self.session.end_time = data_model.time
+                self.session.push(self.session.db)
 
             self.queued.remove(file)
             self.finished.append(file)
