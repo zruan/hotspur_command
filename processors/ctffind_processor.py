@@ -173,11 +173,11 @@ class CtffindProcessor():
 			lines = f.readlines()
 		ctf_params = lines[5].split(' ')
 
-		data_model.defocus_u = (float(ctf_params[1]))
-		data_model.defocus_v = (float(ctf_params[2]))
-		data_model.astigmatism_angle = ctf_params[3]
-		data_model.phase_shift = ctf_params[4]
-		data_model.cross_correlation = ctf_params[5]
-		data_model.estimated_resolution = ctf_params[6].rstrip()
+		data_model.defocus_u = float(ctf_params[1])
+		data_model.defocus_v = float(ctf_params[2])
+		data_model.astigmatism_angle = float(ctf_params[3])
+		data_model.phase_shift = float(ctf_params[4])
+		data_model.cross_correlation = float(ctf_params[5])
+		data_model.estimated_resolution = float(ctf_params[6].rstrip())
 		data_model.estimated_b_factor = 0
 		return data_model
