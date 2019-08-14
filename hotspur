@@ -7,6 +7,8 @@ function cleanup {
 }
 trap cleanup EXIT
 
+source ./hotspur_env.sh
+
 source activate "$CONDA_ENV"
 python3 ./collection_processor.py $@
 cleanup
