@@ -5,8 +5,17 @@ function cleanup {
 trap cleanup EXIT
 
 SCRIPT_DIR=$(dirname $(realpath $0))
-source "${SCRIPT_DIR}/hotspur_env.sh"
+
+if [ -z "$1" ]; then
+    ENV_FILE="${SCRIPT_DIR}/hotspur_env.sh"
+else
+    ENV_FILE="$1"
+fi
+
+source "$ENV_FILE"
 
 source activate "$HOTSPUR_CONDA_ENV"
+
 python3 "${SCRIPT_DIR}/collection_processor.py" $@
+
 cleanup
