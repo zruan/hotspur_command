@@ -1,5 +1,7 @@
 import argparse
+
 import hotspur_processor
+import hotspur_reset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -28,31 +30,31 @@ if __name__ == "__main__":
     # list_parser = subparsers.add_parser("list")
     # list_parser.set_defaults(func=lambda args: print(args))
 
-    # reset_parser = subparsers.add_parser("reset")
-    # reset_parser.set_defaults(func=lambda args: print(args))
-    # reset_parser.add_argument(
-    #     '--all',
-    #     dest='reset_all',
-    #     help="Reset all projects",
-    #     action='store_true'
-    # )
-    # reset_parser.add_argument(
-    #     '--project',
-    #     dest='project_to_reset',
-    #     help="Reset all sessions for project with given name"
-    # )
-    # reset_parser.add_argument(
-    #     '--dirs',
-    #     dest='dirs_to_reset',
-    #     help="Reset all processing done for given directories",
-    #     nargs='+'
-    # )
-    # reset_parser.add_argument(
-    #     '--search',
-    #     dest='reset_found_sessions',
-    #     help="Reset all processing done for sessions found by hotspur",
-    #     action='store_true'
-    # )
+    reset_parser = subparsers.add_parser(
+        "reset",
+        help="Reset sessions by clearing the session database. By default, "
+    )
+    reset_parser.set_defaults(help_func=reset_parser.print_help)
+    reset_parser.set_defaults(func=lambda args: hotspur_reset.reset(args))
+    reset_parser.add_argument(
+        '--all',
+        help="Reset all sessions",
+        action='store_true'
+    )
+    reset_parser.add_argument(
+        '--search',
+        help="Find and reset sessions using configured search settings",
+        action='store_true'
+    )
+    reset_parser.add_argument(
+        '--project',
+        help="Reset sessions for project"
+    )
+    reset_parser.add_argument(
+        '--dirs',
+        help="Reset sessions matching given directories",
+        nargs='+'
+    )
 
     args = parser.parse_args()
     args.func(args)
