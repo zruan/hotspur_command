@@ -6,16 +6,17 @@ trap cleanup EXIT
 
 SCRIPT_DIR=$(dirname $(realpath $0))
 
-if [ -z "$1" ]; then
-    ENV_FILE="${SCRIPT_DIR}/hotspur_env.sh"
+if [ "$1" = "--env" ] || [ "$1" = "-e" ]; then
+    ENV_FILE="$2"
+    shift 2
 else
-    ENV_FILE="$1"
+    ENV_FILE="${SCRIPT_DIR}/hotspur_env.sh"
 fi
 
 source "$ENV_FILE"
 
 source activate "$HOTSPUR_CONDA_ENV"
 
-python3 "${SCRIPT_DIR}/collection_processor.py" $@
+python3 "${SCRIPT_DIR}/hotspur.py" ${@}
 
 cleanup
