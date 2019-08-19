@@ -2,6 +2,7 @@ import argparse
 
 import hotspur_processor
 import hotspur_reset
+import hotspur_info
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -27,12 +28,30 @@ if __name__ == "__main__":
     # hash_parser = subparsers.add_parser("hash")
     # hash_parser.set_defaults(func=lambda args: print(args))
 
-    # list_parser = subparsers.add_parser("list")
-    # list_parser.set_defaults(func=lambda args: print(args))
+    info_parser = subparsers.add_parser("info")
+    info_parser.set_defaults(help_func=info_parser.print_help)
+    info_parser.set_defaults(func=lambda args: hotspur_info.show_info(args))
+    info_parser.add_argument(
+        '--hash',
+        help="Provide hash of given string",
+    )
+    info_parser.add_argument(
+        '--project',
+        help="Provide info about a project",
+    )
+    info_parser.add_argument(
+        '--dir',
+        help="Provide info about a session for given dir",
+    )
+    info_parser.add_argument(
+        '--search',
+        help="Provide info about a sessions for dirs found using configured search settings",
+    )
+
 
     reset_parser = subparsers.add_parser(
         "reset",
-        help="Reset sessions by clearing the session database. By default, "
+        help="Reset sessions by clearing the session database."
     )
     reset_parser.set_defaults(help_func=reset_parser.print_help)
     reset_parser.set_defaults(func=lambda args: hotspur_reset.reset(args))
