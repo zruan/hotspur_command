@@ -13,32 +13,6 @@ import hotspur_setup
 
 def start_processing(args):
 
-    # if args.reset_all:
-    #     couchdb_utils.reset_all()
-    #     exit()
-    
-    # if args.project_to_reset is not None:
-    #     couchdb_utils.reset_project(args.project_to_reset)
-    #     exit()
-
-
-    # if args.dirs_to_reset is not None:
-    #     for session in session_processor.find_sessions(args.dirs_to_reset):
-    #         try:
-    #             couchdb_utils.reset_session(session)
-    #         except:
-    #             continue
-    #     exit()
-    
-    # if args.reset_found_sessions:
-    #     for session in session_processor.find_sessions(hotspur_setup.search_globs):
-    #         try:
-    #             couchdb_utils.reset_session(session)
-    #         except:
-    #             continue
-    #     exit()
-    
-
     if args.dirs is not None:
         search_globs = args.dirs
     else:
