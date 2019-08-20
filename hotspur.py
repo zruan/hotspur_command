@@ -34,6 +34,7 @@ if __name__ == "__main__":
     info_parser.add_argument(
         '--hash',
         help="Provide hash of given string",
+        metavar="STRING"
     )
     info_parser.add_argument(
         '--project',
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     )
     reset_parser.add_argument(
         '--project',
-        help="Reset sessions for project"
+        help="Reset sessions for project",
     )
     reset_parser.add_argument(
         '--dirs',
