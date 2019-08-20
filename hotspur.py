@@ -25,9 +25,6 @@ if __name__ == "__main__":
     # export_parser = subparsers.add_parser("export")
     # export_parser.set_defaults(func=lambda args: print(args))
 
-    # hash_parser = subparsers.add_parser("hash")
-    # hash_parser.set_defaults(func=lambda args: print(args))
-
     info_parser = subparsers.add_parser("info")
     info_parser.set_defaults(help_func=info_parser.print_help)
     info_parser.set_defaults(func=lambda args: hotspur_info.show_info(args))
