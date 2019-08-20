@@ -29,7 +29,6 @@ class SessionProcessor():
             try:
                 session = self.create_new_session(directory)
                 couchdb_utils.update_session_list(session)
-                couchdb_utils.update_project_list(session)
                 self.sessions.append(session)
                 self.queued.remove(directory)
             except:
