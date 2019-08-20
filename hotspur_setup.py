@@ -63,10 +63,10 @@ def setup_from_environment():
         available_gpus = [0]
     print("Using gpus {}".format(available_gpus))
 
-    available_cpus = os.getenv('HOTSPUR_THREADS', 2)
+    available_cpus = int(os.getenv('HOTSPUR_THREADS', 2))
     print("Using {} threads".format(available_cpus))
 
-    session_max_age = os.getenv('HOTSPUR_SESSION_MAX_AGE', 365)
+    session_max_age = float(os.getenv('HOTSPUR_SESSION_MAX_AGE', 365))
     print("Accepting sessions no older than {} days".format(session_max_age))
 
 
