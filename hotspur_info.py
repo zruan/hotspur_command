@@ -11,6 +11,10 @@ def show_info(args):
         show_project_info(args.project)
         return
 
+    if args.config:
+        show_config()
+        return
+
     help_func()
 
 def show_hash(input):
@@ -39,3 +43,11 @@ def show_project_info(project_name):
         session_name = key
         session_hash = val
         print("{}   {}".format(session_hash, session_name))
+
+def show_config():
+    print("Hotspur base path set to {}".format(hotspur_setup.base_path))
+    print("Couchdb url set to {}".format(hotspur_setup.couchdb_address))
+    print("Search for patterns {}".format(hotspur_setup.search_globs))
+    print("Using gpus {}".format(hotspur_setup.available_gpus))
+    print("Using {} threads".format(hotspur_setup.available_cpus))
+    print("Accepting sessions no older than {} days".format(hotspur_setup.session_max_age))

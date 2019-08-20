@@ -31,7 +31,6 @@ def setup_from_environment():
 
     if "HOTSPUR_PATH" in os.environ:
         base_path = os.environ["HOTSPUR_PATH"]
-        print("Hotspur base path set to {}".format(base_path))
     else:
         print("No value for HOTSPUR_PATH in environment")
         sys.exit()
@@ -42,7 +41,6 @@ def setup_from_environment():
             os.environ["HOTSPUR_ADMIN_PASS"],
             os.environ["HOTSPUR_COUCHDB_URL"]
         )
-        print("Received couchdb url")
     else:
         print("Must give both HOTSPUR_ADMIN_NAME and HOTSPUR_ADMIN_PASS")
         sys.exit()
@@ -51,7 +49,6 @@ def setup_from_environment():
         search_globs = os.environ["HOTSPUR_SEARCH_GLOBS"].split(":")
     else:
         search_globs = []
-    print("Search for patterns {}".format(search_globs))
 
     hash_salt = os.getenv("HOTSPUR_HASH_SALT",
                             "Please make me more secure")
@@ -61,13 +58,10 @@ def setup_from_environment():
                             for id in os.environ["HOTSPUR_GPUS"].split(',')]
     else:
         available_gpus = [0]
-    print("Using gpus {}".format(available_gpus))
 
     available_cpus = int(os.getenv('HOTSPUR_THREADS', 2))
-    print("Using {} threads".format(available_cpus))
 
     session_max_age = float(os.getenv('HOTSPUR_SESSION_MAX_AGE', 365))
-    print("Accepting sessions no older than {} days".format(session_max_age))
 
 
 setup_from_environment()

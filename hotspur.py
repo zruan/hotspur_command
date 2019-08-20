@@ -39,6 +39,12 @@ if __name__ == "__main__":
         '--project',
         help="Provide info about a project",
     )
+    info_parser.add_argument(
+        '--config',
+        help="Print the current configuration",
+        action='store_true'
+    )
+    
 
     reset_parser = subparsers.add_parser(
         "reset",
