@@ -15,7 +15,7 @@ def show_info(args):
         show_config()
         return
 
-    help_func()
+    args.help_func()
 
 def show_hash(input):
     hash = hash_utils.get_hash(input)
