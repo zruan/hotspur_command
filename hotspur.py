@@ -39,15 +39,6 @@ if __name__ == "__main__":
         '--project',
         help="Provide info about a project",
     )
-    info_parser.add_argument(
-        '--dir',
-        help="Provide info about a session for given dir",
-    )
-    info_parser.add_argument(
-        '--search',
-        help="Provide info about a sessions for dirs found using configured search settings",
-    )
-
 
     reset_parser = subparsers.add_parser(
         "reset",

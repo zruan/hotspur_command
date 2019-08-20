@@ -11,24 +11,6 @@ def show_info(args):
         show_project_info(args.project)
         return
 
-    session_processor = SessionProcessor()
-
-    if args.dirs is not None:
-        for session in session_processor.find_sessions(args.dirs):
-            try:
-                show_session_info(session)
-            except:
-                continue
-        return
-
-    if args.search:
-        for session in session_processor.find_sessions(hotspur_setup.search_globs):
-            try:
-                show_session_info(session)
-            except:
-                continue
-        return
-
     help_func()
 
 def show_hash(input):
@@ -57,6 +39,3 @@ def show_project_info(project_name):
         session_name = key
         session_hash = val
         print("{}   {}".format(session_hash, session_name))
-
-def show_session_info(session):
-    print("Not yet implemented")
