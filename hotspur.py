@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     process_parser = subparsers.add_parser(
         "process",
-        help="This is some help"
+        help="Process data"
     )
     process_parser.set_defaults(func=lambda args: hotspur_processor.start_processing(args))
     process_parser.add_argument(
@@ -25,7 +25,10 @@ if __name__ == "__main__":
     # export_parser = subparsers.add_parser("export")
     # export_parser.set_defaults(func=lambda args: print(args))
 
-    info_parser = subparsers.add_parser("info")
+    info_parser = subparsers.add_parser(
+        "info",
+        help="Provide info about projects and hotspur config"
+    )
     info_parser.set_defaults(help_func=info_parser.print_help)
     info_parser.set_defaults(func=lambda args: hotspur_info.show_info(args))
     info_parser.add_argument(
@@ -39,7 +42,7 @@ if __name__ == "__main__":
 
     reset_parser = subparsers.add_parser(
         "reset",
-        help="Reset sessions by clearing the session database."
+        help="Delete databases using various strategies"
     )
     reset_parser.set_defaults(help_func=reset_parser.print_help)
     reset_parser.set_defaults(func=lambda args: hotspur_reset.reset(args))
