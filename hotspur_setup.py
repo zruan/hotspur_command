@@ -23,10 +23,12 @@ available_cpus = 12
 # Maximum age of directory for valid session, in days.
 # If mod time of directory is older, it will be skipped.
 # Run `touch /path/to/dir` on the command line to refresh the mod time.
-session_max_age = 7
-
+session_max_age = None
 
 def setup_from_environment():
+    global available_cpus
+    global session_max_age
+
     if "HOTSPUR_PATH" in os.environ:
         base_path = os.environ["HOTSPUR_PATH"]
         print("Hotspur base path set to {}".format(base_path))
@@ -63,6 +65,9 @@ def setup_from_environment():
 
     available_cpus = os.getenv('HOTSPUR_THREADS', 2)
     print("Using {} threads".format(available_cpus))
+
+    session_max_age = os.getenv('HOTSPUR_SESSION_MAX_AGE', 365)
+    print("Accepting sessions no older than {} days".format(session_max_age))
 
 
 setup_from_environment()
