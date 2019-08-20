@@ -31,7 +31,8 @@ class SessionProcessor():
                 couchdb_utils.update_session_list(session)
                 self.sessions.append(session)
                 self.queued.remove(directory)
-            except:
+            except Exception as err:
+                print(err)
                 continue
 
         return self.sessions
