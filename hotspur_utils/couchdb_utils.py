@@ -86,7 +86,8 @@ def push_doc(doc, db):
         db[doc_id] = doc
     except:
         remote = db[doc_id]
-        del doc['_rev']
+        if '_rev' in doc.keys():
+            del doc['_rev']
         remote.update(doc)
         db[doc_id] = remote
 
