@@ -1,5 +1,4 @@
 import hotspur_setup
-from processors import SessionProcessor
 from hotspur_utils import hash_utils, couchdb_utils
 
 def show_info(args):

@@ -7,7 +7,6 @@ import imaging
 import numpy as np
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData 
-from processors import SessionProcessor
 from resource_manager import ResourceManager
 
 

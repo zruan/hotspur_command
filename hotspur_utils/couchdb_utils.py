@@ -5,7 +5,6 @@ import sys
 
 import hotspur_setup
 from hotspur_utils import hash_utils
-from processors import SessionProcessor
 from data_models import SessionData
 
 couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)

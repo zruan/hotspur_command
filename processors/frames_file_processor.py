@@ -5,7 +5,6 @@ import tifffile
 import imaging
 
 from data_models import AcquisitionData
-from processors import SessionProcessor
 
 
 class FramesFileProcessor():
