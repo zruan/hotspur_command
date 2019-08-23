@@ -19,6 +19,9 @@ class SessionProcessor():
         for search in search_globs:
             search_matches.extend(glob(search))
 
+        if len(search_matches) == 0:
+            print("No session search matches found")
+
         new_matches = [
             match for match in search_matches if match not in self.tracked]
         self.tracked.extend(new_matches)
@@ -29,8 +32,8 @@ class SessionProcessor():
             try:
                 session = self.create_new_session(directory)
                 couchdb_utils.update_session_list(session)
-                self.sessions.append(session)
                 self.queued.remove(directory)
+                self.sessions.append(session)
             except Exception as err:
                 print(err)
                 continue
