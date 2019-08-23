@@ -82,7 +82,7 @@ class FramesFileProcessor():
             except:
                 self.queued.remove(file)
                 self.finished.append(file)
-                print('Failed to extract metadata from mdoc file')
+                print(f'Failed to extract metadata from {data_model.data_file_path}')
                 continue
 
             try:
