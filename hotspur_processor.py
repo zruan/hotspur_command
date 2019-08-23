@@ -18,9 +18,9 @@ def start_processing(args):
     else:
         search_globs = hotspur_setup.search_globs
 
-    while True:
+    session_processor = SessionProcessor()
 
-        session_processor = SessionProcessor()
+    while True:
 
         for session in session_processor.find_sessions(search_globs):
             FramesFileProcessor.for_session(session).run()
