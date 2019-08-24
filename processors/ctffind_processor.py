@@ -131,7 +131,7 @@ class CtffindProcessor():
     def create_preview(self, file):
         image = imaging.load(file)[0]
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-        image = imaging.filters.zoom(image, 0.25)
+        # image = imaging.filters.zoom(image, 0.25)
         preview_file = '{}.preview.png'.format(file)
         imaging.save(image, preview_file)
         return preview_file
