@@ -3,6 +3,7 @@ import argparse
 import hotspur_processor
 import hotspur_reset
 import hotspur_info
+import hotspur_export
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -22,8 +23,19 @@ if __name__ == "__main__":
         nargs='+'
     )
 
-    # export_parser = subparsers.add_parser("export")
-    # export_parser.set_defaults(func=lambda args: print(args))
+    export_parser = subparsers.add_parser("export")
+    export_parser.set_defaults(func=lambda args: hotspur_export.export(args))
+    export_parser.add_argument(
+        '--hash',
+        help="Hash of session to export",
+        metavar='SESSION_HASH',
+        required=True
+    )
+    export_parser.add_argument(
+        '--out',
+        dest='out_dir',
+        help="Directory in which output will be place"
+    )
 
     info_parser = subparsers.add_parser(
         "info",
@@ -45,7 +57,6 @@ if __name__ == "__main__":
         help="Print the current configuration",
         action='store_true'
     )
-    
 
     reset_parser = subparsers.add_parser(
         "reset",
