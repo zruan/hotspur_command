@@ -59,9 +59,9 @@ def export(args):
     with open(f'{out_dir}/corrected_micrographs.star', 'w') as fp:
         fp.write(star_string)
 
-    # star_string = generate_ctf_star(micrographs)
-    # with open(f'{out_dir}/micrographs_ctf.star', 'w') as fp:
-    #     fp.write(star_string)
+    star_string = generate_ctf_star(micrographs)
+    with open(f'{out_dir}/micrographs_ctf.star', 'w') as fp:
+        fp.write(star_string)
 
     print(f"Exported project to {out_dir}")
 
@@ -82,8 +82,8 @@ def generate_motion_metadata_star(micrograph):
     mcd = micrograph.motion_correction_data
 
     out_string = '\n'.join([
-        "data_general",
-        "",
+        f"data_general",
+        f"",
         f"_rlnImageSizeX                      {mcd.dimensions[0]}",
         f"_rlnImageSizeY                      {mcd.dimensions[1]}",
         f"_rlnImageSizeZ                      {ad.frame_count}",
@@ -91,19 +91,19 @@ def generate_motion_metadata_star(micrograph):
         f"_rlnMicrographBinning               {mcd.binning}",
         f"_rlnMicrographOriginalPixelSize     {ad.pixel_size}",
         f"_rlnMicrographDoseRate              {ad.frame_dose}",
-        "_rlnMicrographPreExposure            0.000000",
+        f"_rlnMicrographPreExposure           0.000000",
         f"_rlnVoltage                         {ad.voltage}",
-        "_rlnMicrographStartFrame             1",
-        "_rlnMotionModelVersion               0",
-        "",
-        "",
-        "data_global_shift",
-        "",
-        "loop_",
-        "_rlnMicrographFrameNumber #1",
-        "_rlnMicrographShiftX      #2",
-        "_rlnMicrographShiftY      #3",
-        ""
+        f"_rlnMicrographStartFrame            1",
+        f"_rlnMotionModelVersion              0",
+        f"",
+        f"",
+        f"data_global_shift",
+        f"",
+        f"loop_",
+        f"_rlnMicrographFrameNumber #1",
+        f"_rlnMicrographShiftX      #2",
+        f"_rlnMicrographShiftY      #3",
+        f""
     ])
     shifts = [f"{i} {shift[0]} {shift[1]}" for i, shift in enumerate(mcd.displacement_list)]
     out_string += '\n'.join(shifts)
@@ -133,35 +133,45 @@ def generate_motion_correction_star(micrographs, meta_out_dir):
     out_string += '\n'.join(rows)
     return out_string
 
-# def generate_ctf_star(micrographs):
-#     out_string = '\n'.join([
-#         '# RELION; version 3.0.5',
-#         '',
-#         'data_',
-#         '',
-#         'loop_',
-#         '_rlnMicrographName      #1',
-#         '_rlnCtfImage            #2',
-#         '_rlnDefocusU            #3',
-#         '_rlnDefocusV            #4',
-#         '_rlnCtfAstigmatism      #5',
-#         '_rlnDefocusAngle        #6',
-#         '_rlnVoltage             #7',
-#         '_rlnSphericalAberration #8',
-#         '_rlnAmplitudeContrast   #9',
-#         '_rlnMagnification       #10',
-#         '_rlnDetectorPixelSize   #11',
-#         '_rlnCtfFigureOfMerit    #12',
-#         '_rlnCtfMaxResolution    #13',
-#     ])
-#     rows = []
-#     for mcd, cd in [(micrograph.motion_correction_data, micrograph.ctf_data) for micrograph in micrographs]:
-#         row = ' '.join([
-#             f'{mcd.aligned_image_file}',
-#             f'{meta_out_dir}/{mcd.base_name}',
-#             f'{mcd.total_shift}',
-#             f'{mcd.initial_shift}',
-#             f'{mcd.initial_shift}'
-#         ])
-#         rows.append(row)
-#     return out_string
+def generate_ctf_star(micrographs):
+    out_string = '\n'.join([
+        '# RELION; version 3.0.5',
+        '',
+        'data_',
+        '',
+        'loop_',
+        '_rlnMicrographName      #1',
+        '_rlnCtfImage            #2',
+        '_rlnDefocusU            #3',
+        '_rlnDefocusV            #4',
+        '_rlnCtfAstigmatism      #5',
+        '_rlnDefocusAngle        #6',
+        '_rlnVoltage             #7',
+        '_rlnSphericalAberration #8',
+        '_rlnAmplitudeContrast   #9',
+        '_rlnMagnification       #10',
+        '_rlnDetectorPixelSize   #11',
+        '_rlnCtfFigureOfMerit    #12',
+        '_rlnCtfMaxResolution    #13',
+        ''
+    ])
+    rows = []
+    for ad, mcd, cd in [(mg.acquisition_data, mg.motion_correction_data, mg.ctf_data) for mg in micrographs]:
+        row = ' '.join([
+            f'{mcd.corrected_image_file}',
+            f'{cd.ctf_image_file}',
+            f'{cd.defocus_u}',
+            f'{cd.defocus_v}',
+            f'astigmatism',
+            f'{cd.astigmatism_angle}',
+            f'{ad.voltage}',
+            f'{ad.spherical_aberration}',
+            f'{ad.amplitude_contrast}',
+            f'{ad.nominal_magnification}',
+            f'{mcd.pixel_size}',
+            f'{cd.cross_correlation}',
+            f'{cd.estimated_resolution}'
+        ])
+        rows.append(row)
+    out_string += '\n'.join(rows)
+    return out_string

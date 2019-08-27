@@ -74,6 +74,9 @@ class FramesFileProcessor():
             data_model.data_file_path = '{}.mdoc'.format(file)
             data_model.data_file_format = '.mdoc'
             data_model.time = os.path.getmtime(file)
+
+            data_model.spherical_aberration = 2.7
+            data_model.amplitude_contrast = 0.1
             
             try:
                 data_model = self.update_model_from_mdoc(data_model)
@@ -130,6 +133,8 @@ class FramesFileProcessor():
                     data_model.gain_reference_file = os.path.join(
                         self.session.frames_directory, value
                     )
+                elif key == 'Magnification':
+                    data_model.nominal_magnification = value
 
         return data_model
 

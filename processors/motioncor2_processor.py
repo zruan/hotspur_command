@@ -184,7 +184,6 @@ class Motioncor2Processor():
             data_model.shift_list = shifts
             data_model.displacement_list = displacements
             data_model.distance_list = distances
-            print("IUAHDIUAHDIAUHSF")
             data_model.accumulated_distance_list = accumulated_distances
 
             data_model.initial_distance = distances[0]
