@@ -153,10 +153,9 @@ class CtffindProcessor():
         data[0] = np.reciprocal(data[0], where = data[0]!=0)
         data[0][0] = None
 
-        data_model.measured_ctf_fit = list(np.nan_to_num(data[0]))
-        data_model.measured_ctf = list(np.nan_to_num(data[2]))
-        data_model.measured_ctf_no_bg = data_model.measured_ctf
-        data_model.theoretical_ctf = list(np.nan_to_num(data[3]))
+        data_model.spatial_frequency_axis = list(np.nan_to_num(data[0]))
+        data_model.measured_ctf_curve = list(np.nan_to_num(data[2]))
+        data_model.theoretical_ctf_curve = list(np.nan_to_num(data[3]))
         # value["EPA"]["Ctffind_CC"] = list(np.nan_to_num(data[4]))
         # value["EPA"]["Ctffind_CCnoise"] = list(np.nan_to_num(data[5]))
         return data_model
@@ -174,8 +173,9 @@ class CtffindProcessor():
 
         data_model.defocus_u = float(ctf_params[1])
         data_model.defocus_v = float(ctf_params[2])
-        data_model.defocus = (data_model.defocus_u + data_model.defocus_v) / 2
+        data_model.astigmatism = data_model.defocus_u - data_model.defocus_v
         data_model.astigmatism_angle = float(ctf_params[3])
+        data_model.defocus = (data_model.defocus_u + data_model.defocus_v) / 2
         data_model.phase_shift = float(ctf_params[4])
         data_model.cross_correlation = float(ctf_params[5])
         data_model.estimated_resolution = float(ctf_params[6].rstrip())

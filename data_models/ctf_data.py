@@ -10,17 +10,17 @@ class CtfData(DataModel):
         self.ctf_log_file = None
         self.ctf_epa_log_file = None
 
-        self.astigmatism_angle = None
         self.defocus_u = None
         self.defocus_v = None
+        self.astigmatism = None
+        self.astigmatism_angle = None
         self.defocus = None
         self.phase_shift = None
         self.estimated_b_factor = None
         self.estimated_resolution = None
         self.cross_correlation = None
 
-        self.measured_ctf = None
-        self.measured_ctf_no_bg = None
-        self.theoretical_ctf = None
-        self.measured_ctf_fit = None
+        self.spatial_frequency_axis = None
+        self.measured_ctf_curve = None
+        self.theoretical_ctf_curve = None
 
