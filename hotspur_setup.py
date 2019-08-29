@@ -3,6 +3,7 @@ import sys
 
 base_path = None
 search_globs = None
+server_name = None
 couchdb_address = None
 hash_salt = None
 available_gpus = None
@@ -13,6 +14,7 @@ def setup_from_environment():
     global base_path
     global search_globs
     global couchdb_address
+    global server_name
     global hash_salt
     global available_gpus
     global available_cpus
@@ -24,11 +26,16 @@ def setup_from_environment():
         print("No value for HOTSPUR_PATH in environment")
         sys.exit()
 
-    if "HOTSPUR_ADMIN_NAME" in os.environ and "HOTSPUR_ADMIN_PASS" in os.environ and ["HOTSPUR_COUCHDB_URL"]:
-        couchdb_address = "http://{}:{}@{}".format(
+    if 'HOTSPUR_SERVER_NAME' in os.environ:
+      server_name = os.environ['HOTSPUR_SERVER_NAME']
+    else:
+      server_name = os.environ['HOSTNAME']
+
+    if "HOTSPUR_ADMIN_NAME" in os.environ and "HOTSPUR_ADMIN_PASS" in os.environ:
+        couchdb_address = "http://{}:{}@{}/couchdb/".format(
             os.environ["HOTSPUR_ADMIN_NAME"],
             os.environ["HOTSPUR_ADMIN_PASS"],
-            os.environ["HOTSPUR_COUCHDB_URL"]
+            server_name
         )
     else:
         print("Must give both HOTSPUR_ADMIN_NAME and HOTSPUR_ADMIN_PASS")
