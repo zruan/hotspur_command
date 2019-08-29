@@ -48,10 +48,13 @@ def show_project_info(project_name):
 
     project_hash = hash_utils.get_hash(project_name)
     db = couchdb_utils.fetch_db(project_hash)
-    doc = couchdb_utils.fetch_doc(couchdb_utils.session_list_doc_name, db)
+    doc = couchdb_utils.fetch_doc('project_data', db)
 
-    print(project_hash)
     hostname = os.environ['HOSTNAME']
+    print('  http://{}/web-view/projects/{}'.format(
+        hotspur_setup.server_name,
+        project_hash
+    ))
     print(f'{hostname}/{project_hash}')
 
     if doc is None:
@@ -60,13 +63,17 @@ def show_project_info(project_name):
 
     print("Sessions")
     print("------------------------------")
-    for key, val in doc.items():
+    for key, val in doc['sessions'].items():
         if key in ['_id', '_rev']:
             continue
 
         session_name = key
         session_hash = val
-        print("{}   {}".format(session_hash, session_name))
+        print(f'- {session_name}')
+        print('  http://{}/web-view/sessions/{}'.format(
+            hotspur_setup.server_name,
+            session_hash
+        ))
 
 def show_config():
     print("Hotspur base path set to {}".format(hotspur_setup.base_path))
