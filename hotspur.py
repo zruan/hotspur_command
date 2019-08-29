@@ -44,6 +44,11 @@ if __name__ == "__main__":
     info_parser.set_defaults(help_func=info_parser.print_help)
     info_parser.set_defaults(func=lambda args: hotspur_info.show_info(args))
     info_parser.add_argument(
+        '--all',
+        help="Summarize all projects",
+        action='store_true'
+    )
+    info_parser.add_argument(
         '--hash',
         help="Provide hash of given string",
         metavar="STRING"
