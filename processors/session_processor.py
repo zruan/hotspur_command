@@ -4,7 +4,8 @@ import time
 from glob import glob
 
 import hotspur_setup
-from hotspur_utils import couchdb_utils, filesystem_utils
+from hotspur_utils import filesystem_utils
+from hotspur_utils.couchdb_utils import fetch_db, fetch_doc, push_doc
 
 
 class SessionProcessor():
@@ -31,7 +32,7 @@ class SessionProcessor():
             print('Found potential session at {}'.format(directory))
             try:
                 session = self.create_new_session(directory)
-                couchdb_utils.update_session_list(session)
+                self.update_project_data(session)
                 self.queued.remove(directory)
                 self.sessions.append(session)
             except Exception as err:
@@ -69,7 +70,7 @@ class SessionProcessor():
             raise e
 
         try:
-            session.db = couchdb_utils.fetch_db(session.hash)
+            session.db = fetch_db(session.hash)
         except Exception as e:
             print(e)
             raise e
@@ -86,3 +87,29 @@ class SessionProcessor():
             print('Updated session metadata from database')
 
         return session
+
+    def update_project_data(self, session):
+        try:
+            project_db = fetch_db(session.project_hash)
+            doc = fetch_doc('project_data', project_db, True)
+            if not 'sessions' in doc:
+                doc['name'] = session.project_name
+                doc['hash'] = session.project_hash
+                doc['sessions'] = {session.name: session.hash}
+                push_doc(doc, project_db)
+                print(f'Create project data doc for project {session.project_name}')
+                print(f'Added session {session.name} to session list')
+            elif session.name in doc['sessions']:
+                print('Session {} is already in session list for project {}'.format(
+                    session.name, session.project_name))
+            else:
+                doc['sessions'][session.name] = session.hash
+                push_doc(doc, project_db)
+                print('Added session {} to session list for project {}'.format(
+                    session.name, session.project_name))
+
+        except Exception as e:
+            print('Failed to add session {} to session list for project {}'.format(
+                session.name, session.project_name))
+            print(e)
+            raise e

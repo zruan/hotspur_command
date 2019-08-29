@@ -9,10 +9,6 @@ from data_models import SessionData
 
 couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
 
-admin_db_name = 'projects_overview'
-project_list_doc_name = 'projects_overview'
-session_list_doc_name = 'sessions_overview'
-
 docs_of_type_view_template = Template(
 '''function(doc) {
     if (doc.type && doc.type === "${doc_type}") {
@@ -20,43 +16,6 @@ docs_of_type_view_template = Template(
     }
 }'''
 )
-
-
-def update_session_list(session):
-    try:
-        db = fetch_db(session.project_hash)
-        doc = fetch_doc(session_list_doc_name, db, True)
-        try:
-            name = doc[session.name]
-            print('Session {} is already in session list for project {}'.format(
-                session.name, session.project_name))
-        except:
-            doc[session.name] = session.hash
-            push_doc(doc, db)
-            print('Added session {} to session list for project {}'.format(
-                session.name, session.project_name))
-    except Exception as e:
-        print('Failed to add session {} to session list for project {}'.format(
-            session.name, session.project_name))
-        print(e)
-        raise e
-
-
-def update_project_list(session):
-    try:
-        db = fetch_db(admin_db_name)
-        doc = fetch_doc(project_list_doc_name, db, True)
-        try:
-            name = doc[session.project_name]
-            print('Project {} is already in project list'.format(session.project_name))
-        except:
-            doc[session.project_name] = session.project_hash
-            push_doc(doc, db)
-            print('Added project {} to project list'.format(session.project_name))
-    except Exception as e:
-        print('Failed add project {} to project list'.format(session.project_name))
-        print(e)
-        raise e
 
 
 def fetch_db(db_name):
