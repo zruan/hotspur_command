@@ -24,3 +24,10 @@ class AcquisitionData(DataModel):
         self.pixel_size = None
         self.binning = None
         self.dimensions = None
+
+        self.stage_x = None
+        self.stage_y = None
+        self.stage_z = None
+        self.stage_tilt = None
+        self.image_shift_x = None
+        self.image_shift_y = None

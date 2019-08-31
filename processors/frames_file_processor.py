@@ -135,6 +135,16 @@ class FramesFileProcessor():
                     )
                 elif key == 'Magnification':
                     data_model.nominal_magnification = value
+                elif key == 'StagePosition':
+                    data_model.stage_x =  float(value.split(" ")[0])
+                    data_model.stage_y =  float(value.split(" ")[1])
+                elif key == 'StageZ':
+                    data_model.stage_z = float(value)
+                elif key == 'TiltAngle':
+                    data_model.stage_tilt = float(value)
+                elif key == 'ImageShift':
+                    data_model.image_shift_x =  float(value.split(" ")[0])
+                    data_model.image_shift_y =  float(value.split(" ")[1])
 
         return data_model
 
