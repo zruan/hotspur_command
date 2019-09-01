@@ -79,6 +79,7 @@ class FramesFileProcessor():
             data_model.amplitude_contrast = 0.1
             
             try:
+                self.ensure_frame(data_model)
                 data_model = self.update_model_from_mdoc(data_model)
                 print('Extracted metadata from mdoc file')
             except:
@@ -104,6 +105,16 @@ class FramesFileProcessor():
 
             self.queued.remove(file)
             self.finished.append(file)
+
+    def ensure_frame(self, data_model):
+        num_frame_sets = 0
+        with open(data_model.data_file_path, 'r') as mdoc:
+            for line in mdoc.readlines():
+                if line.startswith("[FrameSet"):
+                    num_frame_sets += 1
+        if num_frame_sets != 1:
+            raise AssertionError(f'mdoc contains {num_frame_sets} FrameSets')
+
 
     def update_model_from_mdoc(self, data_model):
         with open(data_model.data_file_path, 'r') as mdoc:
