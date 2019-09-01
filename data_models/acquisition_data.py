@@ -31,3 +31,4 @@ class AcquisitionData(DataModel):
         self.stage_tilt = None
         self.image_shift_x = None
         self.image_shift_y = None
+        self.rotation_angle = None

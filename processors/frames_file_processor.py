@@ -145,6 +145,8 @@ class FramesFileProcessor():
                 elif key == 'ImageShift':
                     data_model.image_shift_x =  float(value.split(" ")[0])
                     data_model.image_shift_y =  float(value.split(" ")[1])
+                elif key == 'RotationAngle':
+                    data_model.rotation_angle = float(value)
 
         return data_model
 
