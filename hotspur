@@ -2,7 +2,6 @@
 function cleanup {
 	conda deactivate
 }
-trap cleanup EXIT
 
 SCRIPT_DIR=$(dirname $(realpath $0))
 
@@ -15,7 +14,10 @@ fi
 
 source "$ENV_FILE"
 
-source activate "$HOTSPUR_CONDA_ENV"
+# https://github.com/conda/conda/issues/7980
+eval "$(conda shell.bash hook)"
+conda activate "hotspur"
+trap cleanup EXIT
 
 python3 "${SCRIPT_DIR}/hotspur.py" ${@}
 
