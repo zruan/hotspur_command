@@ -4,7 +4,7 @@ import glob
 import tifffile
 import imaging
 
-from data_models import AcquisitionData
+from data_models import AcquisitionData, UserData
 
 
 class FramesFileProcessor():
@@ -102,6 +102,9 @@ class FramesFileProcessor():
             if self.session.end_time is None or data_model.time > self.session.end_time:
                 self.session.end_time = data_model.time
                 self.session.push(self.session.db)
+
+            user_data = UserData(base_name)
+            data_model.push(self.session.db)
 
             self.queued.remove(file)
             self.finished.append(file)
