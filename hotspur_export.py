@@ -18,6 +18,7 @@ def export(args):
     acquisition_data = AcquisitionData.fetch_all(db)
     motion_correction_data = MotionCorrectionData.fetch_all(db)
     ctf_data = CtfData.fetch_all(db)
+    user_data = UserData.fetch_all(db)
 
     micrographs = {}
 
@@ -33,8 +34,13 @@ def export(args):
     for data in ctf_data:
         micrograph = micrographs[data.base_name]
         micrograph.ctf_data = data
+    
+    for data in user_data:
+        micrograph = micrographs[data.base_name]
+        micrograph.user_data = data
 
     micrographs = micrographs.values()
+    micrographs = [m for m in micrographs if True not in m.user_data.exclusions.values()]
     
     if args.out_dir is not None:
         out_base = args.out_dir
