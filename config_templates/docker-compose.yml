@@ -1,0 +1,39 @@
+version: '3'
+services:
+  couchdb:
+    image: "hotspur/couchdb"
+    container_name: {{ config.app.name }}-couchdb
+    volumes:
+      - {{ config.app.data_path }}/couchdb:/opt/couchdb/data
+    ports:
+      - "5984"
+    environment:
+      - COUCHDB_USER={{ config.couchdb.admin_name }}
+      - COUCHDB_PASSWORD={{ config.couchdb.admin_pass }}
+
+  fileserver:
+    image: hotspur/web-fileserver
+    container_name: {{ config.app.name }}-web-fileserver
+    volumes:
+      - {{ config.app.data_path }}/hashed:/hotspur
+    ports:
+      - "80"
+
+  view:
+    depends_on:
+      - couchdb
+      - fileserver
+    image: hotspur/web-view
+    container_name: {{ config.app.name }}-web-view
+    ports:
+      - "80"
+
+  router:
+    depends_on:
+      - couchdb
+      - fileserver
+      - view
+    image: hotspur/web-router
+    container_name: {{ config.app.name }}-web-router
+    ports:
+      - "80:80"
