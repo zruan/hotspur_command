@@ -1,0 +1,56 @@
+# Keep this file in a safe place with restricted permissions:
+# it contains sensitive information, like the couchdb admin username and password
+
+app:
+  # The name of the hotspur instance
+  # Changing this is helpful if you need to run multiple instances of hotspur
+  # In particular, Docker container names are based on this to avoid naming collisions
+  name: hotspur
+  # This is the folder under which all hotspur data is saved
+  # Couchdb data is saved under {data_path}/couchdb
+  # The folder structure under this directory is automatic and rigid
+  data_path: /hotspur
+
+processing:
+  # The conda environment for hotspur processing
+  # This can be an environment name or the path to the environment
+  conda_env: hotspur
+  # A list of globs to match for finding sessions
+  # Hotspur expects a file hierarchy following: .../{project}/{sample}/{session}/frames/
+  globs:
+  - /em-data/*/*/*/frames/
+  - /em-data-2/project/sample/session/frames/
+  - /em-data-2/other-project/*/screen/frames/
+  # FOR SECURITY IT'S IMPORTANT TO CHANGE THIS
+  # Salt used when hashing session and project names for the web view
+  hash_salt: hotspur
+  # The path to the Motioncor2 executable
+  # If this program is on your $PATH, you can simply use the name of the program
+  motioncor2_executable: motioncor2
+  # The path to the Ctffind4 executable
+  # If this program is on your $PATH, you can simply use the name of the program
+  ctffind4_executable: ctffind
+  # The ids of the GPUs available to hotspur for processing
+  gpus: [0,1,2,3]
+  # The number of threads hotspur will use for processing
+  threads: 12
+  # The max age (in days) of sessions that hotspur will process
+  # Use a short maximum age to avoid processing a huge backlog
+  session_max_age: 7 
+
+network:
+  # The domain by which users will access hotspur web services, including couchdb
+  # The subdomain is optional
+  domain: subdomain.domain.website.edu
+  # The port by which users will access hotspur web services, including couchdb
+  # Change the port if you're already running a server on port 80 and want to run hotspur alongside it
+  port: "80"
+
+couchdb:
+  # FOR SECURITY IT'S IMPORTANT TO CHANGE THESE
+  # The admin credentials for the couchdb instance
+  # Use these to manage couchdb if you need to
+  # The back end processing uses these credentials to create and delete databases
+  # The front end does not use these credentials
+  admin_name: admin
+  admin_pass: password

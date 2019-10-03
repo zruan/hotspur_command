@@ -1,63 +1,123 @@
-import os
-import sys
+import argparse
+import shutil
+from pathlib import Path
 
-base_path = None
-search_globs = None
-server_name = None
-couchdb_address = None
-hash_salt = None
-available_gpus = None
-available_cpus = None
-session_max_age = None
-
-def setup_from_environment():
-    global base_path
-    global search_globs
-    global couchdb_address
-    global server_name
-    global hash_salt
-    global available_gpus
-    global available_cpus
-    global session_max_age
-
-    if "HOTSPUR_PATH" in os.environ:
-        base_path = os.environ["HOTSPUR_PATH"]
-    else:
-        print("No value for HOTSPUR_PATH in environment")
-        sys.exit()
-
-    if 'HOTSPUR_SERVER_NAME' in os.environ:
-      server_name = os.environ['HOTSPUR_SERVER_NAME']
-    else:
-      server_name = os.environ['HOSTNAME']
-
-    if "HOTSPUR_ADMIN_NAME" in os.environ and "HOTSPUR_ADMIN_PASS" in os.environ:
-        couchdb_address = "http://{}:{}@{}/couchdb/".format(
-            os.environ["HOTSPUR_ADMIN_NAME"],
-            os.environ["HOTSPUR_ADMIN_PASS"],
-            server_name
-        )
-    else:
-        print("Must give both HOTSPUR_ADMIN_NAME and HOTSPUR_ADMIN_PASS")
-        sys.exit()
-
-    if "HOTSPUR_SEARCH_GLOBS" in os.environ:
-        search_globs = os.environ["HOTSPUR_SEARCH_GLOBS"].split(":")
-    else:
-        search_globs = []
-
-    hash_salt = os.getenv("HOTSPUR_HASH_SALT",
-                            "Please make me more secure")
-
-    if "HOTSPUR_GPUS" in os.environ:
-        available_gpus = [int(id)
-                            for id in os.environ["HOTSPUR_GPUS"].split(',')]
-    else:
-        available_gpus = [0]
-
-    available_cpus = int(os.getenv('HOTSPUR_THREADS', 2))
-
-    session_max_age = float(os.getenv('HOTSPUR_SESSION_MAX_AGE', 365))
+import hotspur_config
 
 
-setup_from_environment()
+template_dir_path = Path(__file__).parent / 'config_templates'
+
+
+def prepare_hotspur_config():
+    source = template_dir_path / 'hotspur-config.yml'
+    destination = Path() / 'hotspur-config.yml'
+    copy_template(source, destination)
+
+
+def prepare_conda_config():
+    source = template_dir_path / 'conda-environment.yml'
+    destination = Path() / 'hotspur-conda-environment.yml'
+    copy_template(source, destination)
+
+    print('\n'.join([
+        '',
+        "Create the conda environment using a command such as:",
+        'conda env create -f hotspur-conda-environment.yml',
+        ''
+    ]))
+
+
+def prepare_docker_config(args):
+    config = hotspur_config.load_config(args.config_file)
+    # config = flatten(config)
+    source = template_dir_path / 'docker-compose.yml'
+
+    with open(source, 'r') as fp:
+        contents = fp.read()
+    
+    contents = contents.format(**config)
+
+    destination = Path() / 'hotspur-docker-compose.yml'
+    with open(destination, 'w') as fp:
+        fp.write(contents)
+    print(f'Saved {destination}')
+
+    print('\n'.join([
+        '',
+        "Start the docker containers using a command such as:",
+        'docker-compose -f hotspur-docker-compose.yml up',
+        ''
+    ]))
+
+
+def copy_template(source, destination):
+    # if destination.exists():
+    #     overwrite = input(f'The file {destination} alread exists.\nOverwrite? [Y/n] ')
+    #     if overwrite is '' or overwrite in ['y', 'Y']:
+    #         pass
+    #     elif overwrite in ['n', 'N']:
+    #         print('NOT overwritting file. Exiting.')
+    #         return
+    #     else:
+    #         print(f"Expected [' ', 'y', 'Y', 'n', 'N'] but got {overwrite}. Exiting.")
+    #         return
+
+    copy(source, destination)
+    print(f'Saved {destination}')
+
+# https://stackoverflow.com/questions/33625931/copy-file-with-pathlib-in-python
+def copy(src_path, dst_path):
+    return shutil.copy2(str(src_path), str(dst_path))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description =' '.join([
+            "Provides some assistant for setting up various facets of hotspur. To run hotspur:",
+            "1) A conda environment with the necessary packages must be active when starting hotspur",
+            "2) Docker containers for the database and web resources must be running",
+            "3) A hotspur config file must be passed to hotspur when starting"
+        ])
+    )
+    parser.set_defaults(func=lambda _: parser.print_help())
+    subparsers = parser.add_subparsers()
+
+
+    conda_parser = subparsers.add_parser(
+        "conda",
+        help=' '.join([
+            "Generate a conda environment.yml file, and a conda environment installation shell script.",
+            "The environment file can be used to create the hotspur conda environment.",
+            "The shell script is a suggested way of doing this",
+        ])
+    )
+    conda_parser.set_defaults(func=lambda _: prepare_conda_config())
+
+
+    config_parser = subparsers.add_parser(
+        "config",
+        help=' '.join([
+            "Generate a hotspur config file with default values.",
+            "This config file is well-commented and describes what all of the fields do"
+        ])
+    )
+    config_parser.set_defaults(func=lambda _: prepare_hotspur_config())
+
+
+    docker_parser = subparsers.add_parser(
+        "docker",
+        help=' '.join([
+            "Generate a docker-compose.yml file to orchestrate the hotspur Docker containers.",
+            "The hotspur config file is necessary for this to properly set up the ports, etc.",
+            "These containers do not need to run on the same system as the hotspur backend"
+        ])
+    )
+    docker_parser.set_defaults(func=lambda args: prepare_docker_config(args))
+    docker_parser.add_argument(
+        'config_file',
+        help="The hotspur config yaml file",
+        metavar='CONFIG_FILE'
+    )
+
+    args = parser.parse_args()
+    args.func(args)
