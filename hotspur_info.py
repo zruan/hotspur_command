@@ -1,10 +1,10 @@
 import os
 
-import hotspur_setup
+from hotspur_config import get_config
 from hotspur_utils import hash_utils, couchdb_utils
 
 
-def show_info(args):
+def main(args):
     if args.all:
         show_all_projects()
         return
@@ -17,11 +17,8 @@ def show_info(args):
         show_project_info(args.project)
         return
 
-    if args.config:
-        show_config()
-        return
-
     args.help_func()
+
 
 def show_all_projects():
     for db_name in couchdb_utils.couchdb_server:
@@ -34,14 +31,16 @@ def show_all_projects():
             print('- {}'.format(data['name']))
             print('  {} session(s)'.format(len(data['sessions'].keys())))
             print('  http://{}/web-view/projects/{}'.format(
-                hotspur_setup.server_name,
+                get_config().server_name,
                 data["hash"]
             ))
             print('\n')
 
+
 def show_hash(input):
     hash = hash_utils.get_hash(input)
     print('Hash for input "{}" is:\n{}'.format(input, hash))
+
 
 def show_project_info(project_name):
     print('Collecting info for project {project_name}\n')
@@ -50,12 +49,10 @@ def show_project_info(project_name):
     db = couchdb_utils.fetch_db(project_hash)
     doc = couchdb_utils.fetch_doc('project_data', db)
 
-    hostname = os.environ['HOSTNAME']
-    print('  http://{}/web-view/projects/{}'.format(
-        hotspur_setup.server_name,
+    print('  {}/web-view/projects/{}'.format(
+        get_config().base_url,
         project_hash
     ))
-    print(f'{hostname}/{project_hash}')
 
     if doc is None:
         print("Did not find any sessions associated with this project")
@@ -70,15 +67,7 @@ def show_project_info(project_name):
         session_name = key
         session_hash = val
         print(f'- {session_name}')
-        print('  http://{}/web-view/sessions/{}'.format(
-            hotspur_setup.server_name,
+        print('  {}/web-view/sessions/{}'.format(
+            get_config().base_url,
             session_hash
         ))
-
-def show_config():
-    print("Hotspur base path set to {}".format(hotspur_setup.base_path))
-    print("Couchdb url set to {}".format(hotspur_setup.couchdb_address))
-    print("Search for patterns {}".format(hotspur_setup.search_globs))
-    print("Using gpus {}".format(hotspur_setup.available_gpus))
-    print("Using {} threads".format(hotspur_setup.available_cpus))
-    print("Accepting sessions no older than {} days".format(hotspur_setup.session_max_age))

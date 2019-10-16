@@ -1,12 +1,12 @@
-import hotspur_setup
+from hotspur_config import get_config
 from threading import Lock
 
 
 class ResourceManager():
 
-	gpu_locks = [(gpu_number, Lock()) for gpu_number in hotspur_setup.available_gpus]
+	gpu_locks = [(gpu_number, Lock()) for gpu_number in get_config().gpus]
 	cpu_lock = Lock()
-	available_cpus = hotspur_setup.available_cpus
+	available_cpus = get_config().cpus
 
 	@classmethod
 	def request_gpus(cls, number):

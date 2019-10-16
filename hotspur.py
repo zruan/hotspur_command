@@ -4,10 +4,16 @@ import hotspur_processor
 import hotspur_reset
 import hotspur_info
 import hotspur_export
+import hotspur_config
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Runs data processing live for incoming data'
+    )
+    parser.add_argument(
+        'config_file',
+        help='The hotspur configuration yaml file',
+        metavar='config',
     )
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
@@ -26,10 +32,9 @@ if __name__ == "__main__":
     export_parser = subparsers.add_parser("export")
     export_parser.set_defaults(func=lambda args: hotspur_export.export(args))
     export_parser.add_argument(
-        '--hash',
+        'hash',
         help="Hash of session to export",
         metavar='SESSION_HASH',
-        required=True
     )
     export_parser.add_argument(
         '--out',
@@ -42,7 +47,7 @@ if __name__ == "__main__":
         help="Provide info about projects and hotspur config"
     )
     info_parser.set_defaults(help_func=info_parser.print_help)
-    info_parser.set_defaults(func=lambda args: hotspur_info.show_info(args))
+    info_parser.set_defaults(func=lambda args: hotspur_info.main(args))
     info_parser.add_argument(
         '--all',
         help="Summarize all projects",
@@ -56,11 +61,6 @@ if __name__ == "__main__":
     info_parser.add_argument(
         '--project',
         help="Provide info about a project",
-    )
-    info_parser.add_argument(
-        '--config',
-        help="Print the current configuration",
-        action='store_true'
     )
 
     reset_parser = subparsers.add_parser(
@@ -90,4 +90,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    hotspur_config.load_config(args.config_file)
     args.func(args)

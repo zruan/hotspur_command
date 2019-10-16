@@ -3,7 +3,7 @@ import os
 import time
 from glob import glob
 
-import hotspur_setup
+from hotspur_config import get_config
 from hotspur_utils import filesystem_utils
 from hotspur_utils.couchdb_utils import fetch_db, fetch_doc, push_doc
 
@@ -46,7 +46,7 @@ class SessionProcessor():
         current_time = time.time()
         time_diff = current_time - mod_time
         time_diff_days = time_diff / (60 * 60 * 24)
-        if time_diff_days > hotspur_setup.session_max_age:
+        if time_diff_days > get_config().session_max_age:
             print("Session is not valid: age {} is too old".format(time_diff_days))
             return False
 

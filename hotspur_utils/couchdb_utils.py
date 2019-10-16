@@ -3,11 +3,11 @@ from couchdb.design import ViewDefinition
 from string import Template
 import sys
 
-import hotspur_setup
+from hotspur_config import get_config
 from hotspur_utils import hash_utils
 from data_models import SessionData
 
-couchdb_server = couchdb.Server(hotspur_setup.couchdb_address)
+couchdb_server = couchdb.Server(get_config().couchdb_url)
 
 docs_of_type_view_template = Template(
 '''function(doc) {

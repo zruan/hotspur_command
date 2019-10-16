@@ -1,14 +1,9 @@
-import sys
-import glob
-import os
-import argparse
-import pyfs
 import time
 
 from hotspur_utils import couchdb_utils
 
 from processors import SessionProcessor, FramesFileProcessor, Motioncor2Processor, CtffindProcessor
-import hotspur_setup
+from hotspur_config import get_config
 
 
 def start_processing(args):
@@ -16,7 +11,7 @@ def start_processing(args):
     if args.dirs is not None:
         search_globs = args.dirs
     else:
-        search_globs = hotspur_setup.search_globs
+        search_globs = get_config().search_globs
 
     session_processor = SessionProcessor()
 

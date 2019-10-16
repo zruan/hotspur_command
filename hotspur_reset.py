@@ -1,4 +1,4 @@
-import hotspur_setup
+from hotspur_config import get_config
 from hotspur_utils.couchdb_utils import couchdb_server, fetch_db, fetch_doc, push_doc
 from hotspur_utils import hash_utils
 from processors import SessionProcessor
@@ -15,7 +15,7 @@ def reset(args):
     session_process = SessionProcessor()
 
     if args.search:
-        for session in session_processor.find_sessions(hotspur_setup.search_globs):
+        for session in session_processor.find_sessions(get_config().search_globs):
             try:
                 reset_session(session)
             except:

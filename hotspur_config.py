@@ -1,4 +1,5 @@
 import yaml
+from types import SimpleNamespace
 
 
 config = None
@@ -10,11 +11,15 @@ def load_config(path):
     try:
         with open(path, 'r') as fp:
             config = yaml.safe_load(fp)
-        validate_config(config)
-        return config
+        config = SimpleNamespace(**config)
+        _validate_config(config)
     except Exception as e:
         print(e)
         raise e
+    
+    config = _interpolate_config(config)
+
+    return config
 
 
 def get_config():
@@ -26,7 +31,23 @@ def get_config():
         return config
 
 
-def validate_config(config):
+def _interpolate_config(config):
+    config.couchdb_url = "http://{}:{}@{}:{}/couchdb/".format(
+        config.admin_name,
+        config.admin_pass,
+        config.host,
+        config.port
+    )
+
+    config.base_url = "http://{}:{}/".format(
+        config.host,
+        config.port
+    )
+
+    return config
+
+
+def _validate_config(config):
     return True
 
 
