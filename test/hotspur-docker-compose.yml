@@ -1,0 +1,43 @@
+version: '3'
+services:
+  couchdb:
+    image: "hotspur/couchdb"
+    container_name: hotspur-test-couchdb
+    volumes:
+      - /goliath/processing/hotspur-test/couchdb:/opt/couchdb/data
+    ports:
+      - "5984"
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+
+  fileserver:
+    image: hotspur/web-fileserver
+    container_name: hotspur-test-web-fileserver
+    volumes:
+      - /goliath/processing/hotspur-test/hashed:/hotspur
+    ports:
+      - "80"
+
+  view:
+    depends_on:
+      - couchdb
+      - fileserver
+    image: hotspur/web-view
+    container_name: hotspur-test-web-view
+    ports:
+      - "80"
+
+  router:
+    depends_on:
+      - couchdb
+      - fileserver
+      - view
+    image: hotspur/web-router
+    container_name: hotspur-test-web-router
+    ports:
+      - "36000:80"
+    environment:
+      - HOTSPUR_HOST=loki.ohsu.edu
+      - HOTSPUR_PORT=36000
+      - HOTSPUR_APP_NAME=hotspur-test

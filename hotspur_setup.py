@@ -35,7 +35,7 @@ def prepare_docker_config(args):
     with open(source, 'r') as fp:
         contents = fp.read()
     
-    contents = contents.format(**config)
+    contents = contents.format(**vars(config))
 
     destination = Path() / 'hotspur-docker-compose.yml'
     with open(destination, 'w') as fp:
@@ -86,9 +86,8 @@ if __name__ == "__main__":
     conda_parser = subparsers.add_parser(
         "conda",
         help=' '.join([
-            "Generate a conda environment.yml file, and a conda environment installation shell script.",
+            "Generate a conda environment.yml file.",
             "The environment file can be used to create the hotspur conda environment.",
-            "The shell script is a suggested way of doing this",
         ])
     )
     conda_parser.set_defaults(func=lambda _: prepare_conda_config())
@@ -98,7 +97,7 @@ if __name__ == "__main__":
         "config",
         help=' '.join([
             "Generate a hotspur config file with default values.",
-            "This config file is well-commented and describes what all of the fields do"
+            "This config file is well-commented and describes what all of the fields do."
         ])
     )
     config_parser.set_defaults(func=lambda _: prepare_hotspur_config())
@@ -109,7 +108,7 @@ if __name__ == "__main__":
         help=' '.join([
             "Generate a docker-compose.yml file to orchestrate the hotspur Docker containers.",
             "The hotspur config file is necessary for this to properly set up the ports, etc.",
-            "These containers do not need to run on the same system as the hotspur backend"
+            "These containers do not need to run on the same system as the hotspur backend."
         ])
     )
     docker_parser.set_defaults(func=lambda args: prepare_docker_config(args))
