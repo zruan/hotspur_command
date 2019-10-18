@@ -1,10 +1,22 @@
 import argparse
-
-import hotspur_processor
-import hotspur_reset
-import hotspur_info
-import hotspur_export
 import hotspur_config
+
+def process(args):
+    import hotspur_processor
+    hotspur_processor.start_processing(args)
+
+def reset(args):
+    import hotspur_reset
+    hotspur_reset.reset(args)
+
+def info(args):
+    import hotsur_info
+    hotspur_info.main(args)
+
+def export(args):
+    import hotspur_export
+    hotspur_export.export(args)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -18,19 +30,25 @@ if __name__ == "__main__":
     parser.set_defaults(func=lambda _: parser.print_help())
     subparsers = parser.add_subparsers()
 
+
+
     process_parser = subparsers.add_parser(
         "process",
         help="Process data"
     )
-    process_parser.set_defaults(func=lambda args: hotspur_processor.start_processing(args))
+    process_parser.set_defaults(help_func=process_parser.print_help)
+    process_parser.set_defaults(func=process)
     process_parser.add_argument(
         '--dirs',
         help='Process all directories matching given directories',
         nargs='+'
     )
 
+
+
     export_parser = subparsers.add_parser("export")
-    export_parser.set_defaults(func=lambda args: hotspur_export.export(args))
+    export_parser.set_defaults(help_func=export_parser.print_help)
+    export_parser.set_defaults(func=export)
     export_parser.add_argument(
         'hash',
         help="Hash of session to export",
@@ -42,12 +60,14 @@ if __name__ == "__main__":
         help="Directory in which output will be place"
     )
 
+
+
     info_parser = subparsers.add_parser(
         "info",
         help="Provide info about projects and hotspur config"
     )
     info_parser.set_defaults(help_func=info_parser.print_help)
-    info_parser.set_defaults(func=lambda args: hotspur_info.main(args))
+    info_parser.set_defaults(func=info)
     info_parser.add_argument(
         '--all',
         help="Summarize all projects",
@@ -63,12 +83,14 @@ if __name__ == "__main__":
         help="Provide info about a project",
     )
 
+
+
     reset_parser = subparsers.add_parser(
         "reset",
         help="Delete databases using various strategies"
     )
     reset_parser.set_defaults(help_func=reset_parser.print_help)
-    reset_parser.set_defaults(func=lambda args: hotspur_reset.reset(args))
+    reset_parser.set_defaults(func=reset)
     reset_parser.add_argument(
         '--all',
         help="Reset all sessions",
@@ -89,6 +111,9 @@ if __name__ == "__main__":
         nargs='+'
     )
 
+
+
     args = parser.parse_args()
     hotspur_config.load_config(args.config_file)
     args.func(args)
+
