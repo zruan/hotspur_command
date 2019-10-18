@@ -10,7 +10,7 @@ def reset(args):
     hotspur_reset.reset(args)
 
 def info(args):
-    import hotsur_info
+    import hotspur_info
     hotspur_info.main(args)
 
 def export(args):
