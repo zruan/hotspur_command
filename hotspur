@@ -25,4 +25,4 @@ cleanup()
 	conda deactivate
 }
 
-main
+main ${@}
