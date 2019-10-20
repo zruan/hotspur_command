@@ -5,7 +5,7 @@ services:
     container_name: {app_name}-couchdb
     volumes:
       - {data_path}/couchdb:/opt/couchdb/data
-    ports:
+    expose:
       - "5984"
     environment:
       - COUCHDB_USER={admin_name}
@@ -15,8 +15,8 @@ services:
     image: hotspur/web-fileserver
     container_name: {app_name}-web-fileserver
     volumes:
-      - {data_path}/hashed:/hotspur
-    ports:
+      - {data_path}/projects/hashed:/hotspur
+    expose:
       - "80"
 
   view:
@@ -25,7 +25,7 @@ services:
       - fileserver
     image: hotspur/web-view
     container_name: {app_name}-web-view
-    ports:
+    expose:
       - "80"
 
   router:
