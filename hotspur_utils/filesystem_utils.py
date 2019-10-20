@@ -6,7 +6,8 @@ from hotspur_utils import hash_utils
 from data_models import SessionData
 
 
-def extract_session_from_path(frames_path):
+def extract_session_from_path(frames_dir):
+    frames_path = Path(frames_dir)
     project_name = frames_path.parts[-3]
     sample_name = frames_path.parts[-2]
     session_name = frames_path.parts[-1]
@@ -24,8 +25,9 @@ def extract_session_from_path(frames_path):
     return session
 
 def ensure_session_dirs(session):
-    hash_path = Path(get_config().base_path) / "projects/hashed"
-    link_path = Path(get_config().base_path) / "projects/links"
+    base_path = Path(get_config().data_path)
+    hash_path = base_path / "projects/hashed"
+    link_path = base_path / "projects/links"
 
     processing_path = hash_path / session.project_hash / session.hash
     processing_path.mkdir(parents=True, exist_ok=True)
@@ -34,6 +36,7 @@ def ensure_session_dirs(session):
     parent_path.mkdir(parents=True, exist_ok=True)
 
     link = parent_path / session.name
-    link.symlink_to(processing_path, target_is_directory=True)
+    if not link.exists:
+        link.symlink_to(processing_path, target_is_directory=True)
 
-    return processing_dir
+    return str(processing_path)
