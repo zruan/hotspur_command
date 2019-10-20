@@ -19,10 +19,16 @@ docs_of_type_view_template = Template(
 
 
 def fetch_db(db_name):
+    # if not couchdb_server[db_name]:
+    #     couchdb_server.create(db_name)
+    # return couchdb_server[db_name]
+
     try:
         db = couchdb_server.create(db_name)
+        print(f'Created database {db_name}')
     except couchdb.http.PreconditionFailed:
         db = couchdb_server[db_name]
+        print(f'Retreived database {db_name}')
     return db
 
 
