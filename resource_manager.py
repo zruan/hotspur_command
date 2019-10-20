@@ -6,7 +6,7 @@ class ResourceManager():
 
 	gpu_locks = [(gpu_number, Lock()) for gpu_number in get_config().gpus]
 	cpu_lock = Lock()
-	available_cpus = get_config().cpus
+	available_cpus = get_config().threads
 
 	@classmethod
 	def request_gpus(cls, number):

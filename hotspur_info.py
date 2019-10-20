@@ -31,7 +31,7 @@ def show_all_projects():
             print('- {}'.format(data['name']))
             print('  {} session(s)'.format(len(data['sessions'].keys())))
             print('  http://{}/web-view/projects/{}'.format(
-                get_config().server_name,
+                get_config().host,
                 data["hash"]
             ))
             print('\n')

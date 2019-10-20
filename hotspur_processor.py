@@ -11,7 +11,7 @@ def start_processing(args):
     if args.dirs is not None:
         search_globs = args.dirs
     else:
-        search_globs = get_config().search_globs
+        search_globs = get_config().globs
 
     session_processor = SessionProcessor()
 
