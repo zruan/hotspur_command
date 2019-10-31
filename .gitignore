@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 
+.vscode/
 venv/
 site-python/
 setup/
