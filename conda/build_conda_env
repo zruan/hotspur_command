@@ -1,9 +1,0 @@
-#!/usr/bin/bash 
-
-set -e
-
-export CONDA_PKGS_DIRS="~/.conda/pkgs"
-ENV="~/.conda/envs/hotspur-test"
-YML="environment.yml"
-
-conda env update --prefix "$ENV"
