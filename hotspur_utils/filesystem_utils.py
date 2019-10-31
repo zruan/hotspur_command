@@ -8,9 +8,9 @@ from data_models import SessionData
 
 def extract_session_from_path(frames_dir):
     frames_path = Path(frames_dir)
-    project_name = frames_path.parts[-3]
-    sample_name = frames_path.parts[-2]
-    session_name = frames_path.parts[-1]
+    project_name = frames_path.parts[-4]
+    sample_name = frames_path.parts[-3]
+    session_name = frames_path.parts[-2]
 
     session = SessionData()
     session.name = '{}--{}--{}'.format(project_name, sample_name, session_name)
