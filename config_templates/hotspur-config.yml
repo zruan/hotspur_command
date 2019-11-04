@@ -18,9 +18,8 @@ conda_env: hotspur
 # A list of globs to match for finding sessions
 # Hotspur expects a file hierarchy following: .../{project}/{sample}/{session}/frames/
 globs:
-- /em-data/*/*/*/frames/
-- /em-data-2/project/sample/session/frames/
-- /em-data-2/other-project/*/screen/frames/
+- /em-data/{project}/{sample}/{session}/frames/
+
 
 # FOR SECURITY IT'S IMPORTANT TO CHANGE THIS
 # Salt used when hashing session and project names for the web view

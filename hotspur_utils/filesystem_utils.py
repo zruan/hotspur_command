@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from hotspur_config import get_config
@@ -6,11 +7,15 @@ from hotspur_utils import hash_utils
 from data_models import SessionData
 
 
-def extract_session_from_path(frames_dir):
-    frames_path = Path(frames_dir)
-    project_name = frames_path.parts[-4]
-    sample_name = frames_path.parts[-3]
-    session_name = frames_path.parts[-2]
+def extract_session_from_path(frames_dir,match_string):
+    regexp_string = create_regexp_from_match_string(match_string)
+    p = re.compile(regexp_string)
+    m = p.match(frames_dir)
+    
+    project_name = m.group('project')
+    sample_name = m.group('sample')
+    session_name = m.group('session')
+    frames_path = frames_dir
 
     session = SessionData()
     session.name = '{}--{}--{}'.format(project_name, sample_name, session_name)
@@ -40,3 +45,10 @@ def ensure_session_dirs(session):
         link.symlink_to(processing_path, target_is_directory=True)
 
     return str(processing_path)
+
+def create_glob_from_match_string(match_string):
+    return match_string.format(project="*",sample="*",session="*")
+
+
+def create_regexp_from_match_string(match_string):
+    return match_string.format(project="(?P<project>[^/]+)",sample="(?P<sample>[^/]+)",session="(?P<session>[^/]+)")

@@ -16,28 +16,29 @@ class SessionProcessor():
         self.sessions = []
 
     def find_sessions(self, search_globs):
-        search_matches = []
         for search in search_globs:
-            search_matches.extend(glob(search))
+            search_matches = []
+            glob_string = filesystem_utils.create_glob_from_match_string(search)
+            search_matches.extend(glob(glob_string))
 
-        if len(search_matches) == 0:
-            print("No session search matches found")
+            if len(search_matches) == 0:
+                print("No session search matches found using: {}".format(search))
 
-        new_matches = [
-            match for match in search_matches if match not in self.tracked]
-        self.tracked.extend(new_matches)
-        self.queued.extend(new_matches)
+            new_matches = [
+                match for match in search_matches if match not in self.tracked]
+            self.tracked.extend(new_matches)
+            self.queued.extend(new_matches)
 
-        for directory in self.queued:
-            print('Found potential session at {}'.format(directory))
-            try:
-                session = self.create_new_session(directory)
-                self.update_project_data(session)
-                self.queued.remove(directory)
-                self.sessions.append(session)
-            except Exception as err:
-                print(err)
-                continue
+            for directory in self.queued:
+                print('Found potential session at {}'.format(directory))
+                try:
+                    session = self.create_new_session(directory, search)
+                    self.update_project_data(session)
+                    self.queued.remove(directory)
+                    self.sessions.append(session)
+                except Exception as err:
+                    print(err)
+                    continue
 
         return self.sessions
 
@@ -57,12 +58,12 @@ class SessionProcessor():
         print("Session is valid")
         return True
 
-    def create_new_session(self, frames_directory):
+    def create_new_session(self, frames_directory, match_string):
         if not self.validate_session(frames_directory):
             raise Exception()
 
         try:
-            session = filesystem_utils.extract_session_from_path(frames_directory)
+            session = filesystem_utils.extract_session_from_path(frames_directory, match_string)
             print("Parsed session metadata")
         except Exception as e:
             print("Failed to parse session metadata")
