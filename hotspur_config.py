@@ -1,4 +1,5 @@
 import yaml
+from pathlib import Path
 from types import SimpleNamespace
 
 
@@ -43,6 +44,10 @@ def _interpolate_config(config):
         config.host,
         config.port
     )
+
+    log_dir = Path(config.data_path) / 'logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    config.logfile = log_dir / f'{config.app_name}.log'
 
     return config
 
