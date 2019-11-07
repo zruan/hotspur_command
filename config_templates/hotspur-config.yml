@@ -15,10 +15,14 @@ data_path: /hotspur
 # This can be an environment name or the path to the environment
 conda_env: hotspur
 
-# A list of globs to match for finding sessions
-# Hotspur expects a file hierarchy following: .../{project}/{sample}/{session}/frames/
-globs:
-- /em-data/{project}/{sample}/{session}/frames/
+# A list of patterns to use for finding sessions, mostly identical to bash globs:
+# "*" and "**" are supported and work the same as they do in bash, while
+# {project}, {sample}, {session} work the same as "*" but also tell hotspur
+# what part of the path to use for the project, sample, or session name
+search_patterns:
+- /data/{project}/{sample}/{session}/
+- /tank/{project}/*/{sample}/**/{session}
+- /some-place/{project}/{sample}/subfolder/{session}/
 
 
 # FOR SECURITY IT'S IMPORTANT TO CHANGE THIS

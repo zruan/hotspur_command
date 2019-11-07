@@ -25,7 +25,7 @@ class FramesFileProcessor():
 
         # Time (sec) to wait before acting on a file. Prevents reading a partial file.
         self.min_lifetime = 120
-        self.file_patterns = ['*.tif', '*.mrc']
+        self.file_patterns = ['**.tif', '**.mrc']
 
         self.tracked = []
         self.queued = []

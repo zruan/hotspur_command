@@ -19,5 +19,5 @@ class SessionData(DataModel):
         self.project_name = None
         self.project_hash = None
 
-        self.frames_directory = None
+        self.directory = None
         self.processing_directory = None
