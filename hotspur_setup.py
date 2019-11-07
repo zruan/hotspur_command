@@ -45,7 +45,7 @@ def prepare_docker_config(args):
     print('\n'.join([
         '',
         "Start the docker containers using a command such as:",
-        'docker-compose -f hotspur-docker-compose.yml up',
+        f'docker-compose -p {config.app_name} -f hotspur-docker-compose.yml up',
         ''
     ]))
 
