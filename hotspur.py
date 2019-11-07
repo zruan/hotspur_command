@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         'config_file',
-        help='The hotspur configuration yaml file',
+        help='The hotspur yaml configuration file',
         metavar='config',
     )
     parser.set_defaults(func=lambda _: parser.print_help())
@@ -93,22 +93,18 @@ if __name__ == "__main__":
     reset_parser.set_defaults(func=reset)
     reset_parser.add_argument(
         '--all',
-        help="Reset all sessions",
-        action='store_true'
-    )
-    reset_parser.add_argument(
-        '--search',
-        help="Find and reset sessions using configured search settings",
+        help="Reset all projects and sessions",
         action='store_true'
     )
     reset_parser.add_argument(
         '--project',
-        help="Reset sessions for project",
+        help="Reset all sessions for project with given name",
+        metavar='PROJECT_NAME',
     )
     reset_parser.add_argument(
-        '--dirs',
-        help="Reset sessions matching given directories",
-        nargs='+'
+        '--session',
+        help="Reset session with given hash",
+        metavar='SESSION_HASH',
     )
 
 
