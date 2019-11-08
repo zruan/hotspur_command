@@ -2,6 +2,7 @@ import os
 
 from hotspur_config import get_config
 from hotspur_utils import hash_utils, couchdb_utils
+from data_models import ProjectData
 
 
 def main(args):
@@ -34,40 +35,33 @@ def show_all_projects():
                 get_config().host,
                 data["hash"]
             ))
-            print('\n')
 
 
 def show_hash(input):
     hash = hash_utils.get_hash(input)
-    print('Hash for input "{}" is:\n{}'.format(input, hash))
+    print(f'\n{hash}\n')
 
 
 def show_project_info(project_name):
-    print('Collecting info for project {project_name}\n')
-
     project_hash = hash_utils.get_hash(project_name)
     db = couchdb_utils.fetch_db(project_hash)
-    doc = couchdb_utils.fetch_doc('project_data', db)
+    project = ProjectData()
+    project.fetch(db)
 
-    print('  {}/web-view/projects/{}'.format(
-        get_config().base_url,
-        project_hash
-    ))
+    print('\n')
+    print(f'{project_name}')
+    print(f'{project_hash}')
+    print(f'{get_config().base_url}/web-view/projects/{project_hash}')
 
-    if doc is None:
-        print("Did not find any sessions associated with this project")
-        return
-
+    print('\n')
     print("Sessions")
     print("------------------------------")
-    for key, val in doc['sessions'].items():
-        if key in ['_id', '_rev']:
-            continue
+    if project.sessions is None:
+        print('No sessions')
+        return
+    for name, hash in project.sessions.items():
+        print(f'- {name}')
+        print(f'  {hash}')
+        print(f'  {get_config().base_url}/web-view/sessions/{hash}')
 
-        session_name = key
-        session_hash = val
-        print(f'- {session_name}')
-        print('  {}/web-view/sessions/{}'.format(
-            get_config().base_url,
-            session_hash
-        ))
+    print('\n')
