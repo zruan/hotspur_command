@@ -22,7 +22,6 @@ class SessionProcessor():
     def __init__(self):
         self.tracked = []
         self.queued = []
-        self.finished = []
         self.sessions = []
 
 
@@ -42,11 +41,10 @@ class SessionProcessor():
                 session.push(session.db)
                 logger.debug(f'Pushed session {session.name} to couchdb')
                 self.sessions.append(session)
+                self.queued.remove(session)
             except Exception as e:
                 logger.exception(e)
                 continue
-
-        self.queued = [s for s in self.queued if not s in self.sessions]
 
 
     def find_potential_sessions(self, search_patterns):
