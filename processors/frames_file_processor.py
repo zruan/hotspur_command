@@ -1,11 +1,14 @@
 import os
 import time
-import glob
+from pathlib import Path
 import tifffile
 import imaging
 
+from hotspur_utils.logging_utils import get_logger_for_module
 from data_models import AcquisitionData, UserData
 
+
+logger = get_logger_for_module(__name__)
 
 class FramesFileProcessor():
 
@@ -23,9 +26,10 @@ class FramesFileProcessor():
     def __init__(self, session):
         self.session = session
 
+        self.suffixes= ['.tif', '.mrc']
         # Time (sec) to wait before acting on a file. Prevents reading a partial file.
         self.min_lifetime = 120
-        self.file_patterns = ['**.tif', '**.mrc']
+        self.batch_size = 20
 
         self.tracked = []
         self.queued = []
@@ -34,89 +38,110 @@ class FramesFileProcessor():
         self.sync_with_db()
 
     def sync_with_db(self):
-        current_models = AcquisitionData.fetch_all(self.session.db)
-        image_paths = [model.image_path for model in current_models]
-        self.tracked = image_paths.copy()
-        self.finished = image_paths.copy()
-        print("Fetched aquisition data models for session {}".format(self.session.name))
+        self.tracked = AcquisitionData.fetch_all(self.session.db)
+        logger.debug(f"Fetched aquisition data models for session {self.session.name}")
 
-    def update_tracked_data(self):
-        found_files = []
-        for pattern in self.file_patterns:
-            search_pattern = os.path.join(self.session.frames_directory, pattern)
-            found_files.extend(glob.glob(search_pattern))
-
-        for file in found_files:
-
-            # File has already been found
-            if file in self.tracked:
-                continue
-
-            # File is not old enough
-            acquisition_time = os.path.getmtime(file)
-            current_time = time.time()
-            file_lifetime = current_time - acquisition_time
-            if file_lifetime < self.min_lifetime:
-                print("Skipping file {} because it's too new: {} sec old".format(file, file_lifetime))
-                continue
-
-            self.tracked.append(file)
-            self.queued.append(file)
 
     def run(self):
-        self.update_tracked_data()
+        images = self.find_images()
+        images = self.filter_for_untracked_images(images)
+        self.tracked.extend([i.image_path for i in images])
+        images = self.filter_for_present_metadata(images)
+        stacks = self.filter_for_framestacks(images)
+        self.queued.extend(stacks)
+        stacks = self.get_valid_stacks_from_queue()
+        stacks = self.filter_for_most_recent_stacks(stacks)
 
-        for file in self.queued:
-            base_name = os.path.basename(os.path.splitext(file)[0])
-            data_model = AcquisitionData(base_name)
-            data_model.image_path = file
-            data_model.file_format = os.path.splitext(file)[1]
-            data_model.data_file_path = '{}.mdoc'.format(file)
-            data_model.data_file_format = '.mdoc'
-            data_model.time = os.path.getmtime(file)
-
-            data_model.spherical_aberration = 2.7
-            data_model.amplitude_contrast = 0.1
-            
+        for stack in stacks:
             try:
-                self.ensure_frame(data_model)
-                data_model = self.update_model_from_mdoc(data_model)
-                print('Extracted metadata from mdoc file')
-            except:
-                self.queued.remove(file)
-                self.finished.append(file)
-                print(f'Failed to extract metadata from {data_model.data_file_path}')
+                self.parse_stack(stack)
+                stack.push(self.session.db)
+                user_data = UserData(stack.base_name)
+                user_data.push(self.session.db)
+                self.update_session(stack)
+                self.queued.remove(stack)
+            except Exception as e:
+                logger.exception(e)
                 continue
 
-            try:
-                data_model = self.update_dose_from_image(data_model)
-            except:
-                pass
 
-            data_model.push(self.session.db)
+    def find_images(self):
+        found_images = []
+        for suffix in self.suffixes:
+            image_paths = Path(self.session.directory).glob(f'**/*{suffix}')
+            images = [self.model_image(p) for p in image_paths]
+            found_images.extend(images)
+        return found_images
 
-            if self.session.time is None or data_model.time < self.session.time:
-                self.session.time = data_model.time
-                self.session.push(self.session.db)
 
-            if self.session.end_time is None or data_model.time > self.session.end_time:
-                self.session.end_time = data_model.time
-                self.session.push(self.session.db)
+    def model_image(self, image_path):
+        data_model = AcquisitionData(image_path.stem)
+        data_model.image_path = str(image_path)
+        data_model.file_format = image_path.suffix
+        data_model.data_file_path = f'{image_path}.mdoc'
+        data_model.data_file_format = '.mdoc'
+        data_model.time = image_path.stat().st_mtime
+        return data_model
 
-            user_data = UserData(base_name)
-            data_model.push(self.session.db)
 
-            self.queued.remove(file)
-            self.finished.append(file)
+    def filter_for_untracked_images(self, images):
+        return [i for i in images if i.image_path not in self.tracked]
 
-    def ensure_frame(self, data_model):
+
+    def filter_for_present_metadata(self, images):
+        return [i for i in images if self.metadata_present(i)]
+
+
+    def metadata_present(self, image):
+        return Path(image.data_file_path).exists()
+
+
+    def filter_for_framestacks(self, images):
+        return [i for i in images if self.is_framestack(i)]
+
+
+    def is_framestack(self, image):
         num_frame_sets = 0
-        with open(data_model.data_file_path, 'r') as mdoc:
+        with open(image.data_file_path, 'r') as mdoc:
             for line in mdoc.readlines():
                 if line.startswith("[FrameSet"):
                     num_frame_sets += 1
-        if num_frame_sets != 1:
-            raise AssertionError(f'mdoc contains {num_frame_sets} FrameSets')
+        return num_frame_sets == 1
+
+
+    def get_valid_stacks_from_queue(self):
+        return [i for i in self.queued if self.validate_stack(i)]
+
+
+    def validate_stack(self, image):
+        age = self.get_image_age(image.image_path)
+        if age < self.min_lifetime:
+            return False
+
+        return True
+
+
+    def get_image_age(self, image_path):
+        last_activity = Path(image_path).stat().st_mtime
+        current_time = time.time()
+        age_in_seconds = current_time - last_activity
+        return age_in_seconds
+
+
+    def filter_for_most_recent_stacks(self, stacks):
+        stacks.sort(key=lambda i: i.time, reverse=True)
+        return stacks[-self.batch_size:]
+
+
+    def parse_stack(self, stack):
+        stack.spherical_aberration = 2.7
+        stack.amplitude_contrast = 0.1
+        self.update_model_from_mdoc(stack)
+        try:
+            self.update_dose_from_image(stack)
+        except Exception as e:
+            logger.exception(e)
+            pass
 
 
     def update_model_from_mdoc(self, data_model):
@@ -144,9 +169,8 @@ class FramesFileProcessor():
                 elif key == 'NumSubFrames':
                     data_model.frame_count = int(value)
                 elif key == 'GainReference':
-                    data_model.gain_reference_file = os.path.join(
-                        self.session.frames_directory, value
-                    )
+                    gain_ref_path = Path(data_model.data_file_path).parent / value
+                    data_model.gain_reference_file = str(gain_ref_path)
                 elif key == 'Magnification':
                     data_model.nominal_magnification = value
                 elif key == 'StagePosition':
@@ -166,31 +190,30 @@ class FramesFileProcessor():
 
     def update_dose_from_image(self, data_model):
         if data_model.file_format == '.tif':
-            try:
-                with tifffile.TiffFile(data_model.image_path) as imfile:
-                    frame_dose_per_pixel = imfile.pages[0].asarray().mean()
-                print("Extracted dose rate from {}".format(data_model.image_path))
-            except Exception as e:
-                print("Couldn't extract dose rate from {}".format(data_model.image_path))
-                print(e)
-                raise e
+            frame_dose_per_pixel = self.get_dose_from_tif(data_model.image_path)
         elif data_model.file_format == '.mrc':
-            try:
-                imfile = imaging.load(data_model.image_path)
-                frame_dose_per_pixel = imfile.mean()
-                print("Extracted dose rate from {}".format(file))
-            except Exception as e:
-                print("Couldn't extract dose rate from {}".format(file))
-                print(e)
-                raise e
+            frame_dose_per_pixel = self.get_dose_from_mrc(data_model.image_path)
 
-        try:
-            data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
-            data_model.total_dose = data_model.frame_dose * data_model.frame_count
-            print("Populated dose rate fields in acquisition data")
-        except Exception as e:
-            print("Failed to populate dose rate fields in acquisition data")
-            print(e)
-            raise e
-
+        data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
+        data_model.total_dose = data_model.frame_dose * data_model.frame_count
         return data_model
+
+
+    def get_dose_from_tif(self, tif_path):
+        with tifffile.TiffFile(tif_path) as imfile:
+            return imfile.pages[0].asarray().mean()
+
+
+    def get_dose_from_mrc(self, mrc_path):
+        imfile = imaging.load(mrc_path)
+        return imfile.mean()
+
+
+    def update_session(self, data_model):
+        if self.session.time is None or data_model.time < self.session.time:
+            self.session.time = data_model.time
+            self.session.push(self.session.db)
+
+        if self.session.end_time is None or data_model.time > self.session.end_time:
+            self.session.end_time = data_model.time
+            self.session.push(self.session.db)
