@@ -115,10 +115,7 @@ class FramesFileProcessor():
 
     def validate_stack(self, image):
         age = self.get_image_age(image.image_path)
-        if age < self.min_lifetime:
-            return False
-
-        return True
+        return age >= self.min_lifetime
 
 
     def get_image_age(self, image_path):
