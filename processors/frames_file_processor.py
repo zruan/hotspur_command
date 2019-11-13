@@ -33,12 +33,12 @@ class FramesFileProcessor():
 
         self.tracked = []
         self.queued = []
-        self.finished = []
 
         self.sync_with_db()
 
     def sync_with_db(self):
-        self.tracked = AcquisitionData.fetch_all(self.session.db)
+        present_data = AcquisitionData.fetch_all(self.session.db)
+        self.tracked = [d.image_path for d in present_data]
         logger.debug(f"Fetched aquisition data models for session {self.session.name}")
 
 
