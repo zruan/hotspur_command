@@ -72,7 +72,7 @@ class NavigatorProcessor():
         convert_path_fn = self.get_convert_path_fn(saved_path, nav.path)
         for i in items: i['MapFile'] = convert_path_fn(i['MapFile'])
 
-        maps = [self.process_map(i) for i in items]
+        maps = [self.process_map_item(i) for i in items]
         maps = [m for m in maps if self.map_file_exists(m)]
         atlases = [m for m in maps if self.is_atlas(m)]
         nav.atlas = atlas[-1]
@@ -128,10 +128,11 @@ class NavigatorProcessor():
         return i['Type'] is not None and i['Type'] == '2'
 
 
-    def process_map(self, map_item):
+    def process_map_item(self, map_item):
         return {
             'path': map_item['MapFile'],
-            'corners': zip(map_item['PtsX'], map_item['PtsY'])
+            'corners': zip(map_item['PtsX'], map_item['PtsY']),
+            'section': map_item['MapSection']
         }
 
 
