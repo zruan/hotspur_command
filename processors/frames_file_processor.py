@@ -138,7 +138,6 @@ class FramesFileProcessor():
             self.update_dose_from_image(stack)
         except Exception as e:
             logger.exception(e)
-            raise e
 
 
     def update_model_from_mdoc(self, data_model):
