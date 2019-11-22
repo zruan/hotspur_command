@@ -67,7 +67,8 @@ class SessionProcessor():
         parsed_names = self.parse_directory_path_for_names(directory, pattern)
 
         session = SessionData()
-        session.directory = directory
+        # double cast for consistent path string formatting
+        session.directory = str(Path(directory))
         session.name = '{}--{}--{}'.format(
             parsed_names.project_name,
             parsed_names.sample_name,

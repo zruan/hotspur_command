@@ -1,6 +1,8 @@
+from pathlib import Path
+
 from hotspur_utils.logging_utils import get_logger_for_module
 from hotspur_utils.rect import Rect
-from data_models import NavigatorData
+from data_models import NavigatorData, MontageData
 
 
 LOG = get_logger_for_module(__name__)
@@ -22,29 +24,40 @@ class NavigatorProcessor():
     def __init__(self, session):
         self.session = session
 
-        self.queued = []
-        self.current_nav = None
-        self.suffix = '.mdoc'
+        self.tracked = []
+
+        self.nav = None
+        self.suffix = '.nav'
 
         self.sync_with_db()
 
 
     def sync_with_db(self):
         data = NavigatorData.fetch_all(self.session.db)
-        self.tracked = {self.current_nav.path: self.current_nav.time}
+        if len(data) > 0:
+            self.current_nav = max(data, key=lambda d: d.time)
+            self.tracked = {self.current_nav.path: self.current_nav.time}
         LOG.debug(f"Fetched navigator data model for session {self.session.name}")
 
 
     def run(self):
         navs = self.find_navigators()
-        nav = self.get_most_recent_navigator(navs)
-        if nav.time > self.current_nav.time:
-            try:
-                nav = process_navigator(nav)
-                nav.push(self.session.db)
-                self.current_nav = nav
-            except Exception as e:
-                logger.exception(e)
+        if len(navs) == 0:
+            LOG.debug('Did not find any nav files')
+            return
+
+        current_nav = self.get_most_recent_navigator(navs)
+        if self.nav is not None and self.nav.time > current_nav.time:
+            LOG.debug(f'Current nav {self.nav.path} is already the newest nav')
+            return
+
+        try:
+            current_nav, maps = self.process_navigator(current_nav)
+            current_nav.push(self.session.db)
+            for m in maps: m.push(self.session.db)
+            self.nav = current_nav
+        except Exception as e:
+            LOG.exception(e)
 
 
     def find_navigators(self):
@@ -54,7 +67,7 @@ class NavigatorProcessor():
 
 
     def model_nav(self, path):
-        model = NavigatorData(path.stem)
+        model = NavigatorData()
         model.path = str(path)
         model.time = path.stat().st_mtime
         return model
@@ -66,18 +79,29 @@ class NavigatorProcessor():
 
     def process_navigator(self, nav):
         items = self.parse_nav_items(nav)
-        items = [i for i in items if self.is_map_item(i)]
+        map_items = [i for i in items if self.is_map_item(i)]
+        if len(map_items) == 0:
+            LOG.info(f'Did not find any map items for nav {nav}')
+            return
 
         saved_path = self.get_nav_saved_path(nav)
         convert_path_fn = self.get_convert_path_fn(saved_path, nav.path)
-        for i in items: i['MapFile'] = convert_path_fn(i['MapFile'])
+        for i in map_items: i['MapFile'] = convert_path_fn(i['MapFile'])
+        map_items = [i for i in map_items if self.map_file_exists(i)]
 
-        maps = [self.process_map_item(i) for i in items]
-        maps = [m for m in maps if self.map_file_exists(m)]
+        maps = [self.process_map_item(i) for i in map_items]
+
         atlases = [m for m in maps if self.is_atlas(m)]
-        nav.atlas = atlas[-1]
-        squares = [m in maps if self.is_square(m)]
-        nav.squares = self.remove_overlaping_squares(squares)
+        if len(atlases) > 0:
+            current_atlas = atlases[-1]
+            nav.atlas = current_atlas.base_name
+
+        squares = [m for m in maps if self.is_square(m)]
+        if len(squares) > 0:
+            squares = self.remove_overlaping_squares(squares)
+            nav.squares = [s.base_name for s in squares]
+
+        return nav, maps
 
 
     def get_nav_saved_path(self, nav):
@@ -89,22 +113,22 @@ class NavigatorProcessor():
 
 
     def get_convert_path_fn(self, old_path, new_path):
-        i = 1
-        while new_path.parts[-i] == old_path.parts[-i]:
-            i += 1
+        # SerialEM saves windows back with backslashes. Python cannot deal with backslashes
+        old_path = str(old_path).replace('\\', '/')
+        old_path = Path(old_path)
+        new_path = Path(new_path)
 
-        match_count = i - 1
-        diff_parent_index = match_count - 1
-        if num_matching_end_parts == 0:
-            old_path_start = old_path
-            new_path_start = new_path
-        else
-            old_path_start = old_path.parents[diff_parent_index]
-            new_path_start = new_path.parents[diff_parent_index]
+        session_parent_index = 0
+        for i, path in enumerate(new_path.parents):
+            if path == self.session.directory:
+                session_parent_index = i + 1
+
+        old_path_start = str(old_path.parents[session_parent_index])
 
         def convert_path_fn(old_path):
             old_path_str = str(old_path)
-            new_path_str = old_path_str.replace(old_path_start, new_path_start)
+            old_path_str = old_path_str.replace('\\', '/')
+            new_path_str = old_path_str.replace(old_path_start, self.session.directory)
             return Path(new_path_str)
 
         return convert_path_fn
@@ -116,47 +140,80 @@ class NavigatorProcessor():
             item_data = {}
             for line in fp.readlines():
                 if line.startswith('[Item ='):
-                    nav_items.append(item_data)
+                    items.append(item_data)
                     item_data = {}
-                else:
+                elif ' = ' in line:
                     key, value = line.split(' = ')
-                    item_data[key.strip()] = value.strip().split()
+                    key = key.strip()
+                    value = value.strip().split()
+                    if len(value) == 1: value = value[0]
+                    item_data[key] = value
         return items
 
 
     def is_map_item(self, item):
-        return i['Type'] is not None and i['Type'] == '2'
+        return 'Type' in item and item['Type'] == '2'
+
+
+    def map_file_exists(self, map_item):
+        # print(map_item)
+        return Path(map_item['MapFile']).exists()
+
+
+    # def flatten_relative_path(self, path, parent):
+    #     relative_path = path.relative_to(parent)
+    #     return str(relative_path).replace('/', '-')
 
 
     def process_map_item(self, map_item):
-        return {
-            'path': map_item['MapFile'],
-            'corners': zip(map_item['PtsX'], map_item['PtsY']),
-            'section': map_item['MapSection']
-        }
+        map_path = map_item['MapFile']
+        map_section = map_item['MapSection']
+        map_name = f'{Path(map_path).stem}-{map_section}'
+        model = MontageData(map_name)
+        model.path = str(map_path)
+        model.section = map_section
+
+        position = map_item['RawStageXY']
+        position = [float(n) for n in position]
+        model.position = position
+
+        corners = zip(map_item['PtsX'], map_item['PtsY'])
+        corners = [(float(x), float(y)) for x,y in corners]
+        # SerialEM lists first corner as last corner as well
+        corners = corners[:-1]
+        model.corners = corners
+
+        return model
 
 
-    def map_file_exists(self, map):
-        return Path(map['path']).exists()
+    def get_distance(self, p1, p2):
+        x_distance = abs(p1[0] - p2[0])
+        y_distance = abs(p1[1] - p2[1])
+        distance = (x_distance ** 2 + y_distance ** 2) ** 0.5
+        return distance
 
-
-    def is_atlas(self, maps):
-        rect = create_rect_by_corners(map['corners'])
-        return rect.width > 800 and rect.height > 800:
+    # these are very low tech ways of testing box map size
+    # assumes maps are polygons with four corner points (aka a box)
+    # tests the length of one edge
+    def is_atlas(self, map):
+        distance = self.get_distance(map.corners[0], map.corners[1])
+        return distance > 800
 
 
     def is_square(self, map):
-        rect = create_rect_by_corners(map['corners'])
-        return rect.width < 400 and rect.height < 400:
+        distance = self.get_distance(map.corners[0], map.corners[1])
+        return distance < 400
 
 
     def remove_overlaping_squares(self, maps):
-        rects = {m: create_rect_by_corners(m['corners']) for m in maps}
         new_maps = []
-        # Reverse to prioritize most recent maps
-        for m in maps.reversed():
+        # Reversed to prioritize most recent maps (at bottom of navigator file)
+        maps.reverse()
+        for m in maps:
+            overlap = False
             for n in new_maps:
-                if rects[m].overlaps(rects[n]):
+                distance = self.get_distance(m.position, n.position)
+                if distance < 50:
                     overlap = True
                     break
             if not overlap:

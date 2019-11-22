@@ -7,10 +7,7 @@ class MontageData(DataModel):
 
         self.path = None
         self.section = None
+
         self.preview = None
 
-        # (x, y) is the bottom left point
-        self.x = None
-        self.y = None
-        self.width = None
-        self.height = None
+        self.corners = None

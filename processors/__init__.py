@@ -1,5 +1,6 @@
 from .session_processor import SessionProcessor
 from .project_processor import ProjectProcessor
+from .navigator_processor import NavigatorProcessor
 from .frames_file_processor import FramesFileProcessor
 from .motioncor2_processor import Motioncor2Processor
 from .ctffind_processor import CtffindProcessor
