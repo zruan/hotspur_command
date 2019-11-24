@@ -1,14 +1,19 @@
+import shutil
+from pathlib import Path
+
 import imaging
+
 from hotspur_utils.logging_utils import get_logger_for_module
 from data_models import MontageData
-from hotspur_utils.rect import create_rect_by_corners
 
 
 LOG = get_logger_for_module(__name__)
 
-class FramesFileProcessor():
+class MontageProcessor():
 
     processors_by_session = {}
+
+    batch_size = 1
 
     @classmethod
     def for_session(cls, session):
@@ -22,64 +27,52 @@ class FramesFileProcessor():
 
     def __init__(self, session):
         self.session = session
-        self.nav = self.get_most_recent_nav()
-        self.montage_summaries = None
+        self.queued = []
 
 
     def run(self):
-        nav = self.get_most_recent_nav()
-        if self.nav is not None and nav.time <= self.nav.time:
-            LOG.debug(f'Nav {nav.path} is already up to date')
-            return
-        else:
-            self.nav = nav
+        montages = MontageData.fetch_all(self.session.db)
+        montages = [m for m in montages if m.preview is None]
+        queued_names = [m.base_name for m in self.queued]
+        montages = [m for m in montages if m.base_name not in queued_names]
+        self.queued.extend(montages)
+        stacks = [m.path for m in self.queued]
+        stacks = list(set(stacks))
+        stacks = [Path(p) for p in stacks]
+        stacks = stacks[:MontageProcessor.batch_size]
 
-        self.montage_summaries = [*self.nav.squares, self.nav.atlas]
-        path_strings = [m['path'] for m in montage_summaries]
-        path_strings = list(set(path_strings))
-        paths = [Path(p) for p in path_strings]
-        for p in paths:
+        for s in stacks:
             try:
-                self.process_montage(p)
+                previews = self.process_montage_stack(s)
+                montages = [m for m in self.queued if m.path == s]
+                for m in montages: m.preview = previews(m.section)
+                for m in montages: m.push(self.session.db)
+                self.queued = [m for m in self.queued if m not in montages]
             except Exception as e:
                 LOG.exception(e)
                 continue
 
-        montages = [*self.process_montage(m) for m in montage_summaries]
+
+    def process_montage_stack(self, path):
+        dst_base = Path(self.session.processing_directory) / path.stem
+        binned = self.bin_montage_stack(path, dst_base.with_suffix('.binned'))
+        coords = self.extract_piece_coords_from_montage_stack(path, dst_base.with_suffix('.coords'))
+        blended = self.blend_montage_stack(path, dst_base.with_suffix('.blended'), coords)
+        previews = self.preview_montage_stack(path, dst_base.with_suffix(''), suffix='.preview.png')
+        return
 
 
-    def get_most_recent_nav(self):
-        return NavigatorData.fetch_all(self.session.db)[0]
+    # # def flatten_relative_path(self, path, parent):
+    # #     relative_path = path.relative_to(parent)
+    # #     return str(relative_path).replace('/', '-')
 
 
-    def process_montage(self, path):
-        flat_name = self.flatten_relative_path(path, self.session.directory)
-        dst_base = self.session.processing_directory / flat_name
-        binned = self.bin_montage(path, dst_base.with_suffix('.binned'))
-        coords = self.extract_piece_coords(path, dst_base.with_suffix('.coords'))
-        blended = self.blend_montage(path, dst_base.with_suffix('.blended'), coords)
-        previews = self.preview_montage(path, dst_base.with_suffix(''), suffix='.preview.png')
-        for i, p in enumerate(previews):
-            summaries = [s for s in self.montage_summaries if s['path'] == str(path)]
-            summaries.sort(key=lambda s: s['section'])
-            summary = summaries[i]
-            summary['name'] = f'{flat_name}-{i}'
-            summary['preview'] = p
-            model = self.model_montage(summary)
-            model.push(self.session.db)
-
-
-    def flatten_relative_path(self, path, parent):
-        relative_path = path.relative_to(parent)
-        return str(relative_path).replace('/', '-')
-
-
-    def bin_montage(self, src, dst):
+    def bin_montage_stack(self, src, dst):
         command = ' '.join([
             shutil.which('edmont'),
             f'-imin {src}',
             f'-imout {dst}',
-            f'-bin {binning}',
+            '-bin 4',
             '> /dev/null'
         ])
         LOG.info(f'Binning montage pieces for {src} to {dst}')
@@ -88,11 +81,11 @@ class FramesFileProcessor():
         return dst
 
 
-    def extract_piece_coords(self, src, dst):
+    def extract_piece_coords_from_montage_stack(self, src, dst):
         command = ' '.join([
             shutil.which('extractpieces'),
             f'-input {src}',
-            f'-output {dst)}'
+            f'-output {dst}'
             '> /dev/null'
         ])
         LOG.info(f'Extracting piece coordinates from {src}')
@@ -101,7 +94,7 @@ class FramesFileProcessor():
         return dst
 
 
-    def blend_montage(self, src, dst, coords):
+    def blend_montage_stack(self, src, dst, coords):
         command = ' '.join([
             shutil.which('blendmont'),
             f'-imin {src}',
@@ -116,24 +109,12 @@ class FramesFileProcessor():
         return out_path
 
 
-    def create_preview(self, src, dst_base, suffix):
-        image = imaging.load(src)[0]
+    def preview_montage_stack(self, src, dst_base, suffix):
+        image = imaging.load(src)
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
         outputs = []
         for i, section in enumerate(image):
-            dst = dst_base.with_suffix(f'_{i}{suffix}')
+            dst = dst_base.with_suffix(f'.{i}{suffix}')
             imaging.save(image, dst)
             outputs.append(dst)
         return outputs
-
-
-    def model_montage(self, summary):
-        model = MontageData(path.stem)
-        model.name = summary['name']
-        model.path = summary['path']
-        model.section = summary['section']
-        model.time = Path(model.path).stat().st_mtime
-        model.preview = summary['preview']
-        rect = create_rect_by_corners(summary['corners'])
-        model.__dict__.update(rect.__dict__)
-        return model
