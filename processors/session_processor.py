@@ -34,7 +34,8 @@ class SessionProcessor():
 
         for session in valid_sessions:
             try:
-                self.ensure_processing_directory(session)
+                dir = self.ensure_processing_directory(session)
+                session.processing_directory = str(dir)
                 self.link_processing_directory(session)
                 session.db = fetch_db(session.hash)
                 session.fetch(session.db)
@@ -142,6 +143,7 @@ class SessionProcessor():
         processing_dir = self.get_processing_directory(session)
         logger.debug(f'Ensuring processing directory {processing_dir}')
         processing_dir.mkdir(parents=True, exist_ok=True)
+        return processing_dir
 
 
     def link_processing_directory(self, session):
@@ -155,6 +157,8 @@ class SessionProcessor():
         if not link.exists:
             logger.debug(f'Creating link {link} to {processing_dir}')
             link.symlink_to(processing_dir, target_is_directory=True)
+
+        return link
 
 
     def get_processing_directory(self, session):
