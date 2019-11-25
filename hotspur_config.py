@@ -40,7 +40,7 @@ def _interpolate_config(config):
         config.port
     )
 
-    config.base_url = "http://{}:{}/".format(
+    config.base_url = "http://{}:{}".format(
         config.host,
         config.port
     )

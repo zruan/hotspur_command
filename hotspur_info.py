@@ -31,8 +31,8 @@ def show_all_projects():
             data = couchdb_utils.fetch_doc('project_data', db)
             print('- {}'.format(data['name']))
             print('  {} session(s)'.format(len(data['sessions'].keys())))
-            print('  http://{}/web-view/projects/{}'.format(
-                get_config().host,
+            print('  {}/web-view/project/{}'.format(
+                get_config().base_url,
                 data["hash"]
             ))
 
@@ -51,7 +51,7 @@ def show_project_info(project_name):
     print('\n')
     print(f'{project_name}')
     print(f'{project_hash}')
-    print(f'{get_config().base_url}/web-view/projects/{project_hash}')
+    print(f'{get_config().base_url}/web-view/project/{project_hash}')
 
     print('\n')
     print("Sessions")
@@ -62,6 +62,5 @@ def show_project_info(project_name):
     for name, hash in project.sessions.items():
         print(f'- {name}')
         print(f'  {hash}')
-        print(f'  {get_config().base_url}/web-view/sessions/{hash}')
-
-    print('\n')
+        print(f'  {get_config().base_url}/web-view/session/{hash}')
+        print('\n')
