@@ -10,7 +10,7 @@ from hotspur_config import get_config
 
 from hotspur_utils.logging_utils import get_logger_for_module
 from hotspur_utils.couchdb_utils import fetch_db
-from hotspur_utils import hash_utils
+from hotspur_utils.hash_utils import get_hash
 
 from data_models import SessionData
 
@@ -70,15 +70,15 @@ class SessionProcessor():
         session = SessionData()
         # double cast for consistent path string formatting
         session.directory = str(Path(directory))
-        session.name = '{}--{}--{}'.format(
+        session.name = parsed_names.session_name
+        session.long_name = '{}--{}--{}'.format(
             parsed_names.project_name,
             parsed_names.sample_name,
             parsed_names.session_name
         )
-        session.sample_name = parsed_names.sample_name
-        session.project_name = parsed_names.project_name
-        session.hash = hash_utils.get_hash(session.name)
-        session.project_hash = hash_utils.get_hash(session.project_name)
+        session.hash = get_hash(session.long_name)
+        session.sample = parsed_names.sample_name
+        session.project = parsed_names.project_name
         return session
 
 
@@ -164,10 +164,10 @@ class SessionProcessor():
     def get_processing_directory(self, session):
         base_path = Path(get_config().data_path)
         hash_path = base_path / "projects/hashed"
-        return hash_path / session.project_hash / session.hash
+        return hash_path / session.hash
 
 
     def get_link_directory(self, session):
         base_path = Path(get_config().data_path)
         link_path = base_path / "projects/links"
-        return link_path / session.project_name
+        return link_path / session.project

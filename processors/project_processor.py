@@ -14,7 +14,7 @@ class ProjectProcessor():
 
 
     def update_project(self, session):
-        name = session.project_name
+        name = session.project
         if name in self.projects:
             project = self.projects[name]
         else:

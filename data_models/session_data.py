@@ -11,13 +11,13 @@ class SessionData(DataModel):
         self.db = None
 
         self.name = None
+        self.long_name = None
         self.hash = None
         
         self.end_time = None
 
-        self.sample_name = None
-        self.project_name = None
-        self.project_hash = None
+        self.sample= None
+        self.project= None
 
         self.directory = None
         self.processing_directory = None
