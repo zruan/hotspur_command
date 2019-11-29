@@ -1,4 +1,6 @@
+import subprocess
 import shutil
+import numpy as np
 from pathlib import Path
 
 import imaging
@@ -44,8 +46,8 @@ class MontageProcessor():
         for s in stacks:
             try:
                 previews = self.process_montage_stack(s)
-                montages = [m for m in self.queued if m.path == s]
-                for m in montages: m.preview = previews(m.section)
+                montages = [m for m in self.queued if m.path == str(s)]
+                for m in montages: m.preview = str(previews[m.section])
                 for m in montages: m.push(self.session.db)
                 self.queued = [m for m in self.queued if m not in montages]
             except Exception as e:
@@ -56,10 +58,10 @@ class MontageProcessor():
     def process_montage_stack(self, path):
         dst_base = Path(self.session.processing_directory) / path.stem
         binned = self.bin_montage_stack(path, dst_base.with_suffix('.binned'))
-        coords = self.extract_piece_coords_from_montage_stack(path, dst_base.with_suffix('.coords'))
-        blended = self.blend_montage_stack(path, dst_base.with_suffix('.blended'), coords)
-        previews = self.preview_montage_stack(path, dst_base.with_suffix(''), suffix='.preview.png')
-        return
+        coords = self.extract_piece_coords_from_montage_stack(binned, dst_base.with_suffix('.coords'))
+        blended = self.blend_montage_stack(binned, dst_base.with_suffix('.blended'), coords)
+        previews = self.preview_montage_stack(blended, dst_base.with_suffix(''), suffix='.preview.png')
+        return previews
 
 
     # # def flatten_relative_path(self, path, parent):
@@ -72,7 +74,7 @@ class MontageProcessor():
             shutil.which('edmont'),
             f'-imin {src}',
             f'-imout {dst}',
-            '-bin 4',
+            '-bin 2',
             '> /dev/null'
         ])
         LOG.info(f'Binning montage pieces for {src} to {dst}')
@@ -103,18 +105,20 @@ class MontageProcessor():
             f'-roo {dst}',
             '> /dev/null'
         ])
-        LOG.info(f'Blending montage pieces for {montage.file}')
+        LOG.info(f'Blending montage pieces for {src}')
         LOG.debug(f'Running command "{command}"')
         subprocess.run(command, shell=True, capture_output=True, check=True)
-        return out_path
+        return dst
 
 
     def preview_montage_stack(self, src, dst_base, suffix):
-        image = imaging.load(src)
+        image = imaging.load(str(src), format='mrc')
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
+        sections = np.split(image, image.shape[0])
         outputs = []
-        for i, section in enumerate(image):
+        for i, section in enumerate(sections):
+            section = np.squeeze(section)
             dst = dst_base.with_suffix(f'.{i}{suffix}')
-            imaging.save(image, dst)
+            imaging.save(section , str(dst))
             outputs.append(dst)
         return outputs

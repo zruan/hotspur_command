@@ -165,9 +165,9 @@ class NavigatorProcessor():
 
 
     def process_map_item(self, map_item):
-        map_path = map_item['MapFile']
-        map_section = map_item['MapSection']
-        map_name = f'{Path(map_path).stem}-{map_section}'
+        map_path = Path(map_item['MapFile'])
+        map_section = int(map_item['MapSection'])
+        map_name = f'{map_path.stem}-{map_section}'
         model = MontageData(map_name)
         model.path = str(map_path)
         model.section = map_section
