@@ -1,7 +1,5 @@
-import sys
 import os
 import time
-import re
 from glob import glob
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,7 +13,7 @@ from hotspur_utils.hash_utils import get_hash
 from data_models import SessionData
 
 
-logger = get_logger_for_module(__name__)
+LOG = get_logger_for_module(__name__)
 
 class SessionProcessor():
 
@@ -27,12 +25,12 @@ class SessionProcessor():
 
     def find_sessions(self, search_patterns):
         sessions = self.find_potential_sessions(search_patterns)
-        logger.debug(f'Found new sessions')
-        new_sessions = self.filter_for_untracked_sessions(sessions)
-        self.track_and_queue_new_sessions(new_sessions)
-        valid_sessions = self.get_valid_sessions_from_queue()
+        sessions = [s for s in sessions if s.hash not in self.tracked]
+        self.tracked.extend([s.hash for s in sessions])
+        self.queued.extend(sessions)
+        sessions = [s for s in self.queued if self.validate_session(s)]
 
-        for session in valid_sessions:
+        for session in sessions:
             try:
                 dir = self.ensure_processing_directory(session)
                 session.processing_directory = str(dir)
@@ -40,87 +38,72 @@ class SessionProcessor():
                 session.db = fetch_db(session.hash)
                 session.fetch(session.db)
                 session.push(session.db)
-                logger.debug(f'Pushed session {session.name} to couchdb')
+                LOG.debug(f'Pushed session {session.name} to couchdb')
                 self.sessions.append(session)
                 self.queued.remove(session)
             except Exception as e:
-                logger.exception(e)
+                LOG.exception(e)
                 continue
 
 
     def find_potential_sessions(self, search_patterns):
         found_sessions = []
         for pattern in search_patterns:
-            glob_string = self.create_glob_from_pattern(pattern)
-            session_directories = glob(glob_string)
-            if len(session_directories) == 0:
-                logger.debug(f"No session directories found using: {pattern}")
-            sessions = [self.model_session(d, pattern) for d in session_directories]
+            directories = glob(pattern.glob)
+            if len(directories) == 0:
+                LOG.debug(f"No session directories found using glob {pattern.glob}")
+            sessions = [self.model_session(d, pattern.mask) for d in directories]
             found_sessions.extend(sessions)
         return found_sessions
 
 
-    def create_glob_from_pattern(self, pattern):
-        return pattern.format(project="*",sample="*",session="*")
-
-
-    def model_session(self, directory, pattern):
-        parsed_names = self.parse_directory_path_for_names(directory, pattern)
+    def model_session(self, directory, mask):
+        names = self.parse_directory_path_for_names(directory, mask)
 
         session = SessionData()
         # double cast for consistent path string formatting
         session.directory = str(Path(directory))
-        session.name = parsed_names.session_name
+        session.name = names.session
         session.long_name = '{}--{}--{}'.format(
-            parsed_names.project_name,
-            parsed_names.sample_name,
-            parsed_names.session_name
+            names.project,
+            names.sample,
+            names.session
         )
         session.hash = get_hash(session.long_name)
-        session.sample = parsed_names.sample_name
-        session.project = parsed_names.project_name
+        session.sample = names.sample
+        session.project = names.project
         return session
 
 
-    def parse_directory_path_for_names(self, directory, pattern):
-        regexp_string = pattern.format(
-            project="(?P<project>[^/]+)",
-            sample="(?P<sample>[^/]+)",
-            session="(?P<session>[^/]+)"
-        )
-        regexp = re.compile(regexp_string)
-        match = regexp.match(directory)
-        return SimpleNamespace(
-            project_name = match.group('project'),
-            sample_name = match.group('sample'),
-            session_name = match.group('session')
-        )
+    def parse_directory_path_for_names(self, directory, mask):
+        d = Path(directory)
+        m = Path(mask)
+        if len(d.parts) != len(m.parts):
+            raise Exception('Session directory path and mask are not the same length')
 
+        names = SimpleNamespace()
+        for i in range(len(d.parts)):
+            if m.parts[i] == 'project':
+                names.project = d.parts[i]
+            elif m.parts[i] == 'sample':
+                names.sample = d.parts[i]
+            elif m.parts[i] == 'session':
+                names.session = d.parts[i]
 
-    def filter_for_untracked_sessions(self, sessions):
-        return [s for s in sessions if s.hash not in self.tracked]
-
-
-    def track_and_queue_new_sessions(self, sessions):
-        self.tracked.extend([s.hash for s in sessions])
-        self.queued.extend(sessions)
-
-
-    def get_valid_sessions_from_queue(self):
-        return [s for s in self.queued if self.validate_session(s)]
+        return names
 
 
     def validate_session(self, session):
         age = self.get_directory_age(session.directory)
         if age > get_config().session_max_age:
-            logger.debug(f"Session {session.name} is not valid: age {age} is too old")
+            LOG.debug(f"Session {session.name} is not valid: age {age} is too old")
             return False
 
         if not self.contains_mdoc_file(session.directory):
-            logger.debug(f"Session {session.name} is not valid: no mdoc file found")
+            LOG.debug(f"Session {session.name} is not valid: no mdoc file found")
             return False
 
-        logger.debug(f"Session {session.name} is valid")
+        LOG.debug(f"Session {session.name} is valid")
         return True
 
 
@@ -129,19 +112,19 @@ class SessionProcessor():
         current_time = time.time()
         age_in_seconds = current_time - last_activity
         age_in_days = age_in_seconds / (60 * 60 * 24)
-        logger.debug(f'Age for {directory} is {age_in_days}')
+        LOG.debug(f'Age for {directory} is {age_in_days}')
         return age_in_days
 
 
     def contains_mdoc_file(self, directory):
         mdoc_files = glob(f'{directory}/*.mdoc')
-        logger.debug(f'Found {len(mdoc_files)} in {directory}')
+        LOG.debug(f'Found {len(mdoc_files)} in {directory}')
         return len(mdoc_files) > 0
 
 
     def ensure_processing_directory(self, session):
         processing_dir = self.get_processing_directory(session)
-        logger.debug(f'Ensuring processing directory {processing_dir}')
+        LOG.debug(f'Ensuring processing directory {processing_dir}')
         processing_dir.mkdir(parents=True, exist_ok=True)
         return processing_dir
 
@@ -150,12 +133,12 @@ class SessionProcessor():
         processing_dir = self.get_processing_directory(session)
 
         link_dir = self.get_link_directory(session)
-        logger.debug(f'Ensuring link directory {link_dir}')
+        LOG.debug(f'Ensuring link directory {link_dir}')
         link_dir.mkdir(parents=True, exist_ok=True)
 
         link = link_dir / session.name
         if not link.exists:
-            logger.debug(f'Creating link {link} to {processing_dir}')
+            LOG.debug(f'Creating link {link} to {processing_dir}')
             link.symlink_to(processing_dir, target_is_directory=True)
 
         return link

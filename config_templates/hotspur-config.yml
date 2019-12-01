@@ -20,10 +20,12 @@ conda_env: hotspur
 # {project}, {sample}, {session} work the same as "*" but also tell hotspur
 # what part of the path to use for the project, sample, or session name
 search_patterns:
-- /data/{project}/{sample}/{session}/
-- /tank/{project}/*/{sample}/**/{session}
-- /some-place/{project}/{sample}/subfolder/{session}/
-
+- glob: /data/*/*/*/
+  mask: /*/project/sample/session/
+- glob: /tank/*/*/*/*/*/
+  mask: /*/project/*/sample/*/session/
+- glob: /some-place/*/*/subfolder/*/
+  mask: /*/project/sample/*/session/
 
 # FOR SECURITY IT'S IMPORTANT TO CHANGE THIS
 # Salt used when hashing session and project names for the web view
