@@ -180,9 +180,9 @@ class NavigatorProcessor():
         dimensions = [float(n) for n in dimensions]
         model.dimensions = dimensions
 
-        scaleMatrix = map_item['MapScaleMat']
-        scaleMatrix = [float(n) for n in scaleMatrix]
-        model.scaleMatrix = scaleMatrix
+        scale_matrix = map_item['MapScaleMat']
+        scale_matrix = [float(n) for n in scale_matrix]
+        model.scale_matrix = scale_matrix
 
         corners = zip(map_item['PtsX'], map_item['PtsY'])
         corners = [(float(x), float(y)) for x,y in corners]

@@ -12,5 +12,5 @@ class MontageData(DataModel):
 
         self.corners = None
         self.position = None
-        self.scaleMatrix = None
+        self.scale_matrix = None
         self.dimensions = None
