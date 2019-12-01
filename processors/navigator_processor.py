@@ -176,9 +176,9 @@ class NavigatorProcessor():
         position = [float(n) for n in position]
         model.position = position
 
-        demensions = map_item['MapWidthHeight']
-        demensions = [float(n) for n in demensions]
-        model.demensions = dimensions
+        dimensions = map_item['MapWidthHeight']
+        dimensions = [float(n) for n in dimensions]
+        model.dimensions = dimensions
 
         scaleMatrix = map_item['MapScaleMat']
         scaleMatrix = [float(n) for n in scaleMatrix]
