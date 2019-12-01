@@ -12,18 +12,14 @@ class NavigatorProcessor():
 
     @classmethod
     def for_session(cls, session):
-        try:
-            return cls.processors_by_session[session]
-        except:
+        if not session in cls.processors_by_session:
             processor = cls(session)
             cls.processors_by_session[session] = processor
-            return processor
+        return cls.processors_by_session[session]
 
 
     def __init__(self, session):
         self.session = session
-
-        self.tracked = []
 
         self.nav = None
         self.suffix = '.nav'
@@ -35,7 +31,6 @@ class NavigatorProcessor():
         data = NavigatorData.fetch_all(self.session.db)
         if len(data) > 0:
             self.current_nav = max(data, key=lambda d: d.time)
-            self.tracked = {self.current_nav.path: self.current_nav.time}
         LOG.debug(f"Fetched navigator data model for session {self.session.name}")
 
 
@@ -46,13 +41,14 @@ class NavigatorProcessor():
             return
 
         current_nav = self.get_most_recent_navigator(navs)
-        if self.nav is not None and self.nav.time > current_nav.time:
+        if self.nav is not None and self.nav.time >= current_nav.time:
             LOG.debug(f'Current nav {self.nav.path} is already the newest nav')
             return
 
         try:
             current_nav, maps = self.process_navigator(current_nav)
             current_nav.push(self.session.db)
+            maps = [m for m in maps if m._id not in self.session.db]
             for m in maps: m.push(self.session.db)
             self.nav = current_nav
         except Exception as e:
@@ -155,13 +151,7 @@ class NavigatorProcessor():
 
 
     def map_file_exists(self, map_item):
-        # print(map_item)
         return Path(map_item['MapFile']).exists()
-
-
-    # def flatten_relative_path(self, path, parent):
-    #     relative_path = path.relative_to(parent)
-    #     return str(relative_path).replace('/', '-')
 
 
     def process_map_item(self, map_item):
