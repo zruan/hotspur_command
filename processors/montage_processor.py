@@ -1,11 +1,14 @@
 import subprocess
 import shutil
+from threading import Thread
+from queue import Queue
 import numpy as np
 from pathlib import Path
 
 import imaging
 
 from hotspur_utils.logging_utils import get_logger_for_module
+from resource_manager import ResourceManager
 from data_models import MontageData
 
 
@@ -13,9 +16,8 @@ LOG = get_logger_for_module(__name__)
 
 class MontageProcessor():
 
+    required_cpus = 1
     processors_by_session = {}
-
-    batch_size = 1
 
     @classmethod
     def for_session(cls, session):
@@ -29,52 +31,58 @@ class MontageProcessor():
 
     def __init__(self, session):
         self.session = session
-        self.queued = []
+        self.tracked = []
+        self.queue = Queue()
+
+
+    def sync_with_db(self):
+        montages = MontageData.fetch_all(self.session.db)
+        untracked = [m for m in montages if m.base_name not in self.tracked]
+        self.tracked.extend([m.base_name for m in untracked])
+        unprocessed = [m for m in montages if m.preview is None]
+        for m in unprocessed: self.queue.put(m)
 
 
     def run(self):
-        montages = MontageData.fetch_all(self.session.db)
-        montages = [m for m in montages if m.preview is None]
-        queued_names = [m.base_name for m in self.queued]
-        montages = [m for m in montages if m.base_name not in queued_names]
-        self.queued.extend(montages)
-        stacks = [m.path for m in self.queued]
-        stacks = list(set(stacks))
-        stacks = [Path(p) for p in stacks]
-        stacks = stacks[:MontageProcessor.batch_size]
+        self.sync_with_db()
 
-        for s in stacks:
+        if self.queue.empty():
+            return
+
+        if ResourceManager.request_cpus(MontageProcessor.required_cpus):
             try:
-                previews = self.process_montage_stack(s)
-                montages = [m for m in self.queued if m.path == str(s)]
-                for m in montages: m.preview = str(previews[m.section])
-                for m in montages: m.push(self.session.db)
-                self.queued = [m for m in self.queued if m not in montages]
+                montage = self.queue.get()
+                process_thread = Thread(
+                    target=self.process_montage,
+                    args=[montage]
+                )
+                process_thread.start()
             except Exception as e:
+                ResourceManager.release_cpus(MontageProcessor.required_cpus)
+                self.queue.put(montage)
                 LOG.exception(e)
-                continue
 
 
-    def process_montage_stack(self, path):
-        dst_base = Path(self.session.processing_directory) / path.stem
-        binned = self.bin_montage_stack(path, dst_base.with_suffix('.binned'))
-        coords = self.extract_piece_coords_from_montage_stack(binned, dst_base.with_suffix('.coords'))
-        blended = self.blend_montage_stack(binned, dst_base.with_suffix('.blended'), coords)
-        previews = self.preview_montage_stack(blended, dst_base.with_suffix(''), suffix='.preview.png')
-        return previews
+    def process_montage(self, montage):
+        src = Path(montage.path)
+        dst = Path(self.session.processing_directory) / montage.base_name
+        binned = self.bin_montage_stack(src, montage.section, dst.with_suffix('.binned'))
+        coords = self.extract_piece_coords_from_montage_stack(binned, dst.with_suffix('.coords'))
+        blended = self.blend_montage_stack(binned, coords, dst.with_suffix('.blended'))
+        preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
+        montage.preview = str(preview)
+        montage.push(self.session.db)
 
 
-    # # def flatten_relative_path(self, path, parent):
-    # #     relative_path = path.relative_to(parent)
-    # #     return str(relative_path).replace('/', '-')
-
-
-    def bin_montage_stack(self, src, dst):
+    # This function can return piece coordinates but I
+    # kept them seperate to make things a little more clear
+    def bin_montage_stack(self, src, section, dst):
         command = ' '.join([
             shutil.which('edmont'),
             f'-imin {src}',
             f'-imout {dst}',
-            '-bin 2',
+            f'-secs {section}',
+            '-bin 4',
             '> /dev/null'
         ])
         LOG.info(f'Binning montage pieces for {src} to {dst}')
@@ -96,7 +104,7 @@ class MontageProcessor():
         return dst
 
 
-    def blend_montage_stack(self, src, dst, coords):
+    def blend_montage_stack(self, src, coords, dst):
         command = ' '.join([
             shutil.which('blendmont'),
             f'-imin {src}',
@@ -111,14 +119,9 @@ class MontageProcessor():
         return dst
 
 
-    def preview_montage_stack(self, src, dst_base, suffix):
-        image = imaging.load(str(src), format='mrc')
+    def preview_montage(self, src, dst):
+        image_stack = imaging.load(str(src), format='mrc')
+        image = image_stack[0]
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-        sections = np.split(image, image.shape[0])
-        outputs = []
-        for i, section in enumerate(sections):
-            section = np.squeeze(section)
-            dst = dst_base.with_suffix(f'.{i}{suffix}')
-            imaging.save(section , str(dst))
-            outputs.append(dst)
-        return outputs
+        imaging.save(image, str(dst))
+        return dst
