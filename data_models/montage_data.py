@@ -11,3 +11,6 @@ class MontageData(DataModel):
         self.preview = None
 
         self.corners = None
+        self.position = None
+        self.scaleMatrix = None
+        self.dimensions = None

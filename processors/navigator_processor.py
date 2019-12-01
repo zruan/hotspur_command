@@ -176,9 +176,17 @@ class NavigatorProcessor():
         position = [float(n) for n in position]
         model.position = position
 
+        demensions = map_item['MapWidthHeight']
+        demensions = [float(n) for n in demensions]
+        model.demensions = dimensions
+
+        scaleMatrix = map_item['MapScaleMat']
+        scaleMatrix = [float(n) for n in scaleMatrix]
+        model.scaleMatrix = scaleMatrix
+
         corners = zip(map_item['PtsX'], map_item['PtsY'])
         corners = [(float(x), float(y)) for x,y in corners]
-        # SerialEM lists first corner as last corner as well
+        # Last corner is duplicate of the first corner
         corners = corners[:-1]
         model.corners = corners
 
