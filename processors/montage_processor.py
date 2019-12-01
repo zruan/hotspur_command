@@ -39,7 +39,7 @@ class MontageProcessor():
         montages = MontageData.fetch_all(self.session.db)
         untracked = [m for m in montages if m.base_name not in self.tracked]
         self.tracked.extend([m.base_name for m in untracked])
-        unprocessed = [m for m in montages if m.preview is None]
+        unprocessed = [m for m in untracked if m.preview is None]
         for m in unprocessed: self.queue.put(m)
 
 
