@@ -21,12 +21,10 @@ class MontageProcessor():
 
     @classmethod
     def for_session(cls, session):
-        try:
-            return cls.processors_by_session[session]
-        except:
+        if not session in cls.processors_by_session:
             processor = cls(session)
             cls.processors_by_session[session] = processor
-            return processor
+        return cls.processors_by_session[session]
 
 
     def __init__(self, session):
