@@ -54,7 +54,7 @@ class CtffindProcessor():
         if len(self.queued) == 0:
             return
 
-        if ResourceManager.request_cpus(self.required_cpus):
+        if ResourceManager.request_cpus(CtffindProcessor.required_cpus):
             try:
                 motion_correction_data = self.queued.pop()
                 acquisition_data = AcquisitionData(motion_correction_data.base_name)
