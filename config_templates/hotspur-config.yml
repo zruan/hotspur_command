@@ -33,11 +33,11 @@ hash_salt: hotspur
 
 # The path to the Motioncor2 executable
 # If this program is on your $PATH, you can simply use the name of the program
-motioncor2_executable: motioncor2
+motioncor2: motioncor2
 
 # The path to the Ctffind4 executable
 # If this program is on your $PATH, you can simply use the name of the program
-ctffind4_executable: ctffind
+ctffind: ctffind
 
 # The ids of the GPUs available to hotspur for processing
 gpus: [0,1,2,3]

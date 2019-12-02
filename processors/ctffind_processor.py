@@ -8,6 +8,7 @@ import numpy as np
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData 
 from resource_manager import ResourceManager
+from hotspur_config import get_config
 
 
 class CtffindProcessor():
@@ -77,7 +78,7 @@ class CtffindProcessor():
 
         # Ctffind requires a HEREDOC. Yikes.
         command_list = [
-            'ctffind << EOF',
+            f'{get_config().ctffind} << EOF',
             aligned_image_file,
             output_file,
             '{}'.format(motion_correction_data.pixel_size), # pixelsize
