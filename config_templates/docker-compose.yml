@@ -15,7 +15,7 @@ services:
     image: hotspur/web-fileserver
     container_name: {app_name}-web-fileserver
     volumes:
-      - {data_path}/projects/hashed:/hotspur
+      - {data_path}/sessions:/hotspur
     expose:
       - "80"
 
