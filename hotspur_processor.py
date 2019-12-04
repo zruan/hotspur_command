@@ -42,4 +42,4 @@ def start_processing(args):
             Motioncor2Processor.for_session(session).run()
             CtffindProcessor.for_session(session).run()
 
-        time.sleep(5)
+        time.sleep(1)
