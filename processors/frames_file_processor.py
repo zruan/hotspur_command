@@ -127,7 +127,7 @@ class FramesFileProcessor():
 
     def filter_for_most_recent_stacks(self, stacks):
         stacks.sort(key=lambda i: i.time, reverse=True)
-        return stacks[-self.batch_size:]
+        return stacks[:self.batch_size]
 
 
     def parse_stack(self, stack):
