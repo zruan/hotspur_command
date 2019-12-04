@@ -34,7 +34,6 @@ class SessionProcessor():
             try:
                 dir = self.ensure_processing_directory(session)
                 session.processing_directory = str(dir)
-                self.link_processing_directory(session)
                 session.db = fetch_db(session.hash)
                 session.fetch(session.db)
                 session.push(session.db)
@@ -129,28 +128,7 @@ class SessionProcessor():
         return processing_dir
 
 
-    def link_processing_directory(self, session):
-        processing_dir = self.get_processing_directory(session)
-
-        link_dir = self.get_link_directory(session)
-        LOG.debug(f'Ensuring link directory {link_dir}')
-        link_dir.mkdir(parents=True, exist_ok=True)
-
-        link = link_dir / session.name
-        if not link.exists:
-            LOG.debug(f'Creating link {link} to {processing_dir}')
-            link.symlink_to(processing_dir, target_is_directory=True)
-
-        return link
-
-
     def get_processing_directory(self, session):
         base_path = Path(get_config().data_path)
-        hash_path = base_path / "projects/hashed"
+        hash_path = base_path / "sessions"
         return hash_path / session.hash
-
-
-    def get_link_directory(self, session):
-        base_path = Path(get_config().data_path)
-        link_path = base_path / "projects/links"
-        return link_path / session.project
