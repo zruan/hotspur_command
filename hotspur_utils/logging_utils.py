@@ -13,7 +13,7 @@ sysout_handler.setLevel(logging.DEBUG)
 
 file_handler = RotatingFileHandler(
     get_config().logfile,
-    maxBytes=10000,
+    maxBytes=2*1000*1000, # 2MB
     backupCount=5
 )
 file_handler.setFormatter(full_formatter)
