@@ -85,7 +85,7 @@ class Motioncor2Processor():
         input_flag = '-InTiff' if acquisition_data_model.file_format == '.tif' else '-InMrc'
 
         command_list = [
-            f'{get_config().motioncor2}',
+            f'{get_config().motioncor2_full_path}',
             f'{input_flag} {acquisition_data_model.image_path}',
             f'-OutMrc {output_file}',
             f'-Kv {acquisition_data_model.voltage}',

@@ -1,24 +1,23 @@
-# Keep this file in a safe place with restricted permissions:
-# it contains sensitive information, like the couchdb admin username and password
-
 # The name of the hotspur instance
 # Changing this is helpful if you need to run multiple instances of hotspur
 # In particular, Docker container names are based on this to avoid naming collisions
 app_name: hotspur
 
-# This is the folder under which all hotspur data is saved
-# Couchdb data is saved under {data_path}/couchdb
-# The folder structure under this directory is automatic and rigid
+# Folder under which all hotspur data is saved
+# The folder structure under this directory is automatically generated
 data_path: /hotspur
 
-# The conda environment for hotspur processing
-# This can be an environment name or the path to the environment
-conda_env: hotspur
+# Paths to executables hotspur relies on for processing data
+imod_edmont: edmont
+imod_blendmont: blendmont
+imod_extractpieces: extractpieces
+motioncor2: motioncor2
+ctffind: ctffind
 
-# A list of patterns to use for finding sessions, mostly identical to bash globs:
-# "*" and "**" are supported and work the same as they do in bash, while
-# {project}, {sample}, {session} work the same as "*" but also tell hotspur
-# what part of the path to use for the project, sample, or session name
+# A list of patterns to use for finding sessions
+# The mask indicates what path part to use for the project/sample/session name
+# Mask defaults to the path tail: .../project/sample/session
+# The glob and mask must be the same length
 search_patterns:
 - glob: /data/*/*/*/
   mask: /*/project/sample/session/
@@ -27,40 +26,25 @@ search_patterns:
 - glob: /some-place/*/*/subfolder/*/
   mask: /*/project/sample/*/session/
 
-# FOR SECURITY IT'S IMPORTANT TO CHANGE THIS
 # Salt used when hashing session and project names for the web view
 hash_salt: hotspur
-
-# The path to the Motioncor2 executable
-# If this program is on your $PATH, you can simply use the name of the program
-motioncor2: motioncor2
-
-# The path to the Ctffind4 executable
-# If this program is on your $PATH, you can simply use the name of the program
-ctffind: ctffind
 
 # The ids of the GPUs available to hotspur for processing
 gpus: [0,1,2,3]
 
-# The number of threads hotspur will use for processing
+# The maximum number of threads hotspur will use for processing
 threads: 12
 
 # The max age (in days) of sessions that hotspur will process
-# Use a short maximum age to avoid processing a huge backlog
+# Use a short maximum age to avoid processing a large backlog
 session_max_age: 7 
 
-# The domain by which users will access hotspur web services, including couchdb
-# The subdomain is optional
+# The host for the dockerized hotspur web services stack, including couchdb
 host: subdomain.domain.website.edu
 
-# The port by which users will access hotspur web services, including couchdb
-# Change the port if you're already running a server on port 80 and want to run hotspur alongside it
-port: "80"
+# The port for the hotspur web services
+port: 80
 
-# FOR SECURITY IT'S IMPORTANT TO CHANGE THESE
-# The admin credentials for the couchdb instance
-# Use these to manage couchdb if you need to
-# The back end processing uses these credentials to create and delete databases
-# The front end does not use these credentials
+# Admin credentials for the couchdb instance
 admin_name: admin
 admin_pass: password

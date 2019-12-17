@@ -76,7 +76,7 @@ class MontageProcessor():
     # kept them seperate to make things a little more clear
     def bin_montage_stack(self, src, section, dst):
         command = ' '.join([
-            shutil.which('edmont'),
+            f'{get_config().imod_edmont_full_path}',
             f'-imin {src}',
             f'-imout {dst}',
             f'-secs {section}',
@@ -91,7 +91,7 @@ class MontageProcessor():
 
     def extract_piece_coords_from_montage_stack(self, src, dst):
         command = ' '.join([
-            shutil.which('extractpieces'),
+            f'{get_config().imod_extractpieces_full_path}',
             f'-input {src}',
             f'-output {dst}'
             '> /dev/null'
@@ -104,7 +104,7 @@ class MontageProcessor():
 
     def blend_montage_stack(self, src, coords, dst):
         command = ' '.join([
-            shutil.which('blendmont'),
+            f'{get_config().imod_blendmont_full_path}',
             f'-imin {src}',
             f'-imout {dst}',
             f'-plin {coords}',
