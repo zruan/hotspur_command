@@ -15,14 +15,14 @@ def prepare_hotspur_config():
 
 
 def prepare_conda_config():
-    source = template_dir_path / 'conda-environment.yml'
-    destination = Path() / 'hotspur-conda-environment.yml'
+    source = template_dir_path / 'environment.yml'
+    destination = Path() / 'environment.yml'
     copy_template(source, destination)
 
     print('\n'.join([
         '',
-        "Create the conda environment using a command such as:",
-        'conda env create -f hotspur-conda-environment.yml',
+        'Create the conda environment using a command such as:',
+        'conda env create -f environment.yml -p /conda/env/path',
         ''
     ]))
 
@@ -45,7 +45,7 @@ def prepare_docker_config(args):
     print('\n'.join([
         '',
         "Start the docker containers using a command such as:",
-        f'docker-compose -p {config.app_name} -f hotspur-docker-compose.yml up',
+        f'docker-compose -p {config.app_name} -f docker-compose.yml up',
         ''
     ]))
 
