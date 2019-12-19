@@ -4,23 +4,26 @@ from pathlib import Path
 
 
 template_dir_path = Path(__file__).parent / 'config_templates'
+config_file_name = 'hotspur-config.yml'
+conda_env_file_name = 'environment.yml'
+docker_compose_file_name = 'docker-compose.yml'
 
 
 def prepare_hotspur_config():
-    source = template_dir_path / 'hotspur-config.yml'
-    destination = Path() / 'hotspur-config.yml'
+    source = template_dir_path / config_file_name
+    destination = Path() / config_file_name
     copy_template(source, destination)
 
 
 def prepare_conda_config():
-    source = template_dir_path / 'environment.yml'
-    destination = Path() / 'environment.yml'
+    source = template_dir_path / conda_env_file_name
+    destination = Path() / conda_env_file_name
     copy_template(source, destination)
 
     print('\n'.join([
         '',
         'Create the conda environment using a command such as:',
-        'conda env create -f environment.yml -p /conda/env/path',
+        f'conda env create -f {conda_env_file_name} -p /conda/env/path',
         ''
     ]))
 
@@ -29,14 +32,14 @@ def prepare_docker_config(args):
     from hotspur_config import load_config
     config = load_config(args.config_file)
     # config = flatten(config)
-    source = template_dir_path / 'docker-compose.yml'
+    source = template_dir_path / docker_compose_file_name
 
     with open(source, 'r') as fp:
         contents = fp.read()
     
     contents = contents.format(**vars(config))
 
-    destination = Path() / 'hotspur-docker-compose.yml'
+    destination = Path() / docker_compose_file_name
     with open(destination, 'w') as fp:
         fp.write(contents)
     print(f'Saved {destination}')
@@ -44,7 +47,7 @@ def prepare_docker_config(args):
     print('\n'.join([
         '',
         "Start the docker containers using a command such as:",
-        f'docker-compose -p {config.app_name} -f docker-compose.yml up',
+        f'docker-compose -p {config.app_name} -f {docker_compose_file_name} up',
         ''
     ]))
 
