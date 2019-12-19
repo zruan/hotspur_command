@@ -53,17 +53,6 @@ def prepare_docker_config(args):
 
 
 def copy_template(source, destination):
-    # if destination.exists():
-    #     overwrite = input(f'The file {destination} alread exists.\nOverwrite? [Y/n] ')
-    #     if overwrite is '' or overwrite in ['y', 'Y']:
-    #         pass
-    #     elif overwrite in ['n', 'N']:
-    #         print('NOT overwritting file. Exiting.')
-    #         return
-    #     else:
-    #         print(f"Expected [' ', 'y', 'Y', 'n', 'N'] but got {overwrite}. Exiting.")
-    #         return
-
     copy(source, destination)
     print(f'Saved {destination}')
 
