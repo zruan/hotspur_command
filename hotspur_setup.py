@@ -2,8 +2,6 @@ import argparse
 import shutil
 from pathlib import Path
 
-import hotspur_config
-
 
 template_dir_path = Path(__file__).parent / 'config_templates'
 
@@ -15,6 +13,7 @@ def prepare_hotspur_config():
 
 
 def prepare_conda_config():
+    import hotspur_config
     source = template_dir_path / 'environment.yml'
     destination = Path() / 'environment.yml'
     copy_template(source, destination)
