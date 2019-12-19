@@ -13,7 +13,6 @@ def prepare_hotspur_config():
 
 
 def prepare_conda_config():
-    import hotspur_config
     source = template_dir_path / 'environment.yml'
     destination = Path() / 'environment.yml'
     copy_template(source, destination)
@@ -27,7 +26,8 @@ def prepare_conda_config():
 
 
 def prepare_docker_config(args):
-    config = hotspur_config.load_config(args.config_file)
+    from hotspur_config import load_config
+    config = load_config(args.config_file)
     # config = flatten(config)
     source = template_dir_path / 'docker-compose.yml'
 
