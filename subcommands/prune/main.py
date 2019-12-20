@@ -7,7 +7,7 @@ from data_models import SessionData, ProjectData
 
 logger = get_logger_for_module(__name__)
 
-def reset(args):
+def run(args):
     if args.all:
         reset_all()
         return
