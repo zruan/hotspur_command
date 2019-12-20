@@ -10,7 +10,7 @@ class Micrograph():
         self.motion_correction_data = motion_correction_data
         self.ctf_data = ctf_data
 
-def export(args):
+def run(args):
     db = couchdb_utils.fetch_db(args.hash)
     session = SessionData()
     session.fetch(db)

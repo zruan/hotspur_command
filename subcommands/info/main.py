@@ -5,7 +5,7 @@ from hotspur_utils import hash_utils, couchdb_utils
 from data_models import ProjectData
 
 
-def main(args):
+def run(args):
     if args.all:
         show_all_projects()
         return
