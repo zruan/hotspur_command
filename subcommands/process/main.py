@@ -16,21 +16,17 @@ from processors import (
 from utils.config import get_config
 
 
-logger = get_logger_for_module(__name__)
+LOG = get_logger_for_module(__name__)
 
-def start_processing(args):
+def run(args):
 
-    if args.dirs is not None:
-        search_patterns = args.dirs
-    else:
-        search_patterns = get_config().search_patterns
-        logger.debug('Using search patterns from config file')
+    search_patterns = get_config().search_patterns
 
     session_processor = SessionProcessor()
     project_processor = ProjectProcessor()
 
     while True:
-        logger.debug('Starting main loop')
+        LOG.debug('Starting main loop')
         session_processor.find_sessions(search_patterns)
         random.shuffle(session_processor.sessions)
 

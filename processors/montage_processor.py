@@ -9,6 +9,7 @@ import imaging
 
 from utils.logging import get_logger_for_module
 from utils.resources import ResourceManager
+from utils.config import get_config
 from data_models import MontageData
 
 
@@ -80,6 +81,7 @@ class MontageProcessor():
             f'-imin {src}',
             f'-imout {dst}',
             f'-secs {section}',
+            '-mdoc',
             '-bin 4',
             '> /dev/null'
         ])
