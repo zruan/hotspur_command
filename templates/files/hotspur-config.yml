@@ -15,8 +15,7 @@ motioncor2: motioncor2
 ctffind: ctffind
 
 # A list of patterns to use for finding sessions
-# The mask indicates what path part to use for the project/sample/session name
-# Mask defaults to the path tail: .../project/sample/session
+# The mask indicates what path piece to use for the project, sample, and session name
 # The glob and mask must be the same length
 search_patterns:
 - glob: /data/*/*/*/
@@ -26,7 +25,7 @@ search_patterns:
 - glob: /some-place/*/*/subfolder/*/
   mask: /*/project/sample/*/session/
 
-# Salt used when hashing session and project names for the web view
+# Salt used when hashing session and project names
 hash_salt: hotspur
 
 # The ids of the GPUs available to hotspur for processing
