@@ -18,5 +18,3 @@ Hotspur is also simple to install. Using Conda and Docker, dependencies are nice
 - Create Docker-Compose file: `/path/to/conda/env/bin/python3 command/hotspur.py setup docker config.yml`
 - Start docker containers: `docker-compose -f docker-compose.yml -p hotspur -d up`
 - Run Hotspur help message: `/path/to/conda/env/bin/python3 command/hotspur.py info`
-
-The `hotspur_setup.py` script is included in the hotspur command repo to help you set up things up. It's a lightweight script with no dependencies that generates the config.yml file for the Hotspur, the the environment.yml file for the Conda environment, and the docker-compose.yml file for the Docker containers.
