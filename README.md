@@ -16,5 +16,6 @@ Hotspur is also simple to install. Using Conda and Docker, dependencies are nice
 - Create Conda environment file: `python3 command/hotspur.py setup conda`
 - Create Conda environment: `conda env create -f environment.yml -p /path/to/conda/env`
 - Create Docker-Compose file: `/path/to/conda/env/bin/python3 command/hotspur.py setup docker config.yml`
-- Start docker containers: `docker-compose -f docker-compose.yml -p hotspur -d up`
+- Start Docker containers: `docker-compose -f docker-compose.yml -p hotspur -d up`
+- Set up Couchdb via Fauxton
 - Run Hotspur help message: `/path/to/conda/env/bin/python3 command/hotspur.py info`
