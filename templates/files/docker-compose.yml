@@ -4,7 +4,7 @@ services:
     image: hotspur/couchdb
     container_name: {app_name}-couchdb
     volumes:
-      - {data_path}/couchdb:/opt/couchdb/data
+      - {data_path}couchdb:/opt/couchdb/data
     expose:
       - "5984"
     environment:
@@ -15,7 +15,7 @@ services:
     image: hotspur/web-fileserver
     container_name: {app_name}-web-fileserver
     volumes:
-      - {data_path}/sessions:/hotspur
+      - {data_path}sessions:/hotspur
     expose:
       - "80"
 
