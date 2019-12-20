@@ -1,11 +1,9 @@
 from pathlib import Path
 
-from utils.config import load_config
 from templates.loader import load_docker_template
 
 
 def run(args):
-    config = load_config(args.config)
     template, name = load_docker_template()
     contents = template.format(**vars(config))
 

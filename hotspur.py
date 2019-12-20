@@ -40,7 +40,12 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if not 'func' in args:
-        parser.print_help()
-    else:
+
+    if 'config' in args:
+        from utils.config import load_config
+        load_config(args.config)
+
+    if 'func' in args:
         args.func(args)
+    else:
+        parser.print_help()
