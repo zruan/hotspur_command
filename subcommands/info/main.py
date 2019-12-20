@@ -1,7 +1,8 @@
 import os
 
-from hotspur_config import get_config
-from hotspur_utils import hash_utils, couchdb_utils
+from utils.config import get_config
+from utils.hash import get_hash
+from utils.couchdb import couchdb_server, fetch_db, fetch_doc
 from data_models import ProjectData
 
 
@@ -22,13 +23,13 @@ def run(args):
 
 
 def show_all_projects():
-    for db_name in couchdb_utils.couchdb_server:
+    for db_name in couchdb_server:
         # skip couchdb magic databases
         if db_name[0] == '_':
             continue
-        db = couchdb_utils.couchdb_server[db_name]
+        db = couchdb_server[db_name]
         if 'project_data' in db:
-            data = couchdb_utils.fetch_doc('project_data', db)
+            data = fetch_doc('project_data', db)
             print('- {}'.format(data['name']))
             print('  {} session(s)'.format(len(data['sessions'].keys())))
             print('  {}/web-view/project/{}'.format(
@@ -38,13 +39,13 @@ def show_all_projects():
 
 
 def show_hash(input):
-    hash = hash_utils.get_hash(input)
+    hash = get_hash(input)
     print(f'\n{hash}\n')
 
 
 def show_project_info(project_name):
-    project_hash = hash_utils.get_hash(project_name)
-    db = couchdb_utils.fetch_db(project_hash)
+    project_hash = get_hash(project_name)
+    db = fetch_db(project_hash)
     project = ProjectData()
     project.fetch(db)
 

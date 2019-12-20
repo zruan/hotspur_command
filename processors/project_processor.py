@@ -1,6 +1,6 @@
-from hotspur_utils.logging_utils import get_logger_for_module
-from hotspur_utils.hash_utils import get_hash
-from hotspur_utils.couchdb_utils import fetch_db
+from utils.logging import get_logger_for_module
+from utils.hash import get_hash
+from utils.couchdb import fetch_db
 
 from data_models import ProjectData
 

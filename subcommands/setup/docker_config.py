@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hotspur_config import load_config
+from utils.config import load_config
 from templates.loader import load_docker_template
 
 

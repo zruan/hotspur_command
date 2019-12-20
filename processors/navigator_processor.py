@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hotspur_utils.logging_utils import get_logger_for_module
+from utils.logging import get_logger_for_module
 from data_models import NavigatorData, MontageData
 
 

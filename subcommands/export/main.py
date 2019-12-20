@@ -1,7 +1,7 @@
 import os
 import tempfile
 
-from hotspur_utils import couchdb_utils
+from utils.couchdb import fetch_db 
 from data_models import SessionData, AcquisitionData, MotionCorrectionData, CtfData
 
 class Micrograph():
@@ -11,7 +11,7 @@ class Micrograph():
         self.ctf_data = ctf_data
 
 def run(args):
-    db = couchdb_utils.fetch_db(args.hash)
+    db = fetch_db(args.hash)
     session = SessionData()
     session.fetch(db)
 

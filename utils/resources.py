@@ -1,4 +1,4 @@
-from hotspur_config import get_config
+from utils.config import get_config
 from threading import Lock
 
 

@@ -1,7 +1,7 @@
 import time
 import random
 
-from hotspur_utils.logging_utils import get_logger_for_module
+from utils.logging import get_logger_for_module
 
 from processors import (
     SessionProcessor,
@@ -13,7 +13,7 @@ from processors import (
     CtffindProcessor
 )
 
-from hotspur_config import get_config
+from utils.config import get_config
 
 
 logger = get_logger_for_module(__name__)

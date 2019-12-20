@@ -7,8 +7,8 @@ from pathlib import Path
 
 import imaging
 
-from hotspur_utils.logging_utils import get_logger_for_module
-from resource_manager import ResourceManager
+from utils.logging import get_logger_for_module
+from utils.resources import ResourceManager
 from data_models import MontageData
 
 

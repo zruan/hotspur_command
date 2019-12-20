@@ -4,11 +4,11 @@ from glob import glob
 from pathlib import Path
 from types import SimpleNamespace
 
-from hotspur_config import get_config
+from utils.config import get_config
 
-from hotspur_utils.logging_utils import get_logger_for_module
-from hotspur_utils.couchdb_utils import fetch_db
-from hotspur_utils.hash_utils import get_hash
+from utils.logging import get_logger_for_module
+from utils.couchdb import fetch_db
+from utils.hash import get_hash
 
 from data_models import SessionData
 

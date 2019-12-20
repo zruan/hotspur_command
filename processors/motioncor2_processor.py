@@ -8,8 +8,8 @@ import math
 from itertools import accumulate
 
 from data_models import AcquisitionData, MotionCorrectionData
-from resource_manager import ResourceManager
-from hotspur_config import get_config
+from utils.resources import ResourceManager
+from utils.config import get_config
 
 
 class Motioncor2Processor():

@@ -1,6 +1,6 @@
 import re
 import copy
-from hotspur_utils import couchdb_utils
+from utils.couchdb import fetch_doc, push_doc, fetch_docs_of_type
 
 class DataModel():
 
@@ -24,10 +24,10 @@ class DataModel():
 		for key in self.ignored_keys:
 			del doc[key]
 		del doc['ignored_keys']
-		couchdb_utils.push_doc(doc, db)
+		push_doc(doc, db)
 
 	def fetch(self, db):
-		remote = couchdb_utils.fetch_doc(self._id, db)
+		remote = fetch_doc(self._id, db)
 		if remote is not None:
 			self.__dict__.update(remote)
 			return True
@@ -37,7 +37,7 @@ class DataModel():
 	@classmethod
 	def fetch_all(cls, db):
 		doc_type = cls._get_type()
-		all_docs = couchdb_utils.fetch_docs_of_type(doc_type, db)
+		all_docs = fetch_docs_of_type(doc_type, db)
 		models = []
 		for doc in all_docs:
 			model = cls(None)

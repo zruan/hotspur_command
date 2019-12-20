@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 import sys
-from hotspur_config import get_config
+from utils.config import get_config
 
 
 full_formatter = logging.Formatter('\n%(levelname)s - %(asctime)s - %(name)s - %(message)s')

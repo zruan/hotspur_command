@@ -3,8 +3,8 @@ from couchdb.design import ViewDefinition
 from string import Template
 import sys
 
-from hotspur_config import get_config
-from hotspur_utils.logging_utils import get_logger_for_module
+from utils.config import get_config
+from utils.logging import get_logger_for_module
 
 
 LOG = get_logger_for_module(__name__)

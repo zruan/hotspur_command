@@ -2,9 +2,9 @@ from argparse import ArgumentParser
 from subcommands.shared_parsers import config_file_parser, verbosity_parser
 
 
-def run_hotspur_config(args):
-    from subcommands.setup import hotspur_config
-    hotspur_config.run(args)
+def run_utils.config(args):
+    from subcommands.setup import utils.config
+    utils.config.run(args)
 
 
 def run_conda_config(args):
@@ -29,7 +29,7 @@ config_parser = subparsers.add_parser(
     "config",
     help="generate a hotspur config file with default values",
 )
-config_parser.set_defaults(func=run_hotspur_config)
+config_parser.set_defaults(func=run_utils.config)
 
 conda_parser = subparsers.add_parser(
     "conda",
