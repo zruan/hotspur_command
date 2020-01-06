@@ -4,7 +4,7 @@ from subcommands.shared_parsers import config_file_parser, verbosity_parser
 
 def run_hotspur_config(args):
     from subcommands.setup import hotspur_config
-    utils.config.run(args)
+    hotspur_config.run(args)
 
 
 def run_conda_config(args):
