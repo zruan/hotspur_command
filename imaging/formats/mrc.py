@@ -52,8 +52,6 @@ def load(path, supress=False, norm=False):
             print('swapping MRC endian')
             endian = '>'
             header = header.newbyteorder(endian)
-        print("Extra: " + str(header["symmetry"]))
-        print(MRCHeader.itemsize + header["symmetry"])
         data = np.memmap(fd, mode="c",
                            offset=MRCHeader.itemsize + header["symmetry"],
                             dtype=MRCModes[header["mode"]],
