@@ -229,7 +229,11 @@ class Motioncor2Processor():
                 if ext == '.mrc':
                     os.system("cp {} {}".format(gain_file, target_path))
                 elif ext == '.dm4':
-                    os.system("dm2mrc {} {}".format(gain_file, target_path))
+                    command_list = [
+                        f'{get_config().imod_dm2mrc_full_path}',
+                        f'{gain_file} {target_path}',
+                    ]
+                    subprocess.call(' '.join(command_list), shell=True)
                 else:
                     raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
             return target_path

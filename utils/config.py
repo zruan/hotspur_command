@@ -32,6 +32,7 @@ def _interpolate_config(config):
     config.imod_edmont_full_path = shutil.which(config.imod_edmont)
     config.imod_blendmont_full_path = shutil.which(config.imod_blendmont)
     config.imod_extractpieces_full_path = shutil.which(config.imod_extractpieces)
+    config.imod_dm2mrc_full_path = shutil.which(config.imod_dm2mrc)
     config.motioncor2_full_path = shutil.which(config.motioncor2)
     config.ctffind_full_path = shutil.which(config.ctffind)
     return config
