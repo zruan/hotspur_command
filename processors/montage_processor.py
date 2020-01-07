@@ -112,6 +112,7 @@ class MontageProcessor():
             f'-imout {dst}',
             f'-plin {coords}',
             f'-roo {dst}',
+            '-sl -nofft',
             '> /dev/null'
         ])
         LOG.info(f'Blending montage pieces for {src}')
@@ -124,5 +125,5 @@ class MontageProcessor():
         image_stack = imaging.load(str(src), format='mrc')
         image = image_stack[0]
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
-        imaging.save(image, str(dst))
+        imaging.save(image, str(dst), norm=False)
         return dst
