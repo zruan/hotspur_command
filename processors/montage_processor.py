@@ -71,6 +71,7 @@ class MontageProcessor():
         preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
         montage.preview = str(preview)
         montage.push(self.session.db)
+        ResourceManager.release_cpus(self.required_cpus)
 
 
     # This function can return piece coordinates but I
