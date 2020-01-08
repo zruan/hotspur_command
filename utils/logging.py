@@ -9,7 +9,7 @@ short_formatter = logging.Formatter('\n%(levelname)s - %(name)s - %(message)s')
 
 sysout_handler = logging.StreamHandler(sys.stdout)
 sysout_handler.setFormatter(short_formatter)                                                                                        
-sysout_handler.setLevel(logging.DEBUG)
+sysout_handler.setLevel(logging.INFO)
 
 file_handler = RotatingFileHandler(
     get_config().logfile,
@@ -17,14 +17,14 @@ file_handler = RotatingFileHandler(
     backupCount=5
 )
 file_handler.setFormatter(full_formatter)
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.INFO)
 
 def get_logger_for_module(module_name):
     global sysout_handler
     global file_handler
 
     logger = logging.getLogger(module_name)                                                                                   
-    logger.setLevel(logging.DEBUG)                                                                                         
+    logger.setLevel(logging.INFO)                                                                                         
     logger.addHandler(sysout_handler)
     logger.addHandler(file_handler)
 

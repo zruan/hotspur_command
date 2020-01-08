@@ -2,6 +2,7 @@ import time
 import random
 
 from utils.logging import get_logger_for_module
+from utils.resources import ResourceManager
 
 from processors import (
     SessionProcessor,
@@ -27,6 +28,9 @@ def run(args):
 
     while True:
         LOG.debug('Starting main loop')
+        LOG.info(f'Processing {len(session_processor.sessions)} sessions')
+        LOG.info(f'Available CPUs: {ResourceManager.available_cpus} ')
+        LOG.info(f'Available GPUs: {ResourceManager.gpu_locks} ')
         session_processor.find_sessions(search_patterns)
         random.shuffle(session_processor.sessions)
 
