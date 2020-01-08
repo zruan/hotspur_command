@@ -23,7 +23,10 @@ class ProjectProcessor():
             self.projects[name] = project
 
         if session.name not in project.sessions:
-            project.sessions[session.name] = session.hash
+            project.sessions[session.long_name] = {}
+            project.sessions[session.long_name]["name"] = session.name
+            project.sessions[session.long_name]["sample"] = session.sample
+            project.sessions[session.long_name]["hash"] = session.hash
             project.push(project.db)
 
 
