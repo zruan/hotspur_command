@@ -38,7 +38,7 @@ class Motioncor2Processor():
 
     def sync_with_db(self):
         current_models = MotionCorrectionData.fetch_all(self.session.db)
-        base_names = [model._id for model in current_models]
+        base_names = [model.base_name for model in current_models]
         self.tracked = base_names.copy()
         self.finished = base_names.copy()
         print("Fetched motion correction data models for session {}".format(self.session.name))
