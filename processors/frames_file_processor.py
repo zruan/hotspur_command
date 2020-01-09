@@ -186,23 +186,25 @@ class FramesFileProcessor():
 
     def update_dose_from_image(self, data_model):
         if data_model.file_format == '.tif':
-            frame_dose_per_pixel = self.get_dose_from_tif(data_model.image_path)
+            frame_dose_per_pixel, dimensions = self.get_dose_from_tif(data_model.image_path) 
         elif data_model.file_format == '.mrc':
-            frame_dose_per_pixel = self.get_dose_from_mrc(data_model.image_path)
+            frame_dose_per_pixel, dimensions = self.get_dose_from_mrc(data_model.image_path)
 
         data_model.frame_dose = frame_dose_per_pixel / (data_model.pixel_size ** 2)
         data_model.total_dose = data_model.frame_dose * data_model.frame_count
+        data_model.dimensions = dimensions 
         return data_model
+    
 
 
     def get_dose_from_tif(self, tif_path):
         with tifffile.TiffFile(tif_path) as imfile:
-            return imfile.pages[0].asarray().mean()
+            return (imfile.pages[0].asarray().mean(), imfile.pages[0].asarray().shape[::-1])
 
 
     def get_dose_from_mrc(self, mrc_path):
         imfile = imaging.load(mrc_path)
-        return imfile.mean()
+        return (imfile.mean(), imfile.shape[-2::-1])
 
 
     def update_session(self, data_model):
