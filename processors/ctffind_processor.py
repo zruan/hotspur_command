@@ -82,8 +82,8 @@ class CtffindProcessor():
             aligned_image_file,
             output_file,
             '{}'.format(motion_correction_data.pixel_size), # pixelsize
-            # '{}'.format(acquisition_data.voltage), # acceleration voltage
-            '300',
+            '{}'.format(acquisition_data.voltage), # acceleration voltage
+            #'300',
             '2.70', # Cs
             '0.1', # amplitude contrast
             '512', # size of amplitude spectrum to compute
@@ -122,8 +122,13 @@ class CtffindProcessor():
             print("Failed to update ctf data from ctffind log {}".format(data_model.ctf_log_file))
             print(e)
             pass
-
-        data_model.push(self.session.db)
+        
+        try:
+            data_model.push(self.session.db)
+        except Exception as e:
+            print("Failed to upload data to database")
+            print(e)
+            pass
 
         self.finished.append(data_model.base_name)
 
@@ -180,5 +185,7 @@ class CtffindProcessor():
         data_model.phase_shift = float(ctf_params[4])
         data_model.cross_correlation = float(ctf_params[5])
         data_model.estimated_resolution = float(ctf_params[6].rstrip())
+        if data_model.estimated_resolution > 99.0:
+            data_model.estimated_resolution = 99.0
         data_model.estimated_b_factor = 0
         return data_model
