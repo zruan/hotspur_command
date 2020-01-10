@@ -11,7 +11,8 @@ from processors import (
     MontageProcessor,
     FramesFileProcessor,
     Motioncor2Processor,
-    CtffindProcessor
+    CtffindProcessor,
+    DogpickerProcessor
 )
 
 from utils.config import get_config
@@ -41,5 +42,6 @@ def run(args):
             FramesFileProcessor.for_session(session).run()
             Motioncor2Processor.for_session(session).run()
             CtffindProcessor.for_session(session).run()
+            DogpickerProcessor.for_session(session).run()
 
         time.sleep(1)
