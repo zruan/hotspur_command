@@ -118,17 +118,21 @@ class DogpickerProcessor():
                 idogpicker_data[int(size+0.5)] = keys
             with open(output_file,'w') as fp:
                 json.dump(pretty_floats(idogpicker_data),fp)
-        except Exception as e:
-            LOG.exception(e)
-            pass
-
-        data_model = DogpickerData(acquisition_data.base_name)
-        data_model.time = time.time()
-        data_model.dogpicker_file = output_file
+            data_model = DogpickerData(acquisition_data.base_name)
+            data_model.time = time.time()
+            data_model.dogpicker_file = output_file
         
 
        
-        data_model.push(self.session.db)
+            data_model.push(self.session.db)
+        
+        except Exception as e:
+            LOG.error("Dogpicker failed")
+            LOG.error(e)
+
+            pass
+
+        
 
         self.finished.append(data_model.base_name)
 
