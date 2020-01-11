@@ -10,7 +10,7 @@ from utils.logging import get_logger_for_module
 from utils.couchdb import fetch_db
 from utils.hash import get_hash
 
-from data_models import SessionData
+from data_models import SessionData, UserSessionData
 
 
 LOG = get_logger_for_module(__name__)
@@ -38,6 +38,10 @@ class SessionProcessor():
                 session.fetch(session.db)
                 session.push(session.db)
                 LOG.debug(f'Pushed session {session.name} to couchdb')
+                user_session_data = UserSessionData()
+                if not user_session_data.fetch(session.db):
+                    LOG.info(f'{session.name} does not have user session data so I pushed it')
+                    user_session_data.push(session.db)
                 self.sessions.append(session)
                 self.queued.remove(session)
             except Exception as e:

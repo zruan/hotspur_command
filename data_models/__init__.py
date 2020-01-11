@@ -9,4 +9,5 @@ from .user_data import UserData
 from .navigator_data import NavigatorData
 from .montage_data import MontageData
 from .dogpicker_data import DogpickerData
+from .user_session_data import UserSessionData
 
