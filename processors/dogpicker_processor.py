@@ -32,7 +32,15 @@ def log(image, size):
     return -imaging.filters.laplace(image, sigma)*sigma*sigma
 
 def zoom_peaks(peaks, zoom):
-    return [(tuple(np.array(p)*(1.0/np.array(zoom))), v) for p, v in peaks]
+    return [(tuple(np.array(p)*(1.0/np.array(zoom))), v, s) for p, v, s in peaks]
+
+def peak_mean(peak, radius, image):
+    lr = int(max(0,  peak[0][0] - radius))
+    rr = int(min(image.shape[0], peak[0][0] + radius))
+    lc = int(max(0,  peak[0][1] - radius))
+    rc = int(min(image.shape[1], peak[0][1] + radius))
+    stdv = np.std(image[lr:rr, lc:rc])
+    return stdv
 
 class DogpickerProcessor():
 
@@ -109,7 +117,7 @@ class DogpickerProcessor():
             maxt = None
             debug = None
             meanmax = None
-            sizes = np.logspace(np.log10(60), np.log10(700) ,num=20)
+            sizes = np.logspace(np.log10(30), np.log10(300) ,num=20)
             idogpicker_data = {}
             for size in sizes:
                 keys = list(self.detect(image, size, mint, maxt, debug, meanmax))
@@ -134,7 +142,7 @@ class DogpickerProcessor():
 
         
 
-        self.finished.append(data_model.base_name)
+        self.finished.append(acquisition_data.base_name)
 
         ResourceManager.release_cpus(self.required_cpus)
 
@@ -156,6 +164,8 @@ class DogpickerProcessor():
                 mint = pvalues[0]
             peaks = [(p, v) for p, v in peaks if v <= maxt]
             peaks = [(p, v) for p, v in peaks if v >= mint]
+            peaks = [(p, v, peak_mean((p, v), reduced_size/2, reduced_image)) for p, v in peaks]
+            
             if meanmax is not None:
                 stdvs = [peak_mean(peak, reduced_size/2, reduced_image) for peak in peaks]
                 peaks = [peak for peak, stdv in zip(peaks, stdvs) if stdv < meanmax]
@@ -172,7 +182,7 @@ class DogpickerProcessor():
                 for idx in range(len(counts)):
                     print('  % 13.2f -> % 13.2f: %d' % (bins[idx], bins[idx+1], counts[idx]))
                 save_peaks(reduced_image, log_image, peaks, reduced_size, debug)
-            peaks = [(p, (1+v)*1000) for p, v in peaks]
+            peaks = [(p, (1+v)*1000, (1+s)*1000) for p, v, s in peaks]
             return zoom_peaks(peaks, [rzoom, czoom])
         return []
     
