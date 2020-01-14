@@ -84,10 +84,18 @@ class Motioncor2Processor():
         bin_amount = int(Motioncor2Processor.target_binning / acquisition_data_model.binning)
         input_flag = '-InTiff' if acquisition_data_model.file_format == '.tif' else '-InMrc'
 
+        dose_per_pixel = acquisition_data_model.frame_dose * (acquisition_data_model.pixel_size ** 2)
+        
+        group_amount = math.ceil(1.0 / dose_per_pixel)
+        
+        if group_amount > acquisition_data_model.frame_count / 2:
+            group_amount = int(group_amount/2)
+
         command_list = [
             f'{get_config().motioncor2_full_path}',
             f'{input_flag} {acquisition_data_model.image_path}',
             f'-OutMrc {output_file}',
+            f'-Group {group_amount}'
             f'-Kv {acquisition_data_model.voltage}',
             f'-gain {gain_file}',
             f'-PixSize {acquisition_data_model.pixel_size}',
@@ -107,6 +115,7 @@ class Motioncor2Processor():
         data_model.non_weighted_image_file = output_file
         data_model.log_file = output_log_file
         data_model.binning = Motioncor2Processor.target_binning
+        data_model.grouped_by = group_amount
 
         if os.path.exists(output_file_dose_weighted):
             data_model.dose_weighted_image_file = output_file_dose_weighted
