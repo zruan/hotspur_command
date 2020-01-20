@@ -45,9 +45,10 @@ class FramesFileProcessor():
     def run(self):
         images = self.find_images()
         images = self.filter_for_untracked_images(images)
-        self.tracked.extend([i.image_path for i in images])
+        #self.tracked.extend([i.image_path for i in images])
         images = self.filter_for_present_metadata(images)
         stacks = self.filter_for_framestacks(images)
+        self.tracked.extend([i.image_path for i in images])
         self.queued.extend(stacks)
         stacks = self.get_valid_stacks_from_queue()
         stacks = self.filter_for_most_recent_stacks(stacks)
