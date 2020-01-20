@@ -88,14 +88,16 @@ class Motioncor2Processor():
         
         group_amount = math.ceil(1.0 / dose_per_pixel)
         
-        if group_amount > acquisition_data_model.frame_count / 2:
-            group_amount = int(group_amount/2)
+        if group_amount > (acquisition_data_model.frame_count / 3):
+            group_amount = math.floor(acquisition_data_model.frame_count/3)
+        if group_amount > 7:
+            group_amount = 7
 
         command_list = [
             f'{get_config().motioncor2_full_path}',
             f'{input_flag} {acquisition_data_model.image_path}',
             f'-OutMrc {output_file}',
-            f'-Group {group_amount}'
+            f'-Group {group_amount}',
             f'-Kv {acquisition_data_model.voltage}',
             f'-gain {gain_file}',
             f'-PixSize {acquisition_data_model.pixel_size}',
