@@ -29,17 +29,21 @@ def run(args):
 
     while True:
         LOG.debug('Starting main loop')
-        LOG.info(f'Processing {len(session_processor.sessions)} sessions')
-        LOG.info(f'Available CPUs: {ResourceManager.available_cpus} ')
-        LOG.info(f'Available GPUs: {ResourceManager.gpu_locks} ')
+        LOG.debug(f'Processing {len(session_processor.sessions)} sessions')
+        LOG.debug(f'Available CPUs: {ResourceManager.available_cpus} ')
+        LOG.debug(f'Available GPUs: {ResourceManager.gpu_locks} ')
         session_processor.find_sessions(search_patterns)
         random.shuffle(session_processor.sessions)
 
         for session in session_processor.sessions:
+            LOG.info(f'Main loop session {session}')
             project_processor.update_project(session)
             NavigatorProcessor.for_session(session).run()
+            LOG.info(f'Main loop Montage  {session}')
             MontageProcessor.for_session(session).run()
+            LOG.info(f'Main loop Frame Files  {session}')
             FramesFileProcessor.for_session(session).run()
+            LOG.info(f'Main loop Motioncor  {session}')
             Motioncor2Processor.for_session(session).run()
             CtffindProcessor.for_session(session).run()
             DogpickerProcessor.for_session(session).run()

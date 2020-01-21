@@ -28,7 +28,7 @@ class FramesFileProcessor():
 
         self.suffixes= ['.tif', '.mrc']
         # Time (sec) to wait before acting on a file. Prevents reading a partial file.
-        self.min_lifetime = 120
+        self.min_lifetime = 30
         self.batch_size = 20
 
         self.tracked = []
@@ -51,6 +51,7 @@ class FramesFileProcessor():
         self.tracked.extend([i.image_path for i in images])
         self.queued.extend(stacks)
         stacks = self.get_valid_stacks_from_queue()
+        logger.info(f'{len(stacks)} in queue for {self.session.name}')
         stacks = self.filter_for_most_recent_stacks(stacks)
 
         for stack in stacks:

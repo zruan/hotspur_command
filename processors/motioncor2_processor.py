@@ -41,7 +41,6 @@ class Motioncor2Processor():
         base_names = [model.base_name for model in current_models]
         self.tracked = base_names.copy()
         self.finished = base_names.copy()
-        print("Fetched motion correction data models for session {}".format(self.session.name))
 
 
     def update_tracked_data(self):
@@ -110,7 +109,6 @@ class Motioncor2Processor():
         ]
         # print(' '.join(command_list))
         subprocess.call(' '.join(command_list), shell=True)
-        print(f'Corrected motion for {acquisition_data_model.base_name}')
 
         data_model = MotionCorrectionData(acquisition_data_model.base_name)
         data_model.time = time.time()
