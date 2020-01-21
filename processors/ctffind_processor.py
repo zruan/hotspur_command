@@ -78,7 +78,7 @@ class CtffindProcessor():
 
         # Ctffind requires a HEREDOC. Yikes.
         command_list = [
-            f'{get_config().ctffind_full_path} << EOF',
+            f'{get_config().ctffind_full_path} << EOF > /dev/null',
             aligned_image_file,
             output_file,
             '{}'.format(motion_correction_data.pixel_size), # pixelsize
