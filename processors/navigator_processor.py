@@ -47,6 +47,7 @@ class NavigatorProcessor():
 
         try:
             current_nav, maps = self.process_navigator(current_nav)
+            LOG.info("Pushing NAV")
             current_nav.push(self.session.db)
             maps = [m for m in maps if m._id not in self.session.db]
             for m in maps: m.push(self.session.db)
@@ -77,7 +78,7 @@ class NavigatorProcessor():
         map_items = [i for i in items if self.is_map_item(i)]
         if len(map_items) == 0:
             LOG.info(f'Did not find any map items for nav {nav}')
-            return
+            return nav, []
 
         saved_path = self.get_nav_saved_path(nav)
         convert_path_fn = self.get_convert_path_fn(saved_path, nav.path)
@@ -95,7 +96,6 @@ class NavigatorProcessor():
         if len(squares) > 0:
             squares = self.remove_overlaping_squares(squares)
             nav.squares = [s.base_name for s in squares]
-
         return nav, maps
 
 
@@ -143,6 +143,7 @@ class NavigatorProcessor():
                     value = value.strip().split()
                     if len(value) == 1: value = value[0]
                     item_data[key] = value
+            items.append(item_data)
         return items
 
 
@@ -166,6 +167,10 @@ class NavigatorProcessor():
         position = [float(n) for n in position]
         model.position = position
 
+        net_viewshift = map_item['NetViewShiftXY']
+        net_viewshift = [float(n) for n in net_viewshift]
+        model.net_viewshift = net_viewshift
+
         dimensions = map_item['MapWidthHeight']
         dimensions = [float(n) for n in dimensions]
         model.dimensions = dimensions
@@ -179,6 +184,8 @@ class NavigatorProcessor():
         # Last corner is duplicate of the first corner
         corners = corners[:-1]
         model.corners = corners
+
+        model.is_montage = int(map_item['MapMontage']) > 0
 
         return model
 

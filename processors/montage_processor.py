@@ -65,10 +65,13 @@ class MontageProcessor():
     def process_montage(self, montage):
         src = Path(montage.path)
         dst = Path(self.session.processing_directory) / montage.base_name
-        binned = self.bin_montage_stack(src, montage.section, dst.with_suffix('.binned'))
-        coords = self.extract_piece_coords_from_montage_stack(binned, dst.with_suffix('.coords'))
-        blended = self.blend_montage_stack(binned, coords, dst.with_suffix('.blended'))
-        preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
+        if (montage.is_montage):
+            binned = self.bin_montage_stack(src, montage.section, dst.with_suffix('.binned'))
+            coords = self.extract_piece_coords_from_montage_stack(binned, dst.with_suffix('.coords'))
+            blended = self.blend_montage_stack(binned, coords, dst.with_suffix('.blended'))
+            preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
+        else:
+            preview = self.preview_montage(src, dst.with_suffix('.preview.png'), section=montage.section)
         montage.preview = str(preview)
         montage.push(self.session.db)
         ResourceManager.release_cpus(self.required_cpus)
@@ -121,9 +124,9 @@ class MontageProcessor():
         return dst
 
 
-    def preview_montage(self, src, dst):
+    def preview_montage(self, src, dst, section=0):
         image_stack = imaging.load(str(src), format='mrc')
-        image = image_stack[0]
+        image = image_stack[section]
         image = imaging.filters.norm(image, 0.01, 0.01, 0, 255)
         imaging.save(image, str(dst), norm=False)
         return dst

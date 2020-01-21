@@ -12,5 +12,7 @@ class MontageData(DataModel):
 
         self.corners = None
         self.position = None
+        self.net_viewshift = None
         self.scale_matrix = None
         self.dimensions = None
+        self.is_montage = None
