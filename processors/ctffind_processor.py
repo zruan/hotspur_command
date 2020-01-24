@@ -5,6 +5,7 @@ from threading import Thread
 import subprocess
 import imaging
 import numpy as np
+import math
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData 
 from utils.resources import ResourceManager
@@ -75,7 +76,11 @@ class CtffindProcessor():
             aligned_image_file = motion_correction_data.aligned_image_file
         output_file_base = os.path.join(self.session.processing_directory, acquisition_data.base_name)
         output_file = '{}_ctffind.ctf'.format(output_file_base)
+        max_resolution = math.floor(motion_correction_data.pixel_size * 2)
+        max_resolution = max(max_resolution,4)
 
+        min_resolution = math.ceil(motion_correction_data.pixel_size * 10)
+        min_resolution = max(min_resolution, 20)
         # Ctffind requires a HEREDOC. Yikes.
         command_list = [
             f'{get_config().ctffind_full_path} << EOF > /dev/null',
@@ -87,8 +92,8 @@ class CtffindProcessor():
             '2.70', # Cs
             '0.1', # amplitude contrast
             '512', # size of amplitude spectrum to compute
-            '20', # min resolution
-            '4', # max resolution
+            f'{min_resolution}', # min resolution
+            f'{max_resolution}', # max resolution
             '5000', # min defocus
             '50000', # max defoxus
             '500', # defocus search step
@@ -109,6 +114,7 @@ class CtffindProcessor():
         data_model.ctf_image_preview_file = self.create_preview(data_model.ctf_image_file)
         data_model.ctf_log_file = '{}_ctffind.txt'.format(output_file_base)
         data_model.ctf_epa_log_file = '{}_ctffind_avrot.txt'.format(output_file_base)
+        data_model.command_list = command_list
 
         try:
             data_model = self.update_model_from_EPA_log(data_model)

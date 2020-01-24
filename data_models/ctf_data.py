@@ -24,3 +24,5 @@ class CtfData(DataModel):
         self.measured_ctf_curve = None
         self.theoretical_ctf_curve = None
 
+        self.command_list = None
+
