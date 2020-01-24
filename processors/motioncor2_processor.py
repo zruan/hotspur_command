@@ -16,7 +16,7 @@ class Motioncor2Processor():
 
     required_gpus = 1
     processors_by_session = {}
-    target_binning = 2
+    target_binning = 1
 
     @classmethod
     def for_session(cls, session):
@@ -85,8 +85,8 @@ class Motioncor2Processor():
 
         dose_per_pixel = acquisition_data_model.frame_dose * (acquisition_data_model.pixel_size ** 2)
         
+        # Try to automaticaly choose grouping. Should have 1e/pix/frame, but make sure not too much grouping.
         group_amount = math.ceil(1.0 / dose_per_pixel)
-        
         if group_amount > (acquisition_data_model.frame_count / 3):
             group_amount = math.floor(acquisition_data_model.frame_count/3)
         if group_amount > 7:
