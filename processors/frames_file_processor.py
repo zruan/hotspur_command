@@ -3,15 +3,18 @@ import time
 from pathlib import Path
 import tifffile
 import imaging
+from threading import Thread
 
 from utils.logging import get_logger_for_module
+from utils.resources import ResourceManager
 from data_models import AcquisitionData, UserData
 
 
 logger = get_logger_for_module(__name__)
 
 class FramesFileProcessor():
-
+    
+    required_cpus = 1
     processors_by_session = {}
 
     @classmethod
@@ -53,7 +56,20 @@ class FramesFileProcessor():
         stacks = self.get_valid_stacks_from_queue()
         logger.info(f'{len(stacks)} in queue for {self.session.name}')
         stacks = self.filter_for_most_recent_stacks(stacks)
+            
+        if ResourceManager.request_cpus(FramesFileProcessor.required_cpus):
+            for stack in stacks:
+                self.queued.remove(stack)
+            process_thread = Thread(
+                    target=self.process_frames,
+                    args=([stacks])
+                )
+            process_thread.start()
 
+
+
+    def process_frames(self,stacks):        
+        
         for stack in stacks:
             try:
                 self.parse_stack(stack)
@@ -61,10 +77,11 @@ class FramesFileProcessor():
                 user_data = UserData(stack.base_name)
                 user_data.push(self.session.db)
                 self.update_session(stack)
-                self.queued.remove(stack)
             except Exception as e:
                 logger.exception(e)
                 continue
+
+        ResourceManager.release_cpus(self.required_cpus)
 
 
     def find_images(self):
