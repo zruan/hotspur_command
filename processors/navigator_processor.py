@@ -57,7 +57,7 @@ class NavigatorProcessor():
 
 
     def find_navigators(self):
-        paths = Path(self.session.directory).glob(f'**/*{self.suffix}')
+        paths = Path(self.session.directory).glob(f'*{self.suffix}')
         navs = [self.model_nav(p) for p in paths]
         return navs
 
