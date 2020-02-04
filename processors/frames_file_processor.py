@@ -4,6 +4,7 @@ from pathlib import Path
 import tifffile
 import imaging
 from threading import Thread
+import time
 
 from utils.logging import get_logger_for_module
 from utils.resources import ResourceManager
@@ -16,6 +17,8 @@ class FramesFileProcessor():
     
     required_cpus = 1
     processors_by_session = {}
+
+    frame_tracking_interval = 30
 
     @classmethod
     def for_session(cls, session):
@@ -34,8 +37,12 @@ class FramesFileProcessor():
         self.min_lifetime = 30
         self.batch_size = 20
 
+        self.time_since_last_tracking = None
+
         self.tracked = []
         self.queued = []
+        self.finished = []
+        self.failed = []
 
         self.sync_with_db()
 
@@ -46,15 +53,11 @@ class FramesFileProcessor():
 
 
     def run(self):
-        images = self.find_images()
-        images = self.filter_for_untracked_images(images)
-        #self.tracked.extend([i.image_path for i in images])
-        images = self.filter_for_present_metadata(images)
-        stacks = self.filter_for_framestacks(images)
-        self.tracked.extend([i.image_path for i in images])
-        self.queued.extend(stacks)
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= FramesFileProcessor.frame_tracking_interval:
+            self.track_frames()
+            self.time_since_last_tracking = time.time()
         stacks = self.get_valid_stacks_from_queue()
-        logger.info(f'{len(stacks)} in queue for {self.session.name}')
+        logger.debug(f'{len(stacks)} in queue for {self.session.name}')
         stacks = self.filter_for_most_recent_stacks(stacks)
             
         if ResourceManager.request_cpus(FramesFileProcessor.required_cpus):
@@ -66,10 +69,17 @@ class FramesFileProcessor():
                 )
             process_thread.start()
 
+    def track_frames(self):
+        images = self.find_images()
+        images = self.filter_for_untracked_images(images)
+        #self.tracked.extend([i.image_path for i in images])
+        images = self.filter_for_present_metadata(images)
+        stacks = self.filter_for_framestacks(images)
+        self.tracked.extend([i.image_path for i in images])
+        self.queued.extend(stacks)
 
 
     def process_frames(self,stacks):        
-        
         for stack in stacks:
             try:
                 self.parse_stack(stack)
@@ -78,8 +88,12 @@ class FramesFileProcessor():
                 user_data.push(self.session.db)
                 self.update_session(stack)
             except Exception as e:
-                logger.exception(e)
+                logger.exception(f'Error processing {stack.base_name} in {self.session.long_name}: {e}')
+                self.failed.append(stack.image_path)
                 continue
+            self.finished.append(stack.image_path)
+
+
 
         ResourceManager.release_cpus(self.required_cpus)
 
@@ -87,7 +101,7 @@ class FramesFileProcessor():
     def find_images(self):
         found_images = []
         for suffix in self.suffixes:
-            image_paths = Path(self.session.directory).glob(f'**/*{suffix}')
+            image_paths = Path(self.session.directory).glob(f'*/*{suffix}')
             images = [self.model_image(p) for p in image_paths]
             found_images.extend(images)
         return found_images
