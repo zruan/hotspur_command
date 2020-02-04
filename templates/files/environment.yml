@@ -68,6 +68,7 @@ dependencies:
   - setuptools=41.0.1
   - sqlite=3.28.0
   - tifffile=0.15.1
+  - tqdm=4.41.1
   - tk=8.6.9
   - wheel=0.33.4
   - x264=1!152.20180806
