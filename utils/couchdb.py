@@ -51,11 +51,15 @@ def push_doc(doc, db):
     db[doc_id] = doc
 
 
-def fetch_docs_of_type(doc_type, db):
-    LOG.debug(f'Fetching all docs of type {doc_type} from database {db.name}')
-    map_func = docs_of_type_view_template.substitute(doc_type=doc_type)
-    map_func = "".join(map_func.split())
-    view = ViewDefinition('hotspur', doc_type, map_func)
-    view.sync(db)
-    results = view(db)
-    return [row.value for row in results.rows]
+def fetch_docs_of_type(doc_type, db, since = None):
+    LOG.debug(f'Fetching all docs of type {doc_type} from database {db.name} for first time')
+    if since is None:
+        map_func = docs_of_type_view_template.substitute(doc_type=doc_type)
+        map_func = "".join(map_func.split())
+        view = ViewDefinition('hotspur', doc_type, map_func)
+        view.sync(db)
+        results = view(db,update_seq=True)
+        return {"docs": [row.value for row in results.rows], "last_seq": results.update_seq}
+    else:
+        update = db.changes(since=since, include_docs=True,filter="_view",view=f'hotspur/{doc_type}')
+        return {"docs": [row.doc for row in update.results], "last_seq": update.last_seq}

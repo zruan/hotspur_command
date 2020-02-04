@@ -39,11 +39,13 @@ class DataModel():
 		doc_type = cls._get_type()
 		all_docs = fetch_docs_of_type(doc_type, db)
 		models = []
-		for doc in all_docs:
+		for doc in all_docs['docs']:
 			model = cls(None)
 			model.__dict__.update(doc)
 			models.append(model)
 		return models
+
+	
 
 	@classmethod
 	def _get_id(cls, base_name):
@@ -59,3 +61,20 @@ class DataModel():
 	@classmethod
 	def _get_type(cls):
 		return cls._get_id(None)
+
+class DataModelList():
+
+	def __init__(self, doc_cls, db):
+		self.db = db
+		self.doc_cls = doc_cls
+		self.last_seq = None
+		self.docs = doc_cls.fetch_all(db)
+
+	def update(self):
+		doc_type = self.doc_cls._get_type()
+		update = fetch_docs_of_type(doc_type, db, since=self.update_seq, include_docs=True,filter="_view",view=f'hotspur/{doc_type}')
+		for doc in update['docs']:
+			self.docs.append[doc]
+		self.last_seq = update.last_seq
+
+
