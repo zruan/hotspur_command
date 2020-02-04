@@ -117,7 +117,8 @@ class DogpickerProcessor():
             maxt = None
             debug = None
             meanmax = None
-            sizes = np.logspace(np.log10(30), np.log10(300) ,num=20)
+            sizemin = int(np.min(motion_correction_data.dimensions)/50)
+            sizes = np.logspace(np.log10(sizemin), np.log10(sizemin*10) ,num=20)
             idogpicker_data = {}
             for size in sizes:
                 keys = list(self.detect(image, size, mint, maxt, debug, meanmax))
@@ -137,8 +138,8 @@ class DogpickerProcessor():
         except Exception as e:
             LOG.error("Dogpicker failed")
             LOG.error(e)
-
-            pass
+            ResourceManager.release_cpus(self.required_cpus)
+            return
 
         
 
