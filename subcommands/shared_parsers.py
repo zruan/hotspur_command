@@ -5,7 +5,7 @@ config_file_parser = argparse.ArgumentParser(add_help=False)
 config_file_parser.add_argument(
     'config',
     help='the hotspur yaml configuration file',
-    metavar='config',
+    metavar='config'
 )
 
 
