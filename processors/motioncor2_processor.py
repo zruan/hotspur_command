@@ -10,6 +10,9 @@ from itertools import accumulate
 from data_models import AcquisitionData, MotionCorrectionData
 from utils.resources import ResourceManager
 from utils.config import get_config
+from utils.logging import get_logger_for_module
+
+LOG = get_logger_for_module(__name__)
 
 
 class Motioncor2Processor():
@@ -17,6 +20,8 @@ class Motioncor2Processor():
     required_gpus = 1
     processors_by_session = {}
     target_binning = 1
+
+    tracking_interval = 20
 
     @classmethod
     def for_session(cls, session):
@@ -33,7 +38,8 @@ class Motioncor2Processor():
         self.tracked = []
         self.queued = []
         self.finished = []
-
+        self.failed = []
+        self.time_since_last_tracking = None
         self.sync_with_db()
 
     def sync_with_db(self):
@@ -52,7 +58,9 @@ class Motioncor2Processor():
         self.queued.sort(key=lambda model: model.time)
 
     def run(self):
-        self.update_tracked_data()
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= Motioncor2Processor.tracking_interval:
+            self.update_tracked_data()
+            self.time_since_last_tracking = time.time()
 
         if len(self.queued) == 0:
             return
@@ -128,18 +136,27 @@ class Motioncor2Processor():
         try:
             data_model = self.populate_shifts_from_log(data_model, output_log_file)
         except Exception as e:
-            print("Failed to extract shifts from log {}".format(output_log_file))
-            print(e)
+            LOG.exception(f'Error reading shifts of {data_model.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(data_model.base_name)
+            ResourceManager.release_gpus(gpu_id_list)
             return
 
         try:
             data_model = self.populate_image_metadata_from_mrc(data_model, output_file)
         except Exception as e:
-            print("Failed to parse mrc header of {}".format(output_file))
-            print(e)
+            LOG.exception(f'Error populating image metadata of {data_model.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(data_model.base_name)
+            ResourceManager.release_gpus(gpu_id_list)
             return
 
-        data_model.push(self.session.db)
+        try:
+            data_model.push(self.session.db)
+        except Exception as e:
+            LOG.exception(f'Error pushing results to db {data_model.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(data_model.base_name)
+            ResourceManager.release_gpus(gpu_id_list)
+            return
+
 
         self.finished.append(data_model.base_name)
 
