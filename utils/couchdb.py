@@ -62,4 +62,4 @@ def fetch_docs_of_type(doc_type, db, since = None):
         return {"docs": [row.value for row in results.rows], "last_seq": results.update_seq}
     else:
         update = db.changes(since=since, include_docs=True,filter="_view",view=f'hotspur/{doc_type}')
-        return {"docs": [row.doc for row in update.results], "last_seq": update.last_seq}
+        return {"docs": [row["doc"] for row in update["results"]], "last_seq": update["last_seq"]}

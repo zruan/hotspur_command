@@ -7,7 +7,7 @@ import subprocess
 import math
 from itertools import accumulate
 
-from data_models import AcquisitionData, MotionCorrectionData
+from data_models import AcquisitionData, MotionCorrectionData, DataModelList
 from utils.resources import ResourceManager
 from utils.config import get_config
 from utils.logging import get_logger_for_module
@@ -43,15 +43,18 @@ class Motioncor2Processor():
         self.sync_with_db()
 
     def sync_with_db(self):
-        current_models = MotionCorrectionData.fetch_all(self.session.db)
-        base_names = [model.base_name for model in current_models]
+        self.model_list_mc = DataModelList(MotionCorrectionData, self.session.db)
+        self.model_list_fra = DataModelList(AcquisitionData, self.session.db)
+        #current_models = MotionCorrectionData.fetch_all(self.session.db)
+        base_names = [model.base_name for model in self.model_list_mc.models]
         self.tracked = base_names.copy()
         self.finished = base_names.copy()
 
 
     def update_tracked_data(self):
-        current_models = AcquisitionData.fetch_all(self.session.db)
-        for model in current_models:
+        self.model_list_fra.update()
+        #current_models = AcquisitionData.fetch_all(self.session.db)
+        for model in  self.model_list_fra.models:
             if model.base_name not in self.tracked:
                 self.tracked.append(model.base_name)
                 self.queued.append(model)

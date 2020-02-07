@@ -7,7 +7,7 @@ import imaging
 import numpy as np
 import math
 
-from data_models import AcquisitionData, MotionCorrectionData, CtfData 
+from data_models import AcquisitionData, MotionCorrectionData, CtfData, DataModelList
 from utils.resources import ResourceManager
 from utils.config import get_config
 
@@ -37,14 +37,16 @@ class CtffindProcessor():
         self.sync_with_db()
 
     def sync_with_db(self):
-        ctf_data_models = CtfData.fetch_all(self.session.db)
-        base_names = [model.base_name for model in ctf_data_models]
+        self.model_list_ctf = DataModelList(CtfData, self.session.db)
+        self.model_list_mc = DataModelList(MotionCorrectionData, self.session.db)
+
+        base_names = [model.base_name for model in self.model_list_ctf.models]
         self.tracked = base_names.copy()
         self.finished = base_names.copy()
 
     def update_tracked_data(self):
-        motion_data_model = MotionCorrectionData.fetch_all(self.session.db)
-        for model in motion_data_model:
+        self.model_list_mc.update()
+        for model in self.model_list_mc.models:
             if model.base_name not in self.tracked:
                 self.tracked.append(model.base_name)
                 self.queued.append(model)

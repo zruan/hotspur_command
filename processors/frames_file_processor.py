@@ -49,6 +49,7 @@ class FramesFileProcessor():
     def sync_with_db(self):
         present_data = AcquisitionData.fetch_all(self.session.db)
         self.tracked = [d.image_path for d in present_data]
+        self.finished = self.tracked.copy()
         logger.debug(f"Fetched aquisition data models for session {self.session.name}")
 
 

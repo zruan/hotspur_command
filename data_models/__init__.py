@@ -1,4 +1,5 @@
 from .data_model import DataModel
+from .data_model import DataModelList
 
 from .acquisition_data import AcquisitionData
 from .motion_correction_data import MotionCorrectionData

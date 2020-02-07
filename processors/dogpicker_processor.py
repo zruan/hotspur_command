@@ -7,7 +7,7 @@ import imaging
 import numpy as np
 import json
 
-from data_models import AcquisitionData, MotionCorrectionData, CtfData, DogpickerData
+from data_models import AcquisitionData, MotionCorrectionData, CtfData, DogpickerData, DataModelList
 from utils.resources import ResourceManager
 from utils.config import get_config
 from utils.logging import get_logger_for_module
@@ -67,14 +67,15 @@ class DogpickerProcessor():
         self.sync_with_db()
 
     def sync_with_db(self):
-        dogpicker_data_models = DogpickerData.fetch_all(self.session.db)
-        base_names = [model.base_name for model in dogpicker_data_models]
+        self.model_list_dog = DataModelList(DogpickerData, self.session.db)
+        self.model_list_mc = DataModelList(MotionCorrectionData, self.session.db)
+        base_names = [model.base_name for model in self.model_list_dog.models]
         self.tracked = base_names.copy()
         self.finished = base_names.copy()
 
     def update_tracked_data(self):
-        motioncor_data_model = MotionCorrectionData.fetch_all(self.session.db)
-        for model in motioncor_data_model:
+        self.model_list_mc.update
+        for model in self.model_list_mc.models:
             if model.base_name not in self.tracked:
                 self.tracked.append(model.base_name)
                 self.queued.append(model)

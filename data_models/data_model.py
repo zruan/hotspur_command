@@ -67,14 +67,23 @@ class DataModelList():
 	def __init__(self, doc_cls, db):
 		self.db = db
 		self.doc_cls = doc_cls
-		self.last_seq = None
-		self.docs = doc_cls.fetch_all(db)
+		doc_type = self.doc_cls._get_type()
+		all_docs = fetch_docs_of_type(doc_type, db)
+		models = []
+		for doc in all_docs['docs']:
+			model = self.doc_cls(None)
+			model.__dict__.update(doc)
+			models.append(model)
+		self.models = models
+		self.last_seq = all_docs["last_seq"]
 
 	def update(self):
 		doc_type = self.doc_cls._get_type()
-		update = fetch_docs_of_type(doc_type, db, since=self.update_seq, include_docs=True,filter="_view",view=f'hotspur/{doc_type}')
+		update = fetch_docs_of_type(doc_type, self.db, since=self.last_seq)
 		for doc in update['docs']:
-			self.docs.append[doc]
-		self.last_seq = update.last_seq
+			model = self.doc_cls(None)
+			model.__dict__.update(doc)
+			self.models.append(model)
+		self.last_seq = update["last_seq"]
 
 

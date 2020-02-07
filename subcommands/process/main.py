@@ -28,6 +28,17 @@ def signal_handler(sig, frame):
     LOG.exception('You pressed Ctrl+C! Exiting Hotspur gracefully. You will see errors because programs are being canceled.')
     stop_hotspur = True
 
+def format_string(counter):
+    string = ""
+    for k,v in counter.items():
+        string += k + ": "
+        string += str(v["T"]) +"/"
+        string += str(v["Q"]) +"/"
+        string += str(v["F"]) +"/"
+        string += str(v["X"]) +" "
+    return string
+
+
 signal.signal(signal.SIGINT, signal_handler)
 
 
@@ -51,8 +62,11 @@ def run(args):
     last_session_tracking = None
     last_main_loop = None
     t = time.time()
+    counter = {
+        "FRA": { "T":0, "Q":0,"F":0,"X":0},
+        "MO": { "T":0, "Q":0,"F":0,"X":0},
+    }
 
-    timer = {"SES" : 0, "PRO": 0, "NAV": 0, "MON": 0, "FRA": 0, "MC": 0, "CTF": 0, "DOG": 0}
 
     while True:
         if last_main_loop is not None:
@@ -60,38 +74,33 @@ def run(args):
         else:
             main_loop_time = time.time()
         last_main_loop = time.time()
-        STATUS_BAR.set_description_str(f'CPU: {ResourceManager.available_cpus}/{tot_cpus} GPU: {sum(map(lambda x: not x[1].locked(),ResourceManager.gpu_locks))}/{len(ResourceManager.gpu_locks)} Sessions: {len(session_processor.sessions)} Mainloop time: {main_loop_time} {timer}')
+        STATUS_BAR.set_description_str(f'CPU: {ResourceManager.available_cpus}/{tot_cpus} GPU: {sum(map(lambda x: not x[1].locked(),ResourceManager.gpu_locks))}/{len(ResourceManager.gpu_locks)} Sessions: {len(session_processor.sessions)} Mainloop time: {main_loop_time:.3f} {format_string(counter)}')
         
         if last_session_tracking is None or time.time() - last_session_tracking >= session_tracking_interval:
             session_processor.find_sessions(search_patterns)
             last_session_tracking = time.time()
-        timer["SES"] += time.time() - t
-        t = time.time()
         random.shuffle(session_processor.sessions)
-
+        counter = {
+        "FRA": { "T":0, "Q":0,"F":0,"X":0},
+        "MO": { "T":0, "Q":0,"F":0,"X":0},
+        }
         for session in session_processor.sessions:
             project_processor.update_project(session)
-            timer["PRO"] += time.time() - t
-            t = time.time()
             NavigatorProcessor.for_session(session).run()
-            timer["NAV"] += time.time() - t
-            t = time.time()
             MontageProcessor.for_session(session).run()
-            timer["MON"] += time.time() - t
-            t = time.time()
             FramesFileProcessor.for_session(session).run()
-            timer["FRA"] += time.time() - t
-            t = time.time()
+            counter["FRA"]["T"] += len(FramesFileProcessor.for_session(session).tracked)
+            counter["FRA"]["Q"] += len(FramesFileProcessor.for_session(session).queued)
+            counter["FRA"]["F"] += len(FramesFileProcessor.for_session(session).finished)
+            counter["FRA"]["X"] += len(FramesFileProcessor.for_session(session).failed)
             Motioncor2Processor.for_session(session).run()
-            timer["MC"] += time.time() - t
-            t = time.time()
+            counter["MO"]["T"] += len(Motioncor2Processor.for_session(session).tracked)
+            counter["MO"]["Q"] += len(Motioncor2Processor.for_session(session).queued)
+            counter["MO"]["F"] += len(Motioncor2Processor.for_session(session).finished)
+            counter["MO"]["X"] += len(Motioncor2Processor.for_session(session).failed)
             CtffindProcessor.for_session(session).run()
-            timer["CTF"] += time.time() - t
-            t = time.time()
             DogpickerProcessor.for_session(session).run()
-            timer["DOG"] += time.time() - t
-            t = time.time()
-
+            
         time.sleep(0.1)
         if (stop_hotspur):
             break
