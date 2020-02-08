@@ -65,6 +65,7 @@ def run(args):
     counter = {
         "FRA": { "T":0, "Q":0,"F":0,"X":0},
         "MO": { "T":0, "Q":0,"F":0,"X":0},
+        "DOG": { "T":0, "Q":0,"F":0,"X":0},
     }
 
 
@@ -83,6 +84,7 @@ def run(args):
         counter = {
         "FRA": { "T":0, "Q":0,"F":0,"X":0},
         "MO": { "T":0, "Q":0,"F":0,"X":0},
+        "DOG": { "T":0, "Q":0,"F":0,"X":0},
         }
         for session in session_processor.sessions:
             project_processor.update_project(session)
@@ -100,6 +102,10 @@ def run(args):
             counter["MO"]["X"] += len(Motioncor2Processor.for_session(session).failed)
             CtffindProcessor.for_session(session).run()
             DogpickerProcessor.for_session(session).run()
+            counter["DOG"]["T"] += len(DogpickerProcessor.for_session(session).tracked)
+            counter["DOG"]["Q"] += len(DogpickerProcessor.for_session(session).queued)
+            counter["DOG"]["F"] += len(DogpickerProcessor.for_session(session).finished)
+            counter["DOG"]["X"] += len(DogpickerProcessor.for_session(session).failed)
             
         time.sleep(0.1)
         if (stop_hotspur):
