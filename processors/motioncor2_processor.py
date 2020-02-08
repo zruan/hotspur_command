@@ -81,10 +81,16 @@ class Motioncor2Processor():
                 ResourceManager.release_gpus(gpu_id_list)
 
     def process_data(self, acquisition_data_model, gpu_id_list):
-        gain_file = self.prepare_gain_reference(
-            self.session.processing_directory, acquisition_data_model.gain_reference_file
-        )
-
+        try:
+            gain_file = self.prepare_gain_reference(
+                self.session.processing_directory, acquisition_data_model.gain_reference_file
+            )
+        except Exception as e:
+            LOG.exception(f'Error preparing gain reference for {data_model.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(data_model.base_name)
+            ResourceManager.release_gpus(gpu_id_list)
+            return
+            
         output_file_base = '{}/{}'.format(self.session.processing_directory,
                                           acquisition_data_model.base_name)
         output_file = '{}_mc.mrc'.format(output_file_base)
@@ -249,10 +255,12 @@ class Motioncor2Processor():
             raise e
 
     def prepare_gain_reference(self, processing_directory, gain_file):
-        target_filename="gainRef.mrc"
+        basename = os.path.splitext(os.path.basename(gain_file))[0]
+        target_filename=basename+".mrc"
         ext=os.path.splitext(gain_file)[1]
         target_path=os.path.join(processing_directory, target_filename)
-
+        if not os.path.exists(gain_file):
+            raise ValueError('Gain reference file does not exists. Maybe you copied the data? Make sure the gain reference gets copied first.')
         try:
             if not os.path.exists(target_path):
                 if ext == '.mrc':
