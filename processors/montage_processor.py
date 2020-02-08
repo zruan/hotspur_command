@@ -4,6 +4,7 @@ from threading import Thread
 from queue import Queue
 import numpy as np
 from pathlib import Path
+import time
 
 import imaging
 
@@ -19,6 +20,7 @@ class MontageProcessor():
 
     required_cpus = 1
     processors_by_session = {}
+    tracking_interval = 60
 
     @classmethod
     def for_session(cls, session):
@@ -32,6 +34,7 @@ class MontageProcessor():
         self.session = session
         self.tracked = []
         self.queue = Queue()
+        self.time_since_last_tracking = None
 
 
     def sync_with_db(self):
@@ -43,7 +46,10 @@ class MontageProcessor():
 
 
     def run(self):
-        self.sync_with_db()
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= MontageProcessor.tracking_interval:
+            self.sync_with_db()
+            self.time_since_last_tracking = time.time()
+        
 
         if self.queue.empty():
             return
