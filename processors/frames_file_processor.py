@@ -220,7 +220,7 @@ class FramesFileProcessor():
 
     def update_dose_from_image(self, data_model):
         if data_model.file_format == '.tif':
-            frame_dose_per_pixel, dimensions = self.get_dose_from_tif(data_model.image_path) 
+            frame_dose_per_pixel, dimensions = self.get_dose_from_tif(data_model.image_path,data_model.frame_count) 
         elif data_model.file_format == '.mrc':
             frame_dose_per_pixel, dimensions = self.get_dose_from_mrc(data_model.image_path)
 
@@ -231,9 +231,9 @@ class FramesFileProcessor():
     
 
 
-    def get_dose_from_tif(self, tif_path):
+    def get_dose_from_tif(self, tif_path, num_frames):
         with tifffile.TiffFile(tif_path) as imfile:
-            return (imfile.pages[0].asarray().mean(), imfile.pages[0].asarray().shape[::-1])
+            return (imfile.pages[int(num_frames/2)].asarray().mean(), imfile.pages[0].asarray().shape[::-1])
 
 
     def get_dose_from_mrc(self, mrc_path):
