@@ -19,7 +19,7 @@ def run(args):
         show_project_info(args.project)
         return
 
-    args.help_func()
+    show_all_projects()
 
 
 def show_all_projects():
