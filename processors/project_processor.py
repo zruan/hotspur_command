@@ -22,7 +22,7 @@ class ProjectProcessor():
             project = self.model_project(name)
             self.projects[name] = project
 
-        if session.name not in project.sessions:
+        if session.long_name not in project.sessions:
             project.sessions[session.long_name] = {}
             project.sessions[session.long_name]["name"] = session.name
             project.sessions[session.long_name]["sample"] = session.sample

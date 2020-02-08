@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 from utils.logging import get_logger_for_module
 from data_models import NavigatorData, MontageData
@@ -9,6 +10,8 @@ LOG = get_logger_for_module(__name__)
 class NavigatorProcessor():
 
     processors_by_session = {}
+
+    tracking_interval = 60
 
     @classmethod
     def for_session(cls, session):
@@ -23,7 +26,7 @@ class NavigatorProcessor():
 
         self.nav = None
         self.suffix = '.nav'
-
+        self.time_since_last_tracking = None
         self.sync_with_db()
 
 
@@ -35,6 +38,11 @@ class NavigatorProcessor():
 
 
     def run(self):
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= NavigatorProcessor.tracking_interval:
+            navs = self.find_navigators()
+            self.time_since_last_tracking = time.time()
+        else:
+            return
         navs = self.find_navigators()
         if len(navs) == 0:
             LOG.debug('Did not find any nav files')

@@ -6,6 +6,7 @@ import subprocess
 import imaging
 import numpy as np
 import math
+import time
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData, DataModelList
 from utils.resources import ResourceManager
@@ -16,6 +17,7 @@ class CtffindProcessor():
 
     required_cpus = 1
     processors_by_session = {}
+    tracking_interval = 30
 
     @classmethod
     def for_session(cls, session):
@@ -33,7 +35,8 @@ class CtffindProcessor():
         self.tracked = []
         self.queued = []
         self.finished = []
-
+        self.failed = []
+        self.time_since_last_tracking = None
         self.sync_with_db()
 
     def sync_with_db(self):
@@ -53,8 +56,10 @@ class CtffindProcessor():
         self.queued.sort(key=lambda model: model.time)
 
     def run(self):
-        self.update_tracked_data()
-
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= CtffindProcessor.tracking_interval:
+            self.update_tracked_data()
+            self.time_since_last_tracking = time.time()
+        
         if len(self.queued) == 0:
             return
 

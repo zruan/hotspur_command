@@ -6,6 +6,7 @@ import subprocess
 import imaging
 import numpy as np
 import json
+import time
 
 from data_models import AcquisitionData, MotionCorrectionData, CtfData, DogpickerData, DataModelList
 from utils.resources import ResourceManager
@@ -46,6 +47,7 @@ class DogpickerProcessor():
 
     required_cpus = 1
     processors_by_session = {}
+    tracking_interval = 30
 
     @classmethod
     def for_session(cls, session):
@@ -63,6 +65,8 @@ class DogpickerProcessor():
         self.tracked = []
         self.queued = []
         self.finished = []
+        self.failed = []
+        self.time_since_last_tracking = None
 
         self.sync_with_db()
 
@@ -74,7 +78,7 @@ class DogpickerProcessor():
         self.finished = base_names.copy()
 
     def update_tracked_data(self):
-        self.model_list_mc.update
+        self.model_list_mc.update()
         for model in self.model_list_mc.models:
             if model.base_name not in self.tracked:
                 self.tracked.append(model.base_name)
@@ -82,7 +86,9 @@ class DogpickerProcessor():
         self.queued.sort(key=lambda model: model.time)
 
     def run(self):
-        self.update_tracked_data()
+        if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= DogpickerProcessor.tracking_interval:
+            self.update_tracked_data()
+            self.time_since_last_tracking = time.time()
 
         if len(self.queued) == 0:
             return
@@ -139,6 +145,7 @@ class DogpickerProcessor():
         except Exception as e:
             LOG.error("Dogpicker failed")
             LOG.error(e)
+            self.failed.append(acquisition_data.base_name)
             ResourceManager.release_cpus(self.required_cpus)
             return
 
