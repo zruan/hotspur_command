@@ -55,7 +55,9 @@ class FramesFileProcessor():
 
     def run(self):
         if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= FramesFileProcessor.frame_tracking_interval:
+            logger.info("Starting tracking")
             self.track_frames()
+            logger.info("Finished tracking")
             self.time_since_last_tracking = time.time()
         stacks = self.get_valid_stacks_from_queue()
         logger.debug(f'{len(stacks)} in queue for {self.session.name}')

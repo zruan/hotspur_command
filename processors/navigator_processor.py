@@ -94,7 +94,7 @@ class NavigatorProcessor():
         map_items = [i for i in map_items if self.map_file_exists(i)]
 
         maps = [self.process_map_item(i) for i in map_items]
-
+        
         atlases = [m for m in maps if self.is_atlas(m)]
         if len(atlases) > 0:
             current_atlas = atlases[-1]
@@ -102,7 +102,7 @@ class NavigatorProcessor():
 
         squares = [m for m in maps if self.is_square(m)]
         if len(squares) > 0:
-            squares = self.remove_overlaping_squares(squares)
+            #squares = self.remove_overlaping_squares(squares)
             nav.squares = [s.base_name for s in squares]
         return nav, maps
 

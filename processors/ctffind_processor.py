@@ -11,6 +11,10 @@ import time
 from data_models import AcquisitionData, MotionCorrectionData, CtfData, DataModelList
 from utils.resources import ResourceManager
 from utils.config import get_config
+from utils.logging import get_logger_for_module
+
+
+LOG = get_logger_for_module(__name__)
 
 
 class CtffindProcessor():
@@ -57,7 +61,9 @@ class CtffindProcessor():
 
     def run(self):
         if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= CtffindProcessor.tracking_interval:
+            LOG.info("Starting tracking")
             self.update_tracked_data()
+            LOG.info("Finnished tracking")
             self.time_since_last_tracking = time.time()
         
         if len(self.queued) == 0:

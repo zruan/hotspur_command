@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from utils.couchdb import fetch_db 
-from data_models import SessionData, AcquisitionData, MotionCorrectionData, CtfData
+from data_models import SessionData, AcquisitionData, MotionCorrectionData, CtfData, UserData
 
 class Micrograph():
     def __init__(self, acquisition_data=None, motion_correction_data=None, ctf_data=None):
@@ -40,7 +40,8 @@ def run(args):
         micrograph.user_data = data
 
     micrographs = micrographs.values()
-    micrographs = [m for m in micrographs if True not in m.user_data.exclusions.values()]
+    print(list(micrographs)[0].user_data.excluded)
+    micrographs = [m for m in micrographs if  not m.user_data["excluded"]]
     
     if args.out_dir is not None:
         out_base = args.out_dir
@@ -197,8 +198,8 @@ def generate_ctf_star(micrographs):
             f'{mcd.image_link_path}',
             f'{cd.image_link_path}',
             f'{cd.defocus_u}',
-            f'{cd.defocus_v}',
-            f'astigmatism',
+            f'{cd.defocus_u}',
+            f'{abs(cd.defocus_u-cd.defocus_v)}',
             f'{cd.astigmatism_angle}',
             f'{ad.voltage}',
             f'{ad.spherical_aberration}',

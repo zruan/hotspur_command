@@ -15,7 +15,7 @@ parser = ArgumentParser(
 )
 parser.set_defaults(func=run)
 parser.add_argument(
-    'session-hash',
+    'hash',
     help="hash of session to export",
 )
 parser.add_argument(

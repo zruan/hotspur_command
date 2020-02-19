@@ -62,7 +62,9 @@ class Motioncor2Processor():
 
     def run(self):
         if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= Motioncor2Processor.tracking_interval:
+            LOG.info("Starting tracking")
             self.update_tracked_data()
+            LOG.info("Finished tracking")
             self.time_since_last_tracking = time.time()
 
         if len(self.queued) == 0:
@@ -103,7 +105,7 @@ class Motioncor2Processor():
         dose_per_pixel = acquisition_data_model.frame_dose * (acquisition_data_model.pixel_size ** 2)
         
         # Try to automaticaly choose grouping. Should have 1e/pix/frame, but make sure not too much grouping.
-        group_amount = math.ceil(1.0 / dose_per_pixel)
+        group_amount = math.ceil(0.4 / dose_per_pixel)
         if group_amount > (acquisition_data_model.frame_count / 3):
             group_amount = math.floor(acquisition_data_model.frame_count/3)
         if group_amount > 7:

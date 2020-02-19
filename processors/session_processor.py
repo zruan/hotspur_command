@@ -97,7 +97,11 @@ class SessionProcessor():
 
 
     def validate_session(self, session):
-        age = self.get_directory_age(session.directory)
+        try:
+            age = self.get_directory_age(session.directory)
+        except Exception as e:
+            LOG.exception(f'Cant get age of session. Did it get deleted?: {e}')
+            return False
         if age > get_config().session_max_age:
             LOG.debug(f"Session {session.name} is not valid: age {age} is too old")
             return False

@@ -20,7 +20,7 @@ status_bar = tqdm.tqdm(total=0, position=1, bar_format='{desc}')
 
 
 full_formatter = logging.Formatter('\n%(levelname)s - %(asctime)s - %(name)s - %(message)s')
-short_formatter = logging.Formatter('\n%(levelname)s - %(name)s - %(message)s')
+short_formatter = logging.Formatter('\n%(levelname)s - %(asctime)s - %(name)s - %(message)s')
 
 sysout_handler = TqdmHandler(status_bar)
 sysout_handler.setFormatter(short_formatter)                                                                                        
