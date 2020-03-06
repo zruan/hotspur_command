@@ -6,6 +6,9 @@ from threading import Lock, Thread
 import subprocess
 import math
 from itertools import accumulate
+import glob
+from pathlib import Path
+
 
 from data_models import AcquisitionData, MotionCorrectionData, DataModelList
 from utils.resources import ResourceManager
@@ -85,11 +88,11 @@ class Motioncor2Processor():
     def process_data(self, acquisition_data_model, gpu_id_list):
         try:
             gain_file = self.prepare_gain_reference(
-                self.session.processing_directory, acquisition_data_model.gain_reference_file
+                self.session.processing_directory, acquisition_data_model.gain_reference_file, acquisition_data_model
             )
         except Exception as e:
-            LOG.exception(f'Error preparing gain reference for {data_model.base_name} in {self.session.long_name}: {e}')
-            self.failed.append(data_model.base_name)
+            LOG.exception(f'Error preparing gain reference for {acquisition_data_model.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(acquisition_data_model.base_name)
             ResourceManager.release_gpus(gpu_id_list)
             return
             
@@ -256,11 +259,18 @@ class Motioncor2Processor():
             print(e)
             raise e
 
-    def prepare_gain_reference(self, processing_directory, gain_file):
+    def prepare_gain_reference(self, processing_directory, gain_file, acquisition_data_model):
+        if gain_file is None:
+            collection_directory = Path(acquisition_data_model.data_file_path).parent
+            potential_gain_files = glob.glob(os.path.join(collection_directory, "*.dm4"))
+            if len(potential_gain_files) < 1:
+                raise ValueError('No Gain file found')
+            gain_file = potential_gain_files[0]
         basename = os.path.splitext(os.path.basename(gain_file))[0]
         target_filename=basename+".mrc"
         ext=os.path.splitext(gain_file)[1]
         target_path=os.path.join(processing_directory, target_filename)
+        
         if not os.path.exists(gain_file):
             raise ValueError('Gain reference file does not exists. Maybe you copied the data? Make sure the gain reference gets copied first.')
         try:
