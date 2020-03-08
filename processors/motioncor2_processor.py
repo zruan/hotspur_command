@@ -107,7 +107,7 @@ class Motioncor2Processor():
 
         dose_per_pixel = acquisition_data_model.frame_dose * (acquisition_data_model.pixel_size ** 2)
         
-        # Try to automaticaly choose grouping. Should have 1e/pix/frame, but make sure not too much grouping.
+        # Try to automatically choose grouping. Should have 0.4e/pix/frame, but make sure not too much grouping.
         group_amount = math.ceil(0.4 / dose_per_pixel)
         if group_amount > (acquisition_data_model.frame_count / 3):
             group_amount = math.floor(acquisition_data_model.frame_count/3)
@@ -138,6 +138,7 @@ class Motioncor2Processor():
         data_model.log_file = output_log_file
         data_model.binning = Motioncor2Processor.target_binning
         data_model.grouped_by = group_amount
+        data_model.command_list = command_list
 
         if os.path.exists(output_file_dose_weighted):
             data_model.dose_weighted_image_file = output_file_dose_weighted

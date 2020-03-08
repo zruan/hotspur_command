@@ -26,3 +26,6 @@ class MotionCorrectionData(DataModel):
 		self.binning = None
 		self.pixel_size = None
 		self.dimensions = None
+
+		self.command_list = None
+
