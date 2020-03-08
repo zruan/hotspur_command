@@ -33,6 +33,7 @@ class MontageProcessor():
     def __init__(self, session):
         self.session = session
         self.tracked = []
+        self.failed = []
         self.queue = Queue()
         self.time_since_last_tracking = None
 
@@ -69,17 +70,21 @@ class MontageProcessor():
 
 
     def process_montage(self, montage):
-        src = Path(montage.path)
-        dst = Path(self.session.processing_directory) / montage.base_name
-        if (montage.is_montage):
-            binned = self.bin_montage_stack(src, montage.section, dst.with_suffix('.binned'))
-            coords = self.extract_piece_coords_from_montage_stack(binned, dst.with_suffix('.coords'))
-            blended = self.blend_montage_stack(binned, coords, dst.with_suffix('.blended'))
-            preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
-        else:
-            preview = self.preview_montage(src, dst.with_suffix('.preview.png'), section=montage.section)
-        montage.preview = str(preview)
-        montage.push(self.session.db)
+        try:
+            src = Path(montage.path)
+            dst = Path(self.session.processing_directory) / montage.base_name
+            if (montage.is_montage):
+                binned = self.bin_montage_stack(src, montage.section, dst.with_suffix('.binned'))
+                coords = self.extract_piece_coords_from_montage_stack(binned, dst.with_suffix('.coords'))
+                blended = self.blend_montage_stack(binned, coords, dst.with_suffix('.blended'))
+                preview = self.preview_montage(blended, dst.with_suffix('.preview.png'))
+            else:
+                preview = self.preview_montage(src, dst.with_suffix('.preview.png'), section=montage.section)
+            montage.preview = str(preview)
+            montage.push(self.session.db)
+        except Exception as e:
+            LOG.exception(f'Error processing {montage.base_name} in {self.session.long_name}: {e}')
+            self.failed.append(montage.base_name)
         ResourceManager.release_cpus(self.required_cpus)
 
 
