@@ -65,9 +65,9 @@ class Motioncor2Processor():
 
     def run(self):
         if self.time_since_last_tracking is None or time.time() - self.time_since_last_tracking >= Motioncor2Processor.tracking_interval:
-            LOG.info("Starting tracking")
+            LOG.debug("Starting tracking")
             self.update_tracked_data()
-            LOG.info("Finished tracking")
+            LOG.debug("Finished tracking")
             self.time_since_last_tracking = time.time()
 
         if len(self.queued) == 0:
@@ -261,19 +261,20 @@ class Motioncor2Processor():
             raise e
 
     def prepare_gain_reference(self, processing_directory, gain_file, acquisition_data_model):
-        if gain_file is None:
+        if gain_file is None or not os.path.exists(gain_file):
             collection_directory = Path(acquisition_data_model.data_file_path).parent
             potential_gain_files = glob.glob(os.path.join(collection_directory, "*.dm4"))
+            potential_gain_files += glob.glob(os.path.join(collection_directory, "*[gG]ain*.mrc"))
             if len(potential_gain_files) < 1:
-                raise ValueError('No Gain file found')
+                raise ValueError('No valid gain mentioned in mdoc and mo potential gain files found')
             gain_file = potential_gain_files[0]
+            LOG.info(f'No valid gain in mdoc, but potential gain files: {potential_gain_files}')
+
         basename = os.path.splitext(os.path.basename(gain_file))[0]
         target_filename=basename+".mrc"
         ext=os.path.splitext(gain_file)[1]
         target_path=os.path.join(processing_directory, target_filename)
-        
-        if not os.path.exists(gain_file):
-            raise ValueError('Gain reference file does not exists. Maybe you copied the data? Make sure the gain reference gets copied first.')
+
         try:
             if not os.path.exists(target_path):
                 if ext == '.mrc':
@@ -288,5 +289,5 @@ class Motioncor2Processor():
                     raise ValueError('Gain reference is not ".dm4" or ".mrc" format.')
             return target_path
         except Exception as e:
-            print(e)
+            LOG.error(e)
             raise e

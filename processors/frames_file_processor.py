@@ -5,6 +5,7 @@ import tifffile
 import imaging
 from threading import Thread
 import time
+import calendar
 
 from utils.logging import get_logger_for_module
 from utils.resources import ResourceManager
@@ -217,7 +218,11 @@ class FramesFileProcessor():
                     data_model.image_shift_y =  float(value.split(" ")[1])
                 elif key == 'RotationAngle':
                     data_model.rotation_angle = float(value)
-
+                elif key == 'DateTime':
+                    try:
+                        data_model.time = calendar.timegm(time.strptime(value,"%d-%b-%y %H:%M:%S"))
+                    except ValueError as e:
+                        logger.exception(f'Coul not parse time in mdoc {value}')
         return data_model
 
     def update_dose_from_image(self, data_model):
