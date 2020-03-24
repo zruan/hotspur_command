@@ -5,6 +5,8 @@ from subcommands.export.parser  import parser as export_parser
 from subcommands.info.parser    import parser as info_parser
 from subcommands.process.parser import parser as process_parser
 from subcommands.prune.parser   import parser as prune_parser
+from subcommands.version.parser   import parser as version_parser
+
 
 
 if __name__ == "__main__":
@@ -37,6 +39,11 @@ if __name__ == "__main__":
         name='prune',
         help='Remove processed data and databases for projects or sessions',
         parents=[prune_parser]
+    )
+    subparsers.add_parser(
+        name='version',
+        help='Print the current version',
+        parents=[version_parser]
     )
 
     args = parser.parse_args()
