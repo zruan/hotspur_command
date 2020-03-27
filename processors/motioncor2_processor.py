@@ -261,8 +261,10 @@ class Motioncor2Processor():
             raise e
 
     def prepare_gain_reference(self, processing_directory, gain_file, acquisition_data_model):
+        print("gain_file: {}".format(gain_file))
         if gain_file is None or not os.path.exists(gain_file):
             collection_directory = Path(acquisition_data_model.data_file_path).parent
+            print("collection_directory: {}".format(collection_directory))
             potential_gain_files = glob.glob(os.path.join(collection_directory, "*.dm4"))
             potential_gain_files += glob.glob(os.path.join(collection_directory, "*[gG]ain*.mrc"))
             if len(potential_gain_files) < 1:
